@@ -74,8 +74,10 @@ COPY --from=builder /app/node_modules ./node_modules
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-# Create temp directory for video uploads
+# Create temp directory for video uploads and upload directories
 RUN mkdir -p /tmp/video-uploads && chown nestjs:nodejs /tmp/video-uploads
+RUN mkdir -p /app/apps/api/uploads/images /app/apps/api/uploads/videos && \
+    chown -R nestjs:nodejs /app/apps/api/uploads
 
 USER nestjs
 
