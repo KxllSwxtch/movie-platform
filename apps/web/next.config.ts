@@ -62,7 +62,6 @@ const nextConfig: NextConfig = {
 
   // Turbopack resolve configuration for hoisted monorepo dependencies
   experimental: {
-    optimizePackageImports: ['@phosphor-icons/react'],
     turbo: {
       resolveAlias: {
         'socket.io-client': '../../node_modules/socket.io-client',
