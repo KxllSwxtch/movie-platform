@@ -1,0 +1,286 @@
+'use client';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { api, ApiError, endpoints } from '@/lib/api-client';
+import { queryKeys } from '@/lib/query-client';
+import { useAuthStore } from '@/stores/auth.store';
+
+// ==============================
+// Profile
+// ==============================
+
+export function useProfile() {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+
+  return useQuery({
+    queryKey: queryKeys.users.profile(),
+    queryFn: async () => {
+      const response = await api.get<any>(endpoints.users.me);
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated,
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  const { updateUser } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async (data: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      avatarUrl?: string;
+    }) => {
+      const response = await api.patch<any>(endpoints.users.me, data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.profile() });
+      if (data) updateUser(data);
+      toast.success('Профиль обновлён');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка обновления профиля');
+    },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const response = await api.post<any>(endpoints.users.password, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Пароль изменён');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка смены пароля');
+    },
+  });
+}
+
+// ==============================
+// Verification
+// ==============================
+
+export function useVerificationStatus() {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+
+  return useQuery({
+    queryKey: queryKeys.users.verification(),
+    queryFn: async () => {
+      const response = await api.get<any>(endpoints.users.verificationStatus);
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated,
+  });
+}
+
+export function useSubmitVerification() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { method: string; documentUrl?: string }) => {
+      const response = await api.post<any>(endpoints.users.verification, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.verification() });
+      toast.success('Запрос на верификацию отправлен');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка отправки запроса');
+    },
+  });
+}
+
+// ==============================
+// Watchlist
+// ==============================
+
+export function useWatchlist(page = 1, limit = 20) {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+
+  return useQuery({
+    queryKey: queryKeys.watchlist.list({ page, limit }),
+    queryFn: async () => {
+      const response = await api.get<any>(endpoints.userWatchlist.list, {
+        params: { page, limit },
+      });
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated,
+  });
+}
+
+export function useAddToWatchlist() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (contentId: string) => {
+      const response = await api.post<any>(endpoints.userWatchlist.add, { contentId });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.watchlist.all });
+      toast.success('Добавлено в избранное');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка добавления');
+    },
+  });
+}
+
+export function useRemoveFromWatchlist() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (contentId: string) => {
+      const response = await api.delete<any>(endpoints.userWatchlist.remove(contentId));
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.watchlist.all });
+      toast.success('Удалено из избранного');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка удаления');
+    },
+  });
+}
+
+// ==============================
+// Watch History
+// ==============================
+
+export function useWatchHistory(page = 1, limit = 20) {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+
+  return useQuery({
+    queryKey: [...queryKeys.watchHistory.list(), { page, limit }],
+    queryFn: async () => {
+      const response = await api.get<any>(endpoints.watchHistory.list, {
+        params: { page, limit },
+      });
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated,
+  });
+}
+
+// ==============================
+// Continue Watching
+// ==============================
+
+export function useContinueWatching(limit = 10) {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+
+  return useQuery({
+    queryKey: [...queryKeys.watchHistory.continueWatching(), { limit }],
+    queryFn: async () => {
+      const response = await api.get<any>(endpoints.watchHistory.continueWatching, {
+        params: { limit },
+      });
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated,
+  });
+}
+
+// ==============================
+// Watch History Mutations
+// ==============================
+
+export function useDeleteWatchHistoryItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (contentId: string) => {
+      const response = await api.delete<any>(`/watch-history/${contentId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.watchHistory.all });
+      toast.success('Запись удалена из истории');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка удаления записи');
+    },
+  });
+}
+
+export function useClearWatchHistory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.delete<any>('/watch-history');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.watchHistory.all });
+      toast.success('История просмотров очищена');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка очистки истории');
+    },
+  });
+}
+
+// ==============================
+// Sessions
+// ==============================
+
+export function useActiveSessions() {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+
+  return useQuery({
+    queryKey: queryKeys.sessions.list(),
+    queryFn: async () => {
+      const response = await api.get<any>(endpoints.userSessions.list);
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated,
+  });
+}
+
+export function useTerminateSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      const response = await api.delete<any>(endpoints.userSessions.terminate(sessionId));
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sessions.all });
+      toast.success('Сессия завершена');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка завершения сессии');
+    },
+  });
+}
+
+export function useTerminateAllSessions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.delete<any>(endpoints.userSessions.terminateAll);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sessions.all });
+      toast.success('Все сессии завершены');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Ошибка завершения сессий');
+    },
+  });
+}

@@ -1,0 +1,157 @@
+'use client';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { api, ApiError, endpoints } from '@/lib/api-client';
+import { queryKeys } from '@/lib/query-client';
+import { useAuthStore } from '@/stores/auth.store';
+import type { Content } from '@movie-platform/shared';
+
+// ============ Types ============
+
+export interface AdminContentQueryParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  contentType?: string;
+  search?: string;
+  ageCategory?: string;
+}
+
+export interface AdminContentList {
+  items: Content[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface CreateContentInput {
+  title: string;
+  slug?: string;
+  description?: string;
+  contentType: string;
+  categoryId?: string;
+  ageCategory: string;
+  thumbnailUrl?: string;
+  previewUrl?: string;
+  isFree?: boolean;
+  individualPrice?: number;
+  status?: string;
+}
+
+export interface UpdateContentInput extends Partial<CreateContentInput> {
+  id: string;
+}
+
+// ============ Queries ============
+
+/**
+ * Hook to fetch admin content list
+ */
+export function useAdminContent(params?: AdminContentQueryParams) {
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
+
+  return useQuery({
+    queryKey: queryKeys.adminContent.list(params as Record<string, unknown> | undefined),
+    queryFn: async () => {
+      const response = await api.get<AdminContentList>(endpoints.adminContent.list, {
+        params: params as Record<string, string | number | boolean | undefined | null>,
+      });
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated && isAdmin,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Hook to fetch admin content detail
+ */
+export function useAdminContentDetail(id: string | undefined) {
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
+
+  return useQuery({
+    queryKey: queryKeys.adminContent.detail(id || ''),
+    queryFn: async () => {
+      if (!id) throw new Error('Content ID required');
+      const response = await api.get<Content>(endpoints.adminContent.detail(id));
+      return response.data;
+    },
+    enabled: !!id && isAuthenticated && isHydrated && isAdmin,
+  });
+}
+
+// ============ Mutations ============
+
+/**
+ * Hook to create content
+ */
+export function useCreateContent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateContentInput) => {
+      const response = await api.post<Content>(endpoints.adminContent.create, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminContent.list() });
+      toast.success('Контент создан');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Не удалось создать контент');
+    },
+  });
+}
+
+/**
+ * Hook to update content
+ */
+export function useUpdateContent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: UpdateContentInput) => {
+      const response = await api.patch<Content>(
+        endpoints.adminContent.update(id),
+        data
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminContent.list() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminContent.detail(data.id) });
+      toast.success('Контент обновлён');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Не удалось обновить контент');
+    },
+  });
+}
+
+/**
+ * Hook to delete (archive) content
+ */
+export function useDeleteContent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete<{ success: boolean; message: string }>(
+        endpoints.adminContent.delete(id)
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminContent.list() });
+      toast.success('Контент архивирован');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Не удалось архивировать контент');
+    },
+  });
+}

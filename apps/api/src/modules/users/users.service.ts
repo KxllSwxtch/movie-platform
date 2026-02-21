@@ -1,0 +1,429 @@
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
+import { VerificationStatus, VerificationMethod } from '@movie-platform/shared';
+
+import { PrismaService } from '../../config/prisma.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { VerificationSubmissionDto } from './dto/verification-submission.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  /**
+   * Find a user by ID.
+   */
+  async findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+    });
+  }
+
+  /**
+   * Find a user by email.
+   */
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+  }
+
+  /**
+   * Find a user by referral code.
+   */
+  async findByReferralCode(code: string) {
+    return this.prisma.user.findUnique({
+      where: { referralCode: code.toUpperCase() },
+    });
+  }
+
+  /**
+   * Get user profile (sanitized, without sensitive data).
+   */
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.sanitizeUser(user);
+  }
+
+  /**
+   * Update user profile.
+   */
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Filter out undefined values
+    const updateData: Record<string, any> = {};
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.avatarUrl !== undefined) updateData.avatarUrl = dto.avatarUrl;
+
+    if (Object.keys(updateData).length === 0) {
+      return this.sanitizeUser(user);
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+
+    return this.sanitizeUser(updatedUser);
+  }
+
+  /**
+   * Change user password.
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Hash new password
+    const rounds = this.configService.get<number>('BCRYPT_ROUNDS', 12);
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, rounds);
+
+    // Update password
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+  }
+
+  /**
+   * Submit verification request.
+   */
+  async submitVerification(userId: string, dto: VerificationSubmissionDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if user already has pending or approved verification
+    if (user.verificationStatus === VerificationStatus.PENDING) {
+      throw new ConflictException('You already have a pending verification request');
+    }
+
+    if (user.verificationStatus === VerificationStatus.VERIFIED) {
+      throw new ConflictException('You are already verified');
+    }
+
+    // For DOCUMENT method, require document URL
+    if (dto.method === VerificationMethod.DOCUMENT && !dto.documentUrl) {
+      throw new BadRequestException('Document URL is required for document verification');
+    }
+
+    // Create verification record
+    const verification = await this.prisma.userVerification.create({
+      data: {
+        userId,
+        method: dto.method,
+        documentUrl: dto.documentUrl,
+        status: VerificationStatus.PENDING,
+      },
+    });
+
+    // Update user verification status
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        verificationStatus: VerificationStatus.PENDING,
+        verificationMethod: dto.method,
+      },
+    });
+
+    return {
+      status: VerificationStatus.PENDING,
+      method: dto.method,
+      submittedAt: verification.createdAt,
+    };
+  }
+
+  /**
+   * Get verification status.
+   */
+  async getVerificationStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get the latest verification record
+    const verification = await this.prisma.userVerification.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      status: user.verificationStatus,
+      method: user.verificationMethod,
+      rejectionReason: verification?.rejectionReason,
+      submittedAt: verification?.createdAt,
+      reviewedAt: verification?.reviewedAt,
+    };
+  }
+
+  /**
+   * Get user's active sessions.
+   */
+  async getActiveSessions(userId: string) {
+    return this.prisma.userSession.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: new Date() },
+      },
+      select: {
+        id: true,
+        deviceInfo: true,
+        ipAddress: true,
+        createdAt: true,
+        expiresAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * Get user's referral statistics.
+   */
+  async getReferralStats(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Count direct referrals
+    const directReferrals = await this.prisma.user.count({
+      where: { referredById: userId },
+    });
+
+    // Get partner relationship count at each level
+    const levelCounts = await this.prisma.partnerRelationship.groupBy({
+      by: ['level'],
+      where: { partnerId: userId },
+      _count: true,
+    });
+
+    const teamByLevel: Record<number, number> = {};
+    for (const levelCount of levelCounts) {
+      teamByLevel[levelCount.level] = levelCount._count as unknown as number;
+    }
+
+    // Get total team size
+    const totalTeam = await this.prisma.partnerRelationship.count({
+      where: { partnerId: userId },
+    });
+
+    return {
+      referralCode: user.referralCode,
+      directReferrals,
+      totalTeam,
+      teamByLevel,
+    };
+  }
+
+  /**
+   * Get user watchlist (auto-creates "Избранное" playlist if not exists).
+   */
+  async getWatchlist(userId: string, page: number, limit: number) {
+    // Find or create the "Избранное" playlist
+    let playlist = await this.prisma.playlist.findFirst({
+      where: { userId, name: 'Избранное' },
+    });
+
+    if (!playlist) {
+      playlist = await this.prisma.playlist.create({
+        data: { userId, name: 'Избранное', isPublic: false },
+      });
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.playlistItem.findMany({
+        where: { playlistId: playlist.id },
+        include: {
+          content: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              contentType: true,
+              thumbnailUrl: true,
+              duration: true,
+              ageCategory: true,
+            },
+          },
+        },
+        orderBy: { order: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.playlistItem.count({ where: { playlistId: playlist.id } }),
+    ]);
+
+    return {
+      items: items.map((item) => ({
+        contentId: item.contentId,
+        ...item.content,
+        addedOrder: item.order,
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Add content to watchlist.
+   */
+  async addToWatchlist(userId: string, contentId: string) {
+    // Find or create the "Избранное" playlist
+    let playlist = await this.prisma.playlist.findFirst({
+      where: { userId, name: 'Избранное' },
+    });
+
+    if (!playlist) {
+      playlist = await this.prisma.playlist.create({
+        data: { userId, name: 'Избранное', isPublic: false },
+      });
+    }
+
+    // Check if already in watchlist
+    const existing = await this.prisma.playlistItem.findUnique({
+      where: {
+        playlistId_contentId: { playlistId: playlist.id, contentId },
+      },
+    });
+
+    if (existing) {
+      return { message: 'Already in watchlist' };
+    }
+
+    // Get next order number
+    const maxOrder = await this.prisma.playlistItem.aggregate({
+      where: { playlistId: playlist.id },
+      _max: { order: true },
+    });
+
+    await this.prisma.playlistItem.create({
+      data: {
+        playlistId: playlist.id,
+        contentId,
+        order: (maxOrder._max.order ?? 0) + 1,
+      },
+    });
+
+    return { message: 'Added to watchlist' };
+  }
+
+  /**
+   * Remove content from watchlist.
+   */
+  async removeFromWatchlist(userId: string, contentId: string) {
+    const playlist = await this.prisma.playlist.findFirst({
+      where: { userId, name: 'Избранное' },
+    });
+
+    if (!playlist) {
+      throw new NotFoundException('Watchlist not found');
+    }
+
+    await this.prisma.playlistItem.deleteMany({
+      where: { playlistId: playlist.id, contentId },
+    });
+
+    return { message: 'Removed from watchlist' };
+  }
+
+  /**
+   * Terminate a specific session.
+   */
+  async terminateSession(userId: string, sessionId: string) {
+    const session = await this.prisma.userSession.findFirst({
+      where: { id: sessionId, userId },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    await this.prisma.userSession.delete({
+      where: { id: sessionId },
+    });
+
+    return { message: 'Session terminated' };
+  }
+
+  /**
+   * Terminate all sessions except the current one.
+   */
+  async terminateAllSessions(userId: string, currentSessionId?: string) {
+    const where: Record<string, unknown> = { userId };
+
+    if (currentSessionId) {
+      where.id = { not: currentSessionId };
+    }
+
+    const result = await this.prisma.userSession.deleteMany({ where });
+
+    return { message: `${result.count} session(s) terminated` };
+  }
+
+  /**
+   * Sanitize user object (remove sensitive fields).
+   */
+  private sanitizeUser(user: any) {
+    const {
+      passwordHash,
+      isActive,
+      referredById,
+      ...sanitized
+    } = user;
+
+    return {
+      ...sanitized,
+      bonusBalance: Number(sanitized.bonusBalance),
+    };
+  }
+}

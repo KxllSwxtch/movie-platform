@@ -1,0 +1,133 @@
+import { render, screen } from '@testing-library/react';
+import { AppHeader } from '@/components/layout/app-header';
+
+// Mock Next.js
+vi.mock('next/link', () => ({
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
+// Mock hooks and stores
+const mockSetMobileMenuOpen = vi.fn();
+
+vi.mock('@/hooks/use-media-query', () => ({
+  useIsMobile: vi.fn(() => false),
+}));
+
+vi.mock('@/stores/auth.store', () => ({
+  useAuthStore: vi.fn(() => ({
+    user: { firstName: 'Test', lastName: 'User', email: 'test@example.com', avatarUrl: null },
+  })),
+}));
+
+vi.mock('@/stores/ui.store', () => ({
+  useUIStore: vi.fn(() => ({
+    setMobileMenuOpen: mockSetMobileMenuOpen,
+  })),
+}));
+
+vi.mock('@/stores/content.store', () => ({
+  useContentStore: vi.fn(() => ({
+    activeContentType: 'movies',
+    setContentType: vi.fn(),
+  })),
+  CONTENT_TYPES: [
+    { id: 'movies', label: 'Movies', labelRu: 'Фильмы' },
+    { id: 'series', label: 'Series', labelRu: 'Сериалы' },
+  ],
+}));
+
+// Mock SearchInputCompact
+vi.mock('@/components/search/search-input', () => ({
+  SearchInputCompact: ({ placeholder }: { placeholder?: string }) => (
+    <form data-testid="search-input-compact">
+      <input placeholder={placeholder || 'Поиск...'} />
+    </form>
+  ),
+}));
+
+// Mock UserAvatar
+vi.mock('@/components/ui/avatar', () => ({
+  UserAvatar: ({ name }: { name: string; src?: string; size?: string }) => (
+    <div data-testid="user-avatar">{name}</div>
+  ),
+}));
+
+// Mock Button
+vi.mock('@/components/ui/button', () => ({
+  Button: ({ children, 'aria-label': ariaLabel, ...props }: any) => (
+    <button aria-label={ariaLabel} {...props}>
+      {children}
+    </button>
+  ),
+}));
+
+// Mock lucide-react icons
+vi.mock('lucide-react', () => ({
+  Search: ({ className }: { className?: string }) => <svg data-testid="search-icon" className={className} />,
+  Bell: ({ className }: { className?: string }) => <svg data-testid="bell-icon" className={className} />,
+  ChevronDown: ({ className }: { className?: string }) => <svg data-testid="chevron-icon" className={className} />,
+  Menu: ({ className }: { className?: string }) => <svg data-testid="menu-icon" className={className} />,
+}));
+
+import { useIsMobile } from '@/hooks/use-media-query';
+
+describe('AppHeader', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useIsMobile).mockReturnValue(false);
+  });
+
+  describe('Rendering', () => {
+    it('should render header element', () => {
+      render(<AppHeader />);
+      expect(screen.getByRole('banner')).toBeInTheDocument();
+    });
+
+    it('should render SearchInputCompact component', () => {
+      render(<AppHeader />);
+      expect(screen.getByTestId('search-input-compact')).toBeInTheDocument();
+    });
+
+    it('should render user avatar', () => {
+      render(<AppHeader />);
+      expect(screen.getByTestId('user-avatar')).toBeInTheDocument();
+    });
+  });
+
+  describe('ARIA labels', () => {
+    it('should render mobile search button with aria-label="Поиск"', () => {
+      render(<AppHeader />);
+      expect(screen.getByLabelText('Поиск')).toBeInTheDocument();
+    });
+
+    it('should render notifications button with aria-label="Уведомления"', () => {
+      render(<AppHeader />);
+      expect(screen.getByLabelText('Уведомления')).toBeInTheDocument();
+    });
+
+    it('should render mobile menu button with aria-label="Открыть меню" when mobile', () => {
+      vi.mocked(useIsMobile).mockReturnValue(true);
+      render(<AppHeader />);
+      expect(screen.getByLabelText('Открыть меню')).toBeInTheDocument();
+    });
+
+    it('should not render mobile menu button on desktop', () => {
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      render(<AppHeader />);
+      expect(screen.queryByLabelText('Открыть меню')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Content type tabs', () => {
+    it('should render content type tabs on desktop', () => {
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      render(<AppHeader />);
+      expect(screen.getByText('Movies')).toBeInTheDocument();
+      expect(screen.getByText('Series')).toBeInTheDocument();
+    });
+  });
+});
