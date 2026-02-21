@@ -4,6 +4,10 @@ import { Providers } from '@/components/providers';
 import { fontVariables } from '@/lib/fonts';
 import './globals.css';
 
+// Force all pages to be dynamically rendered (no static prerendering)
+// This app requires auth and dynamic data, so static pages are not useful
+export const dynamic = 'force-dynamic';
+
 /**
  * Site metadata
  */
