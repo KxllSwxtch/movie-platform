@@ -103,7 +103,7 @@ export default function BonusWithdrawPage() {
         <Card className="mb-6 border-yellow-500/30 bg-yellow-500/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <WarningCircleclassName="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
+              <WarningCircle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-mp-text-primary">
                   Недостаточно бонусов для вывода
@@ -166,7 +166,7 @@ export default function BonusWithdrawPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <QuestionclassName="h-4 w-4 text-purple-400" />
+              <Question className="h-4 w-4 text-purple-400" />
               Часто задаваемые вопросы
             </CardTitle>
           </CardHeader>

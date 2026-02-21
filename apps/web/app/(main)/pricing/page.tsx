@@ -45,7 +45,7 @@ export default function PricingPage() {
       {/* Header */}
       <div className="mb-12 text-center">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-mp-accent-primary/10 px-4 py-2 text-sm font-medium text-mp-accent-primary">
-          <SparkleclassName="h-4 w-4" />
+          <Sparkle className="h-4 w-4" />
           Тарифные планы
         </div>
         <h1 className="mb-4 text-3xl font-bold text-mp-text-primary md:text-4xl">

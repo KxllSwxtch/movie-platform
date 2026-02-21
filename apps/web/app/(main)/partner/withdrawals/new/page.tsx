@@ -396,7 +396,7 @@ function PaymentDetailsStep({ details, onDetailsChange }: PaymentDetailsStepProp
                 : 'border-mp-border hover:border-mp-text-secondary'
             }`}
           >
-            <BuildingsclassName={`h-5 w-5 mb-2 ${type === 'bank_account' ? 'text-mp-accent-primary' : 'text-mp-text-secondary'}`} />
+            <Buildings className={`h-5 w-5 mb-2 ${type === 'bank_account' ? 'text-mp-accent-primary' : 'text-mp-text-secondary'}`} />
             <p className="font-medium">Банковский счёт</p>
             <p className="text-xs text-mp-text-secondary">Расчётный счёт</p>
           </button>

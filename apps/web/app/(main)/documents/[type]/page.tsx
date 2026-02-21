@@ -53,7 +53,7 @@ export default function DocumentDetailPage() {
       <Container size="md" className="py-12">
         <div className="flex flex-col items-center justify-center text-center">
           <div className="w-16 h-16 rounded-full bg-mp-error-bg mx-auto mb-4 flex items-center justify-center">
-            <WarningCircleclassName="w-8 h-8 text-mp-error-text" />
+            <WarningCircle className="w-8 h-8 text-mp-error-text" />
           </div>
           <h1 className="text-xl font-bold text-mp-text-primary mb-2">
             Документ не найден
@@ -143,7 +143,7 @@ export default function DocumentDetailPage() {
             >
               {acceptDocument.isPending ? (
                 <>
-                  <SpinnerGapclassName="h-4 w-4 animate-spin mr-2" />
+                  <SpinnerGap className="h-4 w-4 animate-spin mr-2" />
                   Принятие...
                 </>
               ) : (

@@ -140,7 +140,7 @@ export default function ShortsPage() {
 
         {isFetchingNextPage && (
           <div className="flex items-center justify-center py-4">
-            <SpinnerGapclassName="w-6 h-6 text-white animate-spin" />
+            <SpinnerGap className="w-6 h-6 text-white animate-spin" />
           </div>
         )}
       </div>
@@ -158,7 +158,7 @@ export default function ShortsPage() {
           )}
           aria-label="Предыдущее видео"
         >
-          <CaretUpclassName="w-5 h-5 text-white" />
+          <CaretUp className="w-5 h-5 text-white" />
         </button>
         <button
           onClick={() => scrollToIndex(Math.min(activeIndex + 1, shorts.length - 1))}
@@ -171,7 +171,7 @@ export default function ShortsPage() {
           )}
           aria-label="Следующее видео"
         >
-          <CaretDownclassName="w-5 h-5 text-white" />
+          <CaretDown className="w-5 h-5 text-white" />
         </button>
       </div>
 

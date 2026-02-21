@@ -275,7 +275,7 @@ export default function SeriesDetailPage() {
                 В список
               </Button>
               <Button variant="ghost" size="lg">
-                <ShareNetworkclassName="w-5 h-5" />
+                <ShareNetwork className="w-5 h-5" />
               </Button>
             </div>
           </div>

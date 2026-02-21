@@ -51,7 +51,7 @@ export default function BonusDashboardPage() {
         >
           <Link href="/bonuses/history">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
-              <ClockCounterClockwiseclassName="h-5 w-5" />
+              <ClockCounterClockwise className="h-5 w-5" />
             </div>
             <div className="text-left">
               <p className="font-medium">История</p>
@@ -89,7 +89,7 @@ export default function BonusDashboardPage() {
         >
           <Link href="/pricing">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-mp-accent-primary/20 text-mp-accent-primary">
-              <TrendUpclassName="h-5 w-5" />
+              <TrendUp className="h-5 w-5" />
             </div>
             <div className="text-left">
               <p className="font-medium">Использовать</p>
@@ -120,7 +120,7 @@ export default function BonusDashboardPage() {
       <Card className="mt-6">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <ClockCounterClockwiseclassName="h-5 w-5 text-blue-400" />
+            <ClockCounterClockwise className="h-5 w-5 text-blue-400" />
             Последние операции
           </CardTitle>
           <Button variant="ghost" size="sm" asChild>

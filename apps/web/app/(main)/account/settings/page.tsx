@@ -117,7 +117,7 @@ export default function SettingsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="rounded-lg bg-mp-accent-primary/20 p-2">
-            <GearclassName="h-6 w-6 text-mp-accent-primary" />
+            <Gear className="h-6 w-6 text-mp-accent-primary" />
           </div>
           <h1 className="text-2xl font-bold text-mp-text-primary md:text-3xl">
             Настройки
@@ -493,9 +493,9 @@ function SessionsTab() {
               disabled={terminateAllSessions.isPending}
             >
               {terminateAllSessions.isPending ? (
-                <SpinnerGapclassName="mr-2 h-4 w-4 animate-spin" />
+                <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <SignOutclassName="mr-2 h-4 w-4" />
+                <SignOut className="mr-2 h-4 w-4" />
               )}
               Завершить все другие сессии
             </Button>
@@ -574,9 +574,9 @@ function SessionsTab() {
                     disabled={isTerminating || isCurrentSession}
                   >
                     {isTerminating ? (
-                      <SpinnerGapclassName="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      <SpinnerGap className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <SignOutclassName="mr-1.5 h-3.5 w-3.5" />
+                      <SignOut className="mr-1.5 h-3.5 w-3.5" />
                     )}
                     Завершить
                   </Button>

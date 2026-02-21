@@ -215,7 +215,7 @@ export default function PaymentHistoryPage() {
 
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-[160px]">
-              <CalendarDotsclassName="mr-2 h-4 w-4 text-mp-text-secondary" />
+              <CalendarDots className="mr-2 h-4 w-4 text-mp-text-secondary" />
               <SelectValue placeholder="Период" />
             </SelectTrigger>
             <SelectContent>
@@ -273,7 +273,7 @@ export default function PaymentHistoryPage() {
       {!isLoading && !error && data?.items.length === 0 && (
         <Card className="py-12 text-center">
           <CardContent>
-            <ClockCounterClockwiseclassName="mx-auto mb-4 h-12 w-12 text-mp-text-disabled" />
+            <ClockCounterClockwise className="mx-auto mb-4 h-12 w-12 text-mp-text-disabled" />
             <h2 className="mb-2 text-xl font-semibold text-mp-text-primary">
               {hasActiveFilters
                 ? 'Транзакции не найдены'

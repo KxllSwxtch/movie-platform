@@ -103,7 +103,7 @@ export default function MySubscriptionsPage() {
         <div className="flex gap-3">
           <Button variant="outline" asChild>
             <Link href="/account/payments">
-              <ClockCounterClockwiseclassName="mr-2 h-4 w-4" />
+              <ClockCounterClockwise className="mr-2 h-4 w-4" />
               История платежей
             </Link>
           </Button>
@@ -151,7 +151,7 @@ export default function MySubscriptionsPage() {
               Активные ({activeSubscriptions.length})
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
-              <ClockCounterClockwiseclassName="h-4 w-4" />
+              <ClockCounterClockwise className="h-4 w-4" />
               История ({pastSubscriptions.length})
             </TabsTrigger>
           </TabsList>

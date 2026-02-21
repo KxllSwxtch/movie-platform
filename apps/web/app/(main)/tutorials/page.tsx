@@ -116,7 +116,7 @@ export default function TutorialsPage() {
               )}
               aria-label="Grid view"
             >
-              <GridNineclassName="w-4 h-4" />
+              <GridNine className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
@@ -188,7 +188,7 @@ export default function TutorialsPage() {
             <VideoCardSkeletonGrid count={12} variant="series" columns={showFilters ? 4 : 5} />
           ) : tutorials.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <FunnelclassName="w-12 h-12 text-mp-text-disabled mb-4" />
+              <Funnel className="w-12 h-12 text-mp-text-disabled mb-4" />
               <h3 className="text-lg font-medium text-mp-text-primary mb-2">
                 Ничего не найдено
               </h3>

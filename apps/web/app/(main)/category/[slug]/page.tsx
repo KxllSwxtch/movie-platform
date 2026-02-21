@@ -125,7 +125,7 @@ export default function CategoryPage() {
         <VideoCardSkeletonGrid count={12} variant="series" columns={5} />
       ) : total === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <FunnelclassName="w-12 h-12 text-mp-text-disabled mb-4" />
+          <Funnel className="w-12 h-12 text-mp-text-disabled mb-4" />
           <h3 className="text-lg font-medium text-mp-text-primary mb-2">
             Контент не найден
           </h3>

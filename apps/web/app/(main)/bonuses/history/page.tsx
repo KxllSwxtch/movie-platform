@@ -64,7 +64,7 @@ export default function BonusHistoryPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-blue-500/20">
-                <ClockCounterClockwiseclassName="h-6 w-6 text-blue-400" />
+                <ClockCounterClockwise className="h-6 w-6 text-blue-400" />
               </div>
               <h1 className="text-2xl font-bold text-mp-text-primary md:text-3xl">
                 История бонусов
@@ -90,7 +90,7 @@ export default function BonusHistoryPage() {
       <Card className="mb-6">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <FunnelclassName="h-4 w-4" />
+            <Funnel className="h-4 w-4" />
             Фильтры
           </CardTitle>
         </CardHeader>

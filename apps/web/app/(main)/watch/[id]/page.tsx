@@ -120,7 +120,7 @@ export default function WatchPage() {
       <div className="min-h-screen bg-mp-bg-primary flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <div className="w-16 h-16 rounded-full bg-mp-error-bg flex items-center justify-center mx-auto mb-6">
-            <WarningCircleclassName="w-8 h-8 text-mp-error-text" />
+            <WarningCircle className="w-8 h-8 text-mp-error-text" />
           </div>
           <h1 className="text-2xl font-bold text-mp-text-primary mb-3">
             Видео не найдено
@@ -175,7 +175,7 @@ export default function WatchPage() {
               onClick={() => router.back()}
               className="flex items-center gap-2 text-mp-text-secondary hover:text-mp-text-primary transition-colors"
             >
-              <CaretLeftclassName="w-5 h-5" />
+              <CaretLeft className="w-5 h-5" />
               <span className="text-sm font-medium">Назад</span>
             </button>
           </div>
@@ -246,7 +246,7 @@ export default function WatchPage() {
               />
             </Button>
             <Button variant="outline" size="sm" className="gap-2">
-              <ShareNetworkclassName="w-4 h-4" />
+              <ShareNetwork className="w-4 h-4" />
               Поделиться
             </Button>
             <Button variant="ghost" size="sm">
@@ -272,12 +272,12 @@ export default function WatchPage() {
                 >
                   {showFullDescription ? (
                     <>
-                      <CaretUpclassName="w-4 h-4" />
+                      <CaretUp className="w-4 h-4" />
                       Скрыть
                     </>
                   ) : (
                     <>
-                      <CaretDownclassName="w-4 h-4" />
+                      <CaretDown className="w-4 h-4" />
                       Показать полностью
                     </>
                   )}

@@ -327,7 +327,7 @@ export default function ProfilePage() {
                 disabled={!isDirty || updateProfile.isPending}
                 isLoading={updateProfile.isPending}
               >
-                <FloppyDiskclassName="mr-2 h-4 w-4" />
+                <FloppyDisk className="mr-2 h-4 w-4" />
                 Сохранить
               </Button>
             </div>
@@ -373,7 +373,7 @@ export default function ProfilePage() {
             {/* Role */}
             {user?.role && (
               <div className="flex items-start gap-3 rounded-lg border border-mp-border bg-mp-surface/30 p-3">
-                <KeyclassName="mt-0.5 h-4 w-4 shrink-0 text-mp-text-secondary" />
+                <Key className="mt-0.5 h-4 w-4 shrink-0 text-mp-text-secondary" />
                 <div>
                   <p className="text-xs text-mp-text-secondary">Роль</p>
                   <p className="text-sm font-medium text-mp-text-primary">
@@ -403,7 +403,7 @@ export default function ProfilePage() {
             {/* Referral code */}
             {user?.referralCode && (
               <div className="flex items-start gap-3 rounded-lg border border-mp-border bg-mp-surface/30 p-3">
-                <KeyclassName="mt-0.5 h-4 w-4 shrink-0 text-mp-text-secondary" />
+                <Key className="mt-0.5 h-4 w-4 shrink-0 text-mp-text-secondary" />
                 <div>
                   <p className="text-xs text-mp-text-secondary">Реферальный код</p>
                   <p className="text-sm font-mono font-medium text-mp-text-primary">

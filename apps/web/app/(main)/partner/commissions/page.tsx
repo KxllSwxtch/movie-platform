@@ -72,7 +72,7 @@ export default function PartnerCommissionsPage() {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex items-center gap-2">
-              <FunnelclassName="h-4 w-4 text-mp-text-secondary" />
+              <Funnel className="h-4 w-4 text-mp-text-secondary" />
               <span className="text-sm font-medium">Фильтры:</span>
             </div>
 

@@ -126,7 +126,7 @@ export default function OrdersPage() {
                   <div className="flex items-center gap-3">
                     {/* First item thumbnail placeholder */}
                     <div className="w-10 h-10 rounded bg-mp-surface-elevated flex items-center justify-center shrink-0">
-                      <BagclassName="w-4 h-4 text-mp-text-disabled" />
+                      <Bag className="w-4 h-4 text-mp-text-disabled" />
                     </div>
                     <span className="text-sm text-mp-text-secondary">
                       {order.items.length} {order.items.length === 1 ? 'товар' : order.items.length < 5 ? 'товара' : 'товаров'}

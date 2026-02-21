@@ -111,9 +111,9 @@ export default function NotificationsPage() {
                 disabled={markAllAsRead.isPending}
               >
                 {markAllAsRead.isPending ? (
-                  <SpinnerGapclassName="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <SpinnerGap className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <ChecksclassName="mr-1.5 h-3.5 w-3.5" />
+                  <Checks className="mr-1.5 h-3.5 w-3.5" />
                 )}
                 <span className="hidden sm:inline">Прочитать все</span>
               </Button>
@@ -127,9 +127,9 @@ export default function NotificationsPage() {
                 disabled={deleteAll.isPending}
               >
                 {deleteAll.isPending ? (
-                  <SpinnerGapclassName="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <SpinnerGap className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <TrashclassName="mr-1.5 h-3.5 w-3.5" />
+                  <Trash className="mr-1.5 h-3.5 w-3.5" />
                 )}
                 <span className="hidden sm:inline">Очистить</span>
               </Button>
@@ -160,7 +160,7 @@ export default function NotificationsPage() {
       {/* Notification list */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <SpinnerGapclassName="h-6 w-6 animate-spin text-mp-accent-primary" />
+          <SpinnerGap className="h-6 w-6 animate-spin text-mp-accent-primary" />
         </div>
       ) : notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
           {/* Loading more indicator */}
           {isFetchingNextPage && (
             <div className="flex items-center justify-center py-4 border-t border-mp-border">
-              <SpinnerGapclassName="h-5 w-5 animate-spin text-mp-accent-primary" />
+              <SpinnerGap className="h-5 w-5 animate-spin text-mp-accent-primary" />
               <span className="ml-2 text-sm text-mp-text-secondary">Загрузка...</span>
             </div>
           )}

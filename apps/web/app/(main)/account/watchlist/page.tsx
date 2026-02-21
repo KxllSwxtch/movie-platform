@@ -109,7 +109,7 @@ export default function WatchlistPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="rounded-lg bg-mp-accent-tertiary/20 p-2">
-            <BookmarkSimpleclassName="h-6 w-6 text-mp-accent-tertiary" />
+            <BookmarkSimple className="h-6 w-6 text-mp-accent-tertiary" />
           </div>
           <h1 className="text-2xl font-bold text-mp-text-primary md:text-3xl">
             Избранное
@@ -169,7 +169,7 @@ export default function WatchlistPage() {
               onClick={() => setViewMode('grid')}
               aria-label="Сетка"
             >
-              <GridNineclassName="h-4 w-4" />
+              <GridNine className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -181,7 +181,7 @@ export default function WatchlistPage() {
               onClick={() => setViewMode('list')}
               aria-label="Список"
             >
-              <ListBulletsclassName="h-4 w-4" />
+              <ListBullets className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -305,7 +305,7 @@ export default function WatchlistPage() {
                           />
                         ) : (
                           <div className="flex h-full items-center justify-center">
-                            <FilmStripclassName="h-10 w-10 text-mp-text-disabled" />
+                            <FilmStrip className="h-10 w-10 text-mp-text-disabled" />
                           </div>
                         )}
                         <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
@@ -323,7 +323,7 @@ export default function WatchlistPage() {
                       }
                       aria-label="Удалить из избранного"
                     >
-                      <TrashclassName="h-4 w-4" />
+                      <Trash className="h-4 w-4" />
                     </Button>
 
                     <div className="mt-2">
@@ -373,7 +373,7 @@ export default function WatchlistPage() {
                             />
                           ) : (
                             <div className="flex h-full items-center justify-center">
-                              <FilmStripclassName="h-8 w-8 text-mp-text-disabled" />
+                              <FilmStrip className="h-8 w-8 text-mp-text-disabled" />
                             </div>
                           )}
                         </div>
@@ -412,7 +412,7 @@ export default function WatchlistPage() {
                           }
                           aria-label="Удалить из избранного"
                         >
-                          <TrashclassName="h-4 w-4" />
+                          <Trash className="h-4 w-4" />
                         </Button>
                       </div>
                     </CardContent>

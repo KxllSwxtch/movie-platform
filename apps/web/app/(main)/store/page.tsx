@@ -118,7 +118,7 @@ export default function StorePage() {
         <div className="flex items-center gap-3">
           {/* Search */}
           <div className="relative hidden sm:block">
-            <MagnifyingGlassclassName="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mp-text-disabled" />
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mp-text-disabled" />
             <Input
               placeholder="Поиск товаров..."
               value={searchQuery}
@@ -160,7 +160,7 @@ export default function StorePage() {
       {/* Mobile search */}
       <div className="sm:hidden mb-4">
         <div className="relative">
-          <MagnifyingGlassclassName="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mp-text-disabled" />
+          <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mp-text-disabled" />
           <Input
             placeholder="Поиск товаров..."
             value={searchQuery}

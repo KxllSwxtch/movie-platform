@@ -87,7 +87,7 @@ function StepProgress({ currentStep, status }: { currentStep: number; status: st
                   )}
                 >
                   {isDone ? (
-                    <CheckCircleclassName="h-5 w-5" />
+                    <CheckCircle className="h-5 w-5" />
                   ) : isFailed ? (
                     <XCircle className="h-5 w-5" />
                   ) : (
@@ -262,7 +262,7 @@ export default function VerificationPage() {
         <Card className="mb-6 border-mp-border">
           <CardContent className="flex gap-4 p-6">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-yellow-500/10">
-              <ShieldWarningclassName="h-6 w-6 text-yellow-500" />
+              <ShieldWarning className="h-6 w-6 text-yellow-500" />
             </div>
             <div>
               <h2 className="font-semibold text-mp-text-primary">
@@ -320,7 +320,7 @@ export default function VerificationPage() {
                 </p>
               )}
               <Badge variant="success" className="mt-3">
-                <CheckCircleclassName="mr-1 h-3 w-3" />
+                <CheckCircle className="mr-1 h-3 w-3" />
                 Верифицирован
               </Badge>
             </div>
@@ -420,7 +420,7 @@ export default function VerificationPage() {
                   >
                     {uploadedFile ? (
                       <>
-                        <CheckCircleclassName="mb-3 h-10 w-10 text-mp-accent-secondary" />
+                        <CheckCircle className="mb-3 h-10 w-10 text-mp-accent-secondary" />
                         <p className="text-sm font-medium text-mp-text-primary">
                           {uploadedFile.name}
                         </p>
@@ -442,7 +442,7 @@ export default function VerificationPage() {
                       </>
                     ) : (
                       <>
-                        <UploadSimpleclassName="mb-3 h-10 w-10 text-mp-text-disabled" />
+                        <UploadSimple className="mb-3 h-10 w-10 text-mp-text-disabled" />
                         <p className="text-sm font-medium text-mp-text-primary">
                           Перетащите файл сюда
                         </p>
@@ -497,7 +497,7 @@ export default function VerificationPage() {
               {/* Info block */}
               <div className="rounded-lg border border-mp-border bg-mp-surface/50 p-4">
                 <div className="flex gap-3">
-                  <WarningCircleclassName="mt-0.5 h-4 w-4 shrink-0 text-mp-text-secondary" />
+                  <WarningCircle className="mt-0.5 h-4 w-4 shrink-0 text-mp-text-secondary" />
                   <div className="text-sm text-mp-text-secondary">
                     <p>
                       После отправки заявки наши модераторы проверят данные в течение
@@ -517,7 +517,7 @@ export default function VerificationPage() {
                   disabled={submitVerification.isPending}
                   isLoading={submitVerification.isPending}
                 >
-                  <PaperPlaneTiltclassName="mr-2 h-4 w-4" />
+                  <PaperPlaneTilt className="mr-2 h-4 w-4" />
                   Отправить заявку
                 </Button>
               </div>
@@ -535,7 +535,7 @@ export default function VerificationPage() {
           <CardContent>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex gap-3 rounded-lg border border-mp-border bg-mp-surface/50 p-4">
-                <CheckCircleclassName="mt-0.5 h-5 w-5 shrink-0 text-mp-accent-secondary" />
+                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-mp-accent-secondary" />
                 <div>
                   <p className="font-medium text-mp-text-primary">Доступ к контенту 18+</p>
                   <p className="mt-1 text-sm text-mp-text-secondary">
@@ -544,7 +544,7 @@ export default function VerificationPage() {
                 </div>
               </div>
               <div className="flex gap-3 rounded-lg border border-mp-border bg-mp-surface/50 p-4">
-                <CheckCircleclassName="mt-0.5 h-5 w-5 shrink-0 text-mp-accent-secondary" />
+                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-mp-accent-secondary" />
                 <div>
                   <p className="font-medium text-mp-text-primary">Вывод средств</p>
                   <p className="mt-1 text-sm text-mp-text-secondary">
@@ -553,7 +553,7 @@ export default function VerificationPage() {
                 </div>
               </div>
               <div className="flex gap-3 rounded-lg border border-mp-border bg-mp-surface/50 p-4">
-                <CheckCircleclassName="mt-0.5 h-5 w-5 shrink-0 text-mp-accent-secondary" />
+                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-mp-accent-secondary" />
                 <div>
                   <p className="font-medium text-mp-text-primary">Партнёрская программа</p>
                   <p className="mt-1 text-sm text-mp-text-secondary">
@@ -562,7 +562,7 @@ export default function VerificationPage() {
                 </div>
               </div>
               <div className="flex gap-3 rounded-lg border border-mp-border bg-mp-surface/50 p-4">
-                <CheckCircleclassName="mt-0.5 h-5 w-5 shrink-0 text-mp-accent-secondary" />
+                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-mp-accent-secondary" />
                 <div>
                   <p className="font-medium text-mp-text-primary">Повышенное доверие</p>
                   <p className="mt-1 text-sm text-mp-text-secondary">

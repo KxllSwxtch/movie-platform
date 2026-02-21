@@ -175,7 +175,7 @@ export default function TutorialDetailPage() {
                 {/* Number / status */}
                 <div className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center">
                   {lesson.isCompleted ? (
-                    <CheckCircleclassName="w-6 h-6 text-mp-success-text" />
+                    <CheckCircle className="w-6 h-6 text-mp-success-text" />
                   ) : (
                     <span className={cn(
                       'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border',

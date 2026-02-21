@@ -65,7 +65,7 @@ export default function CartPage() {
       {isEmpty ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-16 h-16 rounded-full bg-mp-surface flex items-center justify-center mb-4">
-            <BagclassName="w-8 h-8 text-mp-text-disabled" />
+            <Bag className="w-8 h-8 text-mp-text-disabled" />
           </div>
           <h3 className="text-lg font-medium text-mp-text-primary mb-2">Корзина пуста</h3>
           <p className="text-mp-text-secondary mb-4">Добавьте товары из магазина</p>
@@ -79,7 +79,7 @@ export default function CartPage() {
           <div className="lg:col-span-2">
             {hasOutOfStock && (
               <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-400">
-                <WarningclassName="w-4 h-4 shrink-0" />
+                <Warning className="w-4 h-4 shrink-0" />
                 <span className="text-sm">Некоторые товары недоступны для заказа</span>
               </div>
             )}

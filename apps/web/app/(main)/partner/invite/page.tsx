@@ -33,7 +33,7 @@ export default function PartnerInvitePage() {
 
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-lg bg-mp-accent-primary/20">
-            <ShareNetworkclassName="h-6 w-6 text-mp-accent-primary" />
+            <ShareNetwork className="h-6 w-6 text-mp-accent-primary" />
           </div>
           <h1 className="text-2xl font-bold text-mp-text-primary md:text-3xl">
             Пригласить друзей

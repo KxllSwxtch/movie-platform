@@ -120,7 +120,7 @@ export default function HistoryPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="rounded-lg bg-blue-500/20 p-2">
-              <ClockCounterClockwiseclassName="h-6 w-6 text-blue-400" />
+              <ClockCounterClockwise className="h-6 w-6 text-blue-400" />
             </div>
             <h1 className="text-2xl font-bold text-mp-text-primary md:text-3xl">
               История просмотров
@@ -159,7 +159,7 @@ export default function HistoryPage() {
                 size="sm"
                 onClick={() => setShowClearConfirm(true)}
               >
-                <TrashclassName="mr-2 h-4 w-4" />
+                <Trash className="mr-2 h-4 w-4" />
                 Очистить
               </Button>
             )}
@@ -199,7 +199,7 @@ export default function HistoryPage() {
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <FilmStripclassName="h-8 w-8 text-mp-text-disabled" />
+                        <FilmStrip className="h-8 w-8 text-mp-text-disabled" />
                       </div>
                     )}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
@@ -369,7 +369,7 @@ export default function HistoryPage() {
                               />
                             ) : (
                               <div className="flex h-full items-center justify-center">
-                                <FilmStripclassName="h-8 w-8 text-mp-text-disabled" />
+                                <FilmStrip className="h-8 w-8 text-mp-text-disabled" />
                               </div>
                             )}
                             {duration > 0 && (
@@ -395,7 +395,7 @@ export default function HistoryPage() {
                               <div className="flex items-center gap-2 shrink-0">
                                 {isCompleted && (
                                   <Badge variant="success" className="text-[10px]">
-                                    <CheckCircleclassName="mr-1 h-3 w-3" />
+                                    <CheckCircle className="mr-1 h-3 w-3" />
                                     Просмотрено
                                   </Badge>
                                 )}
@@ -407,7 +407,7 @@ export default function HistoryPage() {
                                   disabled={isDeleting}
                                   aria-label="Удалить из истории"
                                 >
-                                  <TrashclassName="h-3.5 w-3.5" />
+                                  <Trash className="h-3.5 w-3.5" />
                                 </Button>
                               </div>
                             </div>

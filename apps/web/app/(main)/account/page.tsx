@@ -253,7 +253,7 @@ export default function AccountDashboardPage() {
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <FilmStripclassName="h-8 w-8 text-mp-text-disabled" />
+                        <FilmStrip className="h-8 w-8 text-mp-text-disabled" />
                       </div>
                     )}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
