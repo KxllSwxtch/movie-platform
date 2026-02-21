@@ -1,13 +1,9 @@
+'use client';
+
 import { Play, Users, Gift, Shield, Television, GraduationCap, Envelope } from '@phosphor-icons/react';
-import type { Metadata } from 'next';
 
 import { Container } from '@/components/ui/container';
 import { Card, CardContent } from '@/components/ui/card';
-
-export const metadata: Metadata = {
-  title: 'О платформе — MoviePlatform',
-  description: 'MoviePlatform — платформа нового поколения для просмотра видеоконтента с партнёрской программой и бонусной системой.',
-};
 
 const features = [
   {
