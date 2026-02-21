@@ -28,6 +28,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Ensure workspace binaries are resolvable
+ENV PATH="/app/node_modules/.bin:$PATH"
+
 # Build shared package (web depends on it)
 RUN npm run build --workspace=packages/shared
 
