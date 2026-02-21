@@ -10,11 +10,13 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Copy package files for all required workspaces
+# Copy package files for all workspaces (needed for lockfile resolution)
 COPY package*.json ./
 COPY apps/web/package*.json ./apps/web/
+COPY apps/api/package*.json ./apps/api/
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/typescript-config/package*.json ./packages/typescript-config/
+COPY packages/eslint-config/package*.json ./packages/eslint-config/
 
 RUN npm ci
 
