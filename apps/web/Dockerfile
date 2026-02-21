@@ -25,14 +25,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app ./
 COPY . .
 
-# Ensure workspace binaries are resolvable
-ENV PATH="/app/node_modules/.bin:$PATH"
-
 # Build shared package (web depends on it)
-RUN npm run build --workspace=packages/shared
+RUN cd packages/shared && npx tsup src/index.ts --format cjs,esm --dts
 
 # Build Next.js with standalone output
 # Environment variables needed at build time
