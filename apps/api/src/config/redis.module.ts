@@ -11,9 +11,11 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
       provide: REDIS_CLIENT,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const password = configService.get<string>('REDIS_PASSWORD', '');
         const redis = new Redis({
           host: configService.get<string>('REDIS_HOST', 'localhost'),
           port: configService.get<number>('REDIS_PORT', 6379),
+          ...(password ? { password } : {}),
           maxRetriesPerRequest: null,
           enableReadyCheck: false,
         });

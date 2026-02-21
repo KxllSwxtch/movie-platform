@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
+import { CacheModule } from './common/cache/cache.module';
 import { PrismaModule } from './config/prisma.module';
 import { RedisModule } from './config/redis.module';
 import { StorageModule } from './modules/storage/storage.module';
@@ -52,6 +53,7 @@ import { UsersModule } from './modules/users/users.module';
     // Database & Cache
     PrismaModule,
     RedisModule,
+    CacheModule,
 
     // Infrastructure
     StorageModule,
