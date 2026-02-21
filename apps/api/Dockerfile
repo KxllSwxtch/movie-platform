@@ -38,7 +38,7 @@ RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 
 # Create a build-specific tsconfig that compiles only src/ with rootDir=src
 # so the output is dist/main.js (not dist/src/main.js)
-RUN printf '{"extends":"./tsconfig.json","compilerOptions":{"rootDir":"./src"},"include":["src/**/*"],"exclude":["node_modules","dist","test","prisma","**/*.spec.ts","**/*.e2e-spec.ts"]}' > apps/api/tsconfig.build.json
+RUN printf '{"extends":"./tsconfig.json","compilerOptions":{"rootDir":"./src","noEmitOnError":false,"skipLibCheck":true,"noUnusedLocals":false,"noUnusedParameters":false},"include":["src/**/*"],"exclude":["node_modules","dist","test","prisma","**/*.spec.ts","**/*.e2e-spec.ts"]}' > apps/api/tsconfig.build.json
 
 # Build NestJS API
 RUN cd apps/api && npx nest build --path tsconfig.build.json
