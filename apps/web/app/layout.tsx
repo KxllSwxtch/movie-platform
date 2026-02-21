@@ -4,9 +4,6 @@ import { Providers } from '@/components/providers';
 import { fontVariables } from '@/lib/fonts';
 import './globals.css';
 
-// Force dynamic rendering to skip static prerendering (avoids Phosphor icons React version issues)
-export const dynamic = 'force-dynamic';
-
 /**
  * Site metadata
  */
