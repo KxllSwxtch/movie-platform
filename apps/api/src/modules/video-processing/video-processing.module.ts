@@ -15,17 +15,21 @@ import { EdgeCenterModule } from '../edgecenter/edgecenter.module';
       name: VIDEO_PROCESSING_QUEUE,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      useFactory: (config: ConfigService) => {
+        const password = config.get<string>('REDIS_PASSWORD', '');
+        return {
         redis: {
           host: config.get<string>('REDIS_HOST', 'localhost'),
           port: config.get<number>('REDIS_PORT', 6379),
+          ...(password ? { password } : {}),
         },
         defaultJobOptions: {
           removeOnComplete: 5,
           removeOnFail: 10,
           attempts: 1,
         },
-      }),
+      };
+      },
     }),
   ],
   controllers: [VideoProcessingController],
