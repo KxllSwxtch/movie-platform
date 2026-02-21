@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
+  // Externalize packages that use createContext from server bundling
+  serverExternalPackages: ['@phosphor-icons/react'],
+
   // Transpile monorepo packages
   transpilePackages: ['@movie-platform/shared', '@movie-platform/ui'],
 

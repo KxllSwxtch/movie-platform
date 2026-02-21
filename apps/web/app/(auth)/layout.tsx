@@ -1,3 +1,5 @@
+'use client';
+
 import { Play } from '@phosphor-icons/react';
 import Link from 'next/link';
 
