@@ -60,6 +60,10 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 
+  // Externalize @phosphor-icons/react for server — prevents webpack from
+  // breaking React.createContext in standalone server bundles
+  serverExternalPackages: ['@phosphor-icons/react'],
+
   // Turbopack resolve configuration for hoisted monorepo dependencies
   experimental: {
     turbo: {
