@@ -15,9 +15,21 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
-  // Transpile monorepo packages + @phosphor-icons/react (forces SWC to process
-  // the library through Next.js compilation pipeline, fixing createContext in standalone)
-  transpilePackages: ['@movie-platform/shared', '@movie-platform/ui', '@phosphor-icons/react'],
+  // Transpile monorepo packages
+  transpilePackages: ['@movie-platform/shared', '@movie-platform/ui'],
+
+  // Replace @phosphor-icons/react with a noop stub in server bundles to prevent
+  // createContext from being called in react-server context (standalone build issue).
+  // Icons render as null during SSR and hydrate properly on the client.
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.resolve.alias['@phosphor-icons/react'] = require('path').resolve(
+        __dirname,
+        'lib/phosphor-icons-server-stub.js',
+      );
+    }
+    return config;
+  },
 
   // Image optimization
   images: {
@@ -74,9 +86,6 @@ const nextConfig: NextConfig = {
 
   // Turbopack resolve configuration for hoisted monorepo dependencies
   experimental: {
-    // Tree-shake @phosphor-icons/react barrel exports — handles client/server
-    // boundary correctly without externalizing (which causes dual React instances)
-    optimizePackageImports: ['@phosphor-icons/react'],
     turbo: {
       resolveAlias: {
         'socket.io-client': '../../node_modules/socket.io-client',
