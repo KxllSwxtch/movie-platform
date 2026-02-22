@@ -17,6 +17,13 @@ COPY . .
 # Build the shared package (required by web)
 RUN cd packages/shared && npx tsup src/index.ts --format cjs,esm --dts
 
+# Public env vars baked into the Next.js production build.
+# Override at build time via --build-arg or in docker-compose.
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+
 # Build the Next.js app for production
 RUN cd apps/web && npx next build
 
