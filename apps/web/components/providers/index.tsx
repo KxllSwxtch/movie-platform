@@ -23,7 +23,13 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   // Hydrate auth store on mount (SSR-safe)
   React.useEffect(() => {
+    // Subscribe to finish-hydration BEFORE triggering rehydrate so the
+    // callback fires even if rehydrate completes synchronously.
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      useAuthStore.getState().setHydrated(true);
+    });
     useAuthStore.persist.rehydrate();
+    return unsub;
   }, []);
 
   return (
