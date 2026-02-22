@@ -1,7 +1,6 @@
 'use client';
 
 import { ArrowRight, CaretDown, FilmStrip, Television, Sparkle } from '@phosphor-icons/react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import { useRef } from 'react';
@@ -55,14 +54,24 @@ export function LandingHero() {
         className="absolute inset-0"
         style={prefersReducedMotion ? {} : { y: bgY }}
       >
-        <Image
-          src="https://picsum.photos/seed/hero-movie/1920/1080"
-          fill
-          priority
-          className="object-cover"
-          alt="Кинематографический фон"
-          sizes="100vw"
-          quality={85}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(135deg, #0a0c18 0%, #15102a 30%, #1a0a20 50%, #0d1520 70%, #080b12 100%)',
+          }}
+        />
+        {/* Decorative gradient orbs for cinematic feel */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse 40% 50% at 70% 40%, rgba(201,75,255,0.15) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse 30% 40% at 20% 60%, rgba(40,224,196,0.08) 0%, transparent 70%)',
+          }}
         />
       </motion.div>
 

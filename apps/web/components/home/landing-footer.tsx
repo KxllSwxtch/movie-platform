@@ -15,7 +15,7 @@ const footerLinks = {
   ],
   company: [
     { label: 'О нас', href: '/about' },
-    { label: 'Партнерам', href: '/partners' },
+    { label: 'Партнерам', href: '/partner' },
     { label: 'Тарифы', href: '/pricing' },
     { label: 'Поддержка', href: '/support' },
   ],

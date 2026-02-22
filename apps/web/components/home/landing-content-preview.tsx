@@ -1,7 +1,6 @@
 'use client';
 
 import { Play, CaretRight } from '@phosphor-icons/react';
-import Image from 'next/image';
 import Link from 'next/link';
 
 import { RatingBadge } from '@/components/ui/rating-badge';
@@ -10,27 +9,27 @@ import { ScrollReveal } from './scroll-reveal';
 /* ---------- Mock data ---------- */
 
 const popularItems = [
-  { id: 1, title: 'Темные времена', year: '2024', rating: 8.7, genre: 'Драма', thumbnail: 'https://picsum.photos/seed/pop1/800/1200' },
-  { id: 2, title: 'Пламя надежды', year: '2024', rating: 9.1, genre: 'Триллер', thumbnail: 'https://picsum.photos/seed/pop2/800/600' },
-  { id: 3, title: 'Бесконечность', year: '2023', rating: 8.4, genre: 'Фантастика', thumbnail: 'https://picsum.photos/seed/pop3/800/600' },
+  { id: 1, title: 'Темные времена', year: '2024', rating: 8.7, genre: 'Драма', gradient: 'linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 40%, #0d1520 100%)' },
+  { id: 2, title: 'Пламя надежды', year: '2024', rating: 9.1, genre: 'Триллер', gradient: 'linear-gradient(135deg, #1a1005 0%, #2e1a0a 40%, #0d1520 100%)' },
+  { id: 3, title: 'Бесконечность', year: '2023', rating: 8.4, genre: 'Фантастика', gradient: 'linear-gradient(135deg, #0a1a2e 0%, #0d2030 40%, #0a1520 100%)' },
 ];
 
 const mockSeries = [
-  { id: 1, title: 'Код судьбы', year: '2024', rating: 8.6, thumbnail: 'https://picsum.photos/seed/s1/560/315' },
-  { id: 2, title: 'Грань реальности', year: '2024', rating: 8.9, thumbnail: 'https://picsum.photos/seed/s2/560/315' },
-  { id: 3, title: 'Последний рубеж', year: '2023', rating: 8.2, thumbnail: 'https://picsum.photos/seed/s3/560/315' },
-  { id: 4, title: 'Тёмный мир', year: '2024', rating: 9.0, thumbnail: 'https://picsum.photos/seed/s4/560/315' },
-  { id: 5, title: 'Парадокс', year: '2023', rating: 8.5, thumbnail: 'https://picsum.photos/seed/s5/560/315' },
-  { id: 6, title: 'Сигнал', year: '2024', rating: 8.8, thumbnail: 'https://picsum.photos/seed/s6/560/315' },
+  { id: 1, title: 'Код судьбы', year: '2024', rating: 8.6, gradient: 'linear-gradient(135deg, #1a0a2e 0%, #C94BFF20 50%, #0d1520 100%)' },
+  { id: 2, title: 'Грань реальности', year: '2024', rating: 8.9, gradient: 'linear-gradient(135deg, #0a1a2e 0%, #28E0C420 50%, #0d1520 100%)' },
+  { id: 3, title: 'Последний рубеж', year: '2023', rating: 8.2, gradient: 'linear-gradient(135deg, #1a1005 0%, #FF6B5A20 50%, #0d1520 100%)' },
+  { id: 4, title: 'Тёмный мир', year: '2024', rating: 9.0, gradient: 'linear-gradient(135deg, #15102a 0%, #C94BFF15 50%, #0a0c18 100%)' },
+  { id: 5, title: 'Парадокс', year: '2023', rating: 8.5, gradient: 'linear-gradient(135deg, #0d1520 0%, #28E0C415 50%, #0a1a2e 100%)' },
+  { id: 6, title: 'Сигнал', year: '2024', rating: 8.8, gradient: 'linear-gradient(135deg, #1a0a20 0%, #FF6B5A15 50%, #0d1520 100%)' },
 ];
 
 const mockCourses = [
-  { id: 1, title: 'Основы программирования', year: '2024', rating: 9.3, thumbnail: 'https://picsum.photos/seed/c1/560/315' },
-  { id: 2, title: 'Веб-разработка с нуля', year: '2024', rating: 9.0, thumbnail: 'https://picsum.photos/seed/c2/560/315' },
-  { id: 3, title: 'UI/UX дизайн', year: '2023', rating: 8.8, thumbnail: 'https://picsum.photos/seed/c3/560/315' },
-  { id: 4, title: 'Мобильная разработка', year: '2024', rating: 8.6, thumbnail: 'https://picsum.photos/seed/c4/560/315' },
-  { id: 5, title: 'DevOps практики', year: '2023', rating: 8.9, thumbnail: 'https://picsum.photos/seed/c5/560/315' },
-  { id: 6, title: 'Анализ данных', year: '2024', rating: 9.1, thumbnail: 'https://picsum.photos/seed/c6/560/315' },
+  { id: 1, title: 'Основы программирования', year: '2024', rating: 9.3, gradient: 'linear-gradient(135deg, #0a1a2e 0%, #28E0C420 50%, #0d1520 100%)' },
+  { id: 2, title: 'Веб-разработка с нуля', year: '2024', rating: 9.0, gradient: 'linear-gradient(135deg, #0d1520 0%, #28E0C415 50%, #0a1a2e 100%)' },
+  { id: 3, title: 'UI/UX дизайн', year: '2023', rating: 8.8, gradient: 'linear-gradient(135deg, #1a0a2e 0%, #C94BFF15 50%, #0a1a2e 100%)' },
+  { id: 4, title: 'Мобильная разработка', year: '2024', rating: 8.6, gradient: 'linear-gradient(135deg, #15102a 0%, #28E0C415 50%, #0a0c18 100%)' },
+  { id: 5, title: 'DevOps практики', year: '2023', rating: 8.9, gradient: 'linear-gradient(135deg, #0d1520 0%, #FF6B5A15 50%, #1a0a2e 100%)' },
+  { id: 6, title: 'Анализ данных', year: '2024', rating: 9.1, gradient: 'linear-gradient(135deg, #1a1005 0%, #28E0C420 50%, #0d1520 100%)' },
 ];
 
 /* ---------- Bento Grid ---------- */
@@ -43,12 +42,9 @@ function BentoGrid() {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
       {/* Large featured card — spans full height on desktop */}
       <div className="group relative rounded-2xl overflow-hidden border border-white/[0.08] aspect-[3/4] md:aspect-auto md:row-span-2 cursor-pointer">
-        <Image
-          src={featured.thumbnail}
-          fill
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-          alt={featured.title}
-          sizes="(max-width: 768px) 100vw, 50vw"
+        <div
+          className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105"
+          style={{ background: featured.gradient }}
         />
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -83,12 +79,9 @@ function BentoGrid() {
           key={item.id}
           className="group relative rounded-2xl overflow-hidden border border-white/[0.08] aspect-video cursor-pointer"
         >
-          <Image
-            src={item.thumbnail}
-            fill
-            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            alt={item.title}
-            sizes="(max-width: 768px) 100vw, 50vw"
+          <div
+            className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105"
+            style={{ background: item.gradient }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
@@ -164,12 +157,9 @@ function ContentRowPreview({
               className="flex-shrink-0 group w-[260px] sm:w-[280px]"
             >
               <div className="relative aspect-video rounded-xl overflow-hidden border border-white/[0.06] bg-mp-surface mb-3 transition-transform duration-300 group-hover:-translate-y-1">
-                <Image
-                  src={item.thumbnail}
-                  fill
-                  className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                  alt={item.title}
-                  sizes="280px"
+                <div
+                  className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-105"
+                  style={{ background: item.gradient }}
                 />
                 <div className="absolute bottom-3 right-3">
                   <RatingBadge rating={item.rating} />

@@ -26,6 +26,12 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   useEffect(() => {
     if (inView) {
       motionValue.set(value);
+    } else {
+      // Fallback: if IntersectionObserver hasn't fired within 2s, animate anyway
+      const timer = setTimeout(() => {
+        motionValue.set(value);
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [inView, motionValue, value]);
 
@@ -39,10 +45,12 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
     return unsubscribe;
   }, [springValue, suffix]);
 
+  const formatted = value.toLocaleString('ru-RU') + suffix;
+
   if (prefersReducedMotion) {
     return (
       <span ref={ref} className="text-3xl sm:text-4xl md:text-5xl font-bold text-mp-text-primary">
-        {value.toLocaleString('ru-RU')}{suffix}
+        {formatted}
       </span>
     );
   }
@@ -52,7 +60,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
       ref={ref}
       className="text-3xl sm:text-4xl md:text-5xl font-bold text-mp-text-primary"
     >
-      0{suffix}
+      {formatted}
     </span>
   );
 }

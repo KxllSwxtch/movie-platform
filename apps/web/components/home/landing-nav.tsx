@@ -11,7 +11,7 @@ const navLinks = [
   { label: 'Сериалы', href: '/series' },
   { label: 'Обучение', href: '/tutorials' },
   { label: 'Тарифы', href: '/pricing' },
-  { label: 'Партнерам', href: '/partners' },
+  { label: 'Партнерам', href: '/partner' },
 ];
 
 export function LandingNav() {
