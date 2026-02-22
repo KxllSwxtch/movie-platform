@@ -60,12 +60,11 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 
-  // Externalize @phosphor-icons/react for server — prevents webpack from
-  // breaking React.createContext in standalone server bundles
-  serverExternalPackages: ['@phosphor-icons/react'],
-
   // Turbopack resolve configuration for hoisted monorepo dependencies
   experimental: {
+    // Tree-shake @phosphor-icons/react barrel exports — handles client/server
+    // boundary correctly without externalizing (which causes dual React instances)
+    optimizePackageImports: ['@phosphor-icons/react'],
     turbo: {
       resolveAlias: {
         'socket.io-client': '../../node_modules/socket.io-client',
