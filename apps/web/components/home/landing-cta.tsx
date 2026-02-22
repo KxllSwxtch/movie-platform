@@ -1,44 +1,39 @@
 'use client';
 
 import { ArrowRight } from '@phosphor-icons/react';
-import Image from 'next/image';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { ScrollReveal } from './scroll-reveal';
 
-const bgImages = [
-  'https://picsum.photos/seed/cta1/400/300',
-  'https://picsum.photos/seed/cta2/400/300',
-  'https://picsum.photos/seed/cta3/400/300',
-  'https://picsum.photos/seed/cta4/400/300',
-  'https://picsum.photos/seed/cta5/400/300',
-  'https://picsum.photos/seed/cta6/400/300',
+const bgGradients = [
+  'linear-gradient(135deg, #1a0a2e 0%, #16213e 100%)',
+  'linear-gradient(135deg, #0f2027 0%, #203a43 100%)',
+  'linear-gradient(135deg, #1e1233 0%, #110e2e 100%)',
+  'linear-gradient(135deg, #0d1b2a 0%, #1b2838 100%)',
+  'linear-gradient(135deg, #170b26 0%, #1a1a2e 100%)',
+  'linear-gradient(135deg, #0e1428 0%, #1c1230 100%)',
 ];
 
-const avatars = [
-  'https://picsum.photos/seed/face1/80/80',
-  'https://picsum.photos/seed/face2/80/80',
-  'https://picsum.photos/seed/face3/80/80',
-  'https://picsum.photos/seed/face4/80/80',
-  'https://picsum.photos/seed/face5/80/80',
+const avatarGradients = [
+  'linear-gradient(135deg, #C94BFF, #8B5CF6)',
+  'linear-gradient(135deg, #28E0C4, #06B6D4)',
+  'linear-gradient(135deg, #FF6B5A, #F59E0B)',
+  'linear-gradient(135deg, #3B82F6, #6366F1)',
+  'linear-gradient(135deg, #EC4899, #C94BFF)',
 ];
 
 export function LandingCTA() {
   return (
     <section className="py-16 md:py-24 relative overflow-hidden">
-      {/* Background collage — tiled images, blurred + dimmed */}
+      {/* Background collage — gradient tiles, blurred + dimmed */}
       <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-2 opacity-20">
-        {bgImages.map((src, i) => (
-          <div key={i} className="relative overflow-hidden">
-            <Image
-              src={src}
-              fill
-              className="object-cover blur-sm brightness-50"
-              alt=""
-              sizes="33vw"
-            />
-          </div>
+        {bgGradients.map((gradient, i) => (
+          <div
+            key={i}
+            className="overflow-hidden blur-sm brightness-50"
+            style={{ background: gradient }}
+          />
         ))}
       </div>
 
@@ -68,20 +63,12 @@ export function LandingCTA() {
             {/* Stacked avatars */}
             <div className="flex items-center justify-center mb-4">
               <div className="flex -space-x-3">
-                {avatars.map((src, i) => (
+                {avatarGradients.map((gradient, i) => (
                   <div
                     key={i}
-                    className="relative w-10 h-10 rounded-full border-2 border-[#05060A] overflow-hidden"
-                    style={{ zIndex: avatars.length - i }}
-                  >
-                    <Image
-                      src={src}
-                      fill
-                      className="object-cover"
-                      alt=""
-                      sizes="40px"
-                    />
-                  </div>
+                    className="w-10 h-10 rounded-full border-2 border-[#05060A]"
+                    style={{ zIndex: avatarGradients.length - i, background: gradient }}
+                  />
                 ))}
               </div>
             </div>
