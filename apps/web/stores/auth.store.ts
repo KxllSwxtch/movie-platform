@@ -3,6 +3,21 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User } from '@movie-platform/shared';
 
 /**
+ * Sync auth state to cookies so Next.js middleware can detect authentication.
+ * Middleware runs on the server and cannot read localStorage.
+ */
+function syncAuthCookies(accessToken: string | null, isAuthenticated: boolean) {
+  if (typeof document === 'undefined') return;
+  if (isAuthenticated && accessToken) {
+    document.cookie = `mp-auth-token=${accessToken};path=/;max-age=${60 * 60 * 24 * 7};samesite=lax`;
+    document.cookie = `mp-authenticated=true;path=/;max-age=${60 * 60 * 24 * 7};samesite=lax`;
+  } else {
+    document.cookie = 'mp-auth-token=;path=/;max-age=0';
+    document.cookie = 'mp-authenticated=;path=/;max-age=0';
+  }
+}
+
+/**
  * Authentication state interface
  */
 interface AuthState {
@@ -37,23 +52,27 @@ export const useAuthStore = create<AuthState>()(
       isHydrated: false,
 
       // Set full auth state (after login)
-      setAuth: (user, accessToken, refreshToken) =>
+      setAuth: (user, accessToken, refreshToken) => {
+        syncAuthCookies(accessToken, true);
         set({
           user,
           accessToken,
           refreshToken: refreshToken ?? get().refreshToken,
           isAuthenticated: true,
-        }),
+        });
+      },
 
       // Update user data
       setUser: (user) => set({ user }),
 
       // Update tokens (after refresh)
-      setTokens: (accessToken, refreshToken) =>
+      setTokens: (accessToken, refreshToken) => {
+        syncAuthCookies(accessToken, true);
         set({
           accessToken,
           refreshToken: refreshToken ?? get().refreshToken,
-        }),
+        });
+      },
 
       // Partial user update
       updateUser: (updates) =>
@@ -62,16 +81,24 @@ export const useAuthStore = create<AuthState>()(
         })),
 
       // Clear auth state (logout)
-      logout: () =>
+      logout: () => {
+        syncAuthCookies(null, false);
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
-        }),
+        });
+      },
 
-      // Mark store as hydrated
-      setHydrated: (hydrated) => set({ isHydrated: hydrated }),
+      // Mark store as hydrated — also sync cookies from persisted state
+      setHydrated: (hydrated) => {
+        if (hydrated) {
+          const { accessToken, isAuthenticated } = get();
+          syncAuthCookies(accessToken, isAuthenticated);
+        }
+        set({ isHydrated: hydrated });
+      },
     }),
     {
       name: 'mp-auth-storage',
