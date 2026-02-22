@@ -43,6 +43,9 @@ RUN printf '{"extends":"./tsconfig.json","compilerOptions":{"rootDir":"./src","n
 # Build NestJS API (use tsc directly; ignore exit code since noEmitOnError:false ensures JS is emitted)
 RUN cd apps/api && npx tsc -p tsconfig.build.json || true && test -f dist/main.js
 
+# Copy non-TS assets (email templates) that tsc doesn't handle
+RUN cp -r apps/api/src/modules/email/templates apps/api/dist/modules/email/templates
+
 # ---- Stage 3: Production runner ----
 FROM node:20-alpine AS runner
 
