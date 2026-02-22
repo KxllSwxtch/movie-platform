@@ -102,6 +102,10 @@ next-env.d.ts
 playwright-report/
 test-results/
 
+# Production E2E test credentials and reports
+.env.e2e
+apps/web/tests/e2e-production/reports/
+
 # Storybook
 storybook-static/
 

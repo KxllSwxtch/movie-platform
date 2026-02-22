@@ -56,7 +56,7 @@ export function DashboardRows({ data }: DashboardRowsProps) {
       {/* Trending / Popular */}
       <ContentRow
         title="Популярное"
-        seeAllHref="/popular"
+        seeAllHref="/series"
         isLoading={trending.isLoading}
       >
         {trendingItems.map((item) => (
@@ -67,7 +67,7 @@ export function DashboardRows({ data }: DashboardRowsProps) {
       {/* New Releases */}
       <ContentRow
         title="Новинки"
-        seeAllHref="/new"
+        seeAllHref="/series"
         isLoading={newReleases.isLoading}
       >
         {newItems.map((item) => (

@@ -108,7 +108,7 @@ export function AppHeader({ className }: AppHeaderProps) {
 
           {/* User profile */}
           <Link
-            href="/profile"
+            href="/account/profile"
             className="flex items-center gap-3 hover:opacity-90 transition-opacity"
           >
             <UserAvatar

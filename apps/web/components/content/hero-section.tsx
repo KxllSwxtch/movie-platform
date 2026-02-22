@@ -54,7 +54,7 @@ interface HeroSectionProps {
  * Hero section component with professional asymmetrical layout
  */
 export function HeroSection({ content, className, onCTAClick, onSecondaryClick }: HeroSectionProps) {
-  const genreColor = genreColors[content.genre.toLowerCase()] || genreColors.default;
+  const genreColor = genreColors[String(content.genre || '').toLowerCase()] || genreColors.default;
 
   return (
     <section

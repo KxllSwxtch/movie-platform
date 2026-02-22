@@ -58,7 +58,7 @@ export default function ClipsPage() {
       duration: item.duration,
       viewCount: item.viewCount,
       ageCategory: (item.ageCategory || '0+') as AgeCategory,
-      category: item.category,
+      category: typeof item.category === 'object' && item.category !== null ? item.category.name : item.category,
     }));
   }, [data]);
 

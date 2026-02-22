@@ -9,11 +9,14 @@ import type { PaginatedList } from '@/types';
 interface ContentListParams {
   type?: string;
   categorySlug?: string;
+  categoryId?: string;
   age?: string;
   sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
   search?: string;
+  freeOnly?: boolean;
   instructor?: string;
 }
 
@@ -26,7 +29,7 @@ interface ContentListItem {
   ageCategory: string;
   duration: number;
   viewCount: number;
-  category?: string;
+  category?: string | { id: string; name: string; slug: string };
   rating?: number;
   year?: number;
   seasonCount?: number;
@@ -75,21 +78,21 @@ export interface TutorialLesson {
  * Hook for fetching a paginated list of content with filters
  */
 export function useContentList(params: ContentListParams) {
-  const { type, categorySlug, age, sortBy, page = 1, limit = 20, search, instructor } = params;
+  const { type, categorySlug, categoryId, sortBy, sortOrder, page = 1, limit = 20, search, freeOnly } = params;
 
   return useQuery({
-    queryKey: queryKeys.content.list({ type, categorySlug, age, sortBy, page, limit, search, instructor }),
+    queryKey: queryKeys.content.list({ type, categorySlug, categoryId, sortBy, sortOrder, page, limit, search, freeOnly }),
     queryFn: async () => {
       const response = await api.get<PaginatedList<ContentListItem>>(endpoints.content.list, {
         params: {
-          contentType: type,
-          categorySlug: categorySlug,
-          ageCategory: age,
+          type,
+          categoryId: categoryId || undefined,
           sortBy,
+          sortOrder,
           page,
           limit,
           search,
-          instructor,
+          freeOnly,
         },
       });
       return response;
@@ -103,19 +106,21 @@ export function useContentList(params: ContentListParams) {
  * Hook for fetching infinite scrollable content (for shorts)
  */
 export function useContentInfinite(params: Omit<ContentListParams, 'page'>) {
-  const { type, categorySlug, age, sortBy, limit = 10 } = params;
+  const { type, categorySlug, categoryId, sortBy, sortOrder, limit = 10, search, freeOnly } = params;
 
   return useInfiniteQuery({
-    queryKey: [...queryKeys.content.lists(), 'infinite', { type, categorySlug, age, sortBy }],
+    queryKey: [...queryKeys.content.lists(), 'infinite', { type, categorySlug, categoryId, sortBy, sortOrder }],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await api.get<PaginatedList<ContentListItem>>(endpoints.content.list, {
         params: {
-          contentType: type,
-          categorySlug,
-          ageCategory: age,
+          type,
+          categoryId: categoryId || undefined,
           sortBy,
+          sortOrder,
           page: pageParam,
           limit,
+          search,
+          freeOnly,
         },
       });
       return response.data;

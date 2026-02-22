@@ -31,7 +31,7 @@ export default function CategoryPage() {
   const contentType = activeTab === 'all' ? undefined : activeTab === 'series' ? 'SERIES' : activeTab === 'clips' ? 'CLIP' : 'TUTORIAL';
 
   const { data, isLoading } = useContentList({
-    categorySlug: slug,
+    categoryId: categoryData?.id,
     type: contentType,
     page: currentPage,
     limit: 20,
@@ -61,7 +61,7 @@ export default function CategoryPage() {
     duration: item.duration,
     viewCount: item.viewCount,
     ageCategory: (item.ageCategory || '0+') as AgeCategory,
-    category: item.category,
+    category: typeof item.category === 'object' && item.category !== null ? item.category.name : item.category,
   }));
 
   const tutorialItems = items.filter((i) => i.contentType === 'TUTORIAL').map((item) => ({
@@ -72,7 +72,7 @@ export default function CategoryPage() {
     lessonCount: item.lessonCount || 0,
     completedLessons: item.completedLessons || 0,
     ageCategory: (item.ageCategory || '0+') as AgeCategory,
-    category: item.category,
+    category: typeof item.category === 'object' && item.category !== null ? item.category.name : item.category,
     instructor: item.instructor,
   }));
 

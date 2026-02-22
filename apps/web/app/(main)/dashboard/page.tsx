@@ -17,7 +17,7 @@ export default function DashboardPage() {
         id: heroItem.slug || heroItem.id,
         title: heroItem.title,
         year: heroItem.year || new Date().getFullYear(),
-        genre: heroItem.category || '',
+        genre: (typeof heroItem.category === 'object' && heroItem.category !== null) ? heroItem.category.name || '' : heroItem.category || '',
         description: '',
         thumbnailUrl: heroItem.thumbnailUrl || '/images/hero-placeholder.jpg',
         rank: 1,
