@@ -26,12 +26,30 @@ import type {
 /**
  * Hook to fetch partner program levels (public)
  */
+// Map level numbers to PartnerLevel strings
+const LEVEL_NUMBER_TO_NAME: Record<number, string> = {
+  1: 'STARTER',
+  2: 'BRONZE',
+  3: 'SILVER',
+  4: 'GOLD',
+  5: 'PLATINUM',
+};
+
 export function usePartnerLevels() {
   return useQuery({
     queryKey: queryKeys.partners.levels(),
     queryFn: async () => {
-      const response = await api.get<PartnerLevelConfig[]>(endpoints.partners.levels);
-      return response.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await api.get<any[]>(endpoints.partners.levels);
+      // Normalize API response fields to match frontend PartnerLevelConfig type
+      return (response.data ?? []).map((l) => ({
+        level: l.level ?? LEVEL_NUMBER_TO_NAME[l.levelNumber] ?? 'STARTER',
+        name: l.name ?? '',
+        minReferrals: l.minReferrals ?? 0,
+        minEarnings: l.minEarnings ?? l.minTeamVolume ?? 0,
+        commissionRate: l.commissionRate ?? 0,
+        benefits: Array.isArray(l.benefits) ? l.benefits : [],
+      })) as PartnerLevelConfig[];
     },
     staleTime: 60 * 60 * 1000, // 1 hour - levels don't change often
   });
@@ -51,8 +69,11 @@ export function usePartnerDashboard() {
       const d = response.data;
       // Normalize API response fields to match frontend PartnerDashboard type
       const np = d.nextLevelProgress;
+      // Convert numeric level to PartnerLevel string if needed
+      const rawLevel = d.currentLevel ?? d.level ?? 1;
+      const level = typeof rawLevel === 'number' ? (LEVEL_NUMBER_TO_NAME[rawLevel] ?? 'STARTER') : rawLevel;
       return {
-        level: d.currentLevel ?? d.level ?? 1,
+        level,
         levelName: d.levelName ?? 'Стартер',
         referralCode: d.referralCode ?? '',
         referralUrl: d.referralUrl ?? '',
@@ -65,8 +86,8 @@ export function usePartnerDashboard() {
         currentMonthEarnings: d.currentMonthEarnings ?? d.thisMonthEarnings ?? 0,
         previousMonthEarnings: d.previousMonthEarnings ?? d.lastMonthEarnings ?? 0,
         levelProgress: d.levelProgress ?? (np ? {
-          currentLevel: d.currentLevel ?? 1,
-          nextLevel: np.nextLevel ?? null,
+          currentLevel: level,
+          nextLevel: np.nextLevel ? (typeof np.nextLevel === 'number' ? (LEVEL_NUMBER_TO_NAME[np.nextLevel] ?? null) : np.nextLevel) : null,
           referralsProgress: {
             current: np.currentReferrals ?? 0,
             required: np.referralsNeeded ?? 0,
@@ -150,8 +171,21 @@ export function usePartnerBalance() {
   return useQuery({
     queryKey: queryKeys.partners.balance(),
     queryFn: async () => {
-      const response = await api.get<AvailableBalance>(endpoints.partners.balance);
-      return response.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await api.get<any>(endpoints.partners.balance);
+      const d = response.data;
+      // Normalize API response fields to match frontend AvailableBalance type
+      const available = d.available ?? d.availableBalance ?? 0;
+      const pending = d.pending ?? d.pendingWithdrawals ?? 0;
+      const processing = d.processing ?? 0;
+      const minimumWithdrawal = d.minimumWithdrawal ?? 1000;
+      return {
+        available,
+        pending,
+        processing,
+        minimumWithdrawal,
+        canWithdraw: d.canWithdraw ?? available >= minimumWithdrawal,
+      } as AvailableBalance;
     },
     enabled: isAuthenticated && isHydrated,
     staleTime: 30 * 1000, // 30 seconds - balance changes more frequently
