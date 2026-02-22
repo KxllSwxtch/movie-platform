@@ -25,7 +25,15 @@ export function useSubscriptionPlans() {
     queryKey: queryKeys.subscriptions.plans(),
     queryFn: async () => {
       const response = await api.get<SubscriptionPlan[]>(endpoints.subscriptions.plans);
-      return response.data;
+      // API may return features as a JSON string — normalize to array
+      return (response.data ?? []).map((plan) => ({
+        ...plan,
+        features: Array.isArray(plan.features)
+          ? plan.features
+          : typeof plan.features === 'string'
+            ? JSON.parse(plan.features)
+            : [],
+      }));
     },
     staleTime: 10 * 60 * 1000, // 10 minutes - plans don't change often
   });
@@ -40,7 +48,16 @@ export function useSubscriptionPlan(planId: string | undefined) {
     queryFn: async () => {
       if (!planId) throw new Error('Plan ID required');
       const response = await api.get<SubscriptionPlan>(endpoints.subscriptions.plan(planId));
-      return response.data;
+      const plan = response.data;
+      // API may return features as a JSON string — normalize to array
+      return {
+        ...plan,
+        features: Array.isArray(plan.features)
+          ? plan.features
+          : typeof plan.features === 'string'
+            ? JSON.parse(plan.features)
+            : [],
+      };
     },
     enabled: !!planId,
   });

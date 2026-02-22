@@ -46,8 +46,40 @@ export function usePartnerDashboard() {
   return useQuery({
     queryKey: queryKeys.partners.dashboard(),
     queryFn: async () => {
-      const response = await api.get<PartnerDashboard>(endpoints.partners.dashboard);
-      return response.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await api.get<any>(endpoints.partners.dashboard);
+      const d = response.data;
+      // Normalize API response fields to match frontend PartnerDashboard type
+      const np = d.nextLevelProgress;
+      return {
+        level: d.currentLevel ?? d.level ?? 1,
+        levelName: d.levelName ?? 'Стартер',
+        referralCode: d.referralCode ?? '',
+        referralUrl: d.referralUrl ?? '',
+        totalReferrals: d.totalReferrals ?? 0,
+        activeReferrals: d.activeReferrals ?? 0,
+        totalEarnings: d.totalEarnings ?? 0,
+        pendingEarnings: d.pendingEarnings ?? 0,
+        availableBalance: d.availableBalance ?? 0,
+        withdrawnAmount: d.withdrawnAmount ?? 0,
+        currentMonthEarnings: d.currentMonthEarnings ?? d.thisMonthEarnings ?? 0,
+        previousMonthEarnings: d.previousMonthEarnings ?? d.lastMonthEarnings ?? 0,
+        levelProgress: d.levelProgress ?? (np ? {
+          currentLevel: d.currentLevel ?? 1,
+          nextLevel: np.nextLevel ?? null,
+          referralsProgress: {
+            current: np.currentReferrals ?? 0,
+            required: np.referralsNeeded ?? 0,
+            percentage: np.referralsNeeded ? Math.round((np.currentReferrals / np.referralsNeeded) * 100) : 0,
+          },
+          earningsProgress: {
+            current: np.currentTeamVolume ?? 0,
+            required: np.teamVolumeNeeded ?? 0,
+            percentage: np.teamVolumeNeeded ? Math.round((np.currentTeamVolume / np.teamVolumeNeeded) * 100) : 0,
+          },
+        } : { currentLevel: 1, nextLevel: null, referralsProgress: { current: 0, required: 0, percentage: 0 }, earningsProgress: { current: 0, required: 0, percentage: 0 } }),
+        recentCommissions: d.recentCommissions ?? [],
+      } as PartnerDashboard;
     },
     enabled: isAuthenticated && isHydrated,
     staleTime: 60 * 1000, // 1 minute
