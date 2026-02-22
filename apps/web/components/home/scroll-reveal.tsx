@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -25,8 +25,14 @@ export function ScrollReveal({
 }: ScrollRevealProps) {
   const prefersReducedMotion = useReducedMotion();
   const offset = directionOffsets[direction];
+  const [mounted, setMounted] = useState(false);
 
-  if (prefersReducedMotion) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Before client mount or with reduced motion, render visible immediately
+  if (!mounted || prefersReducedMotion) {
     return <div className={className}>{children}</div>;
   }
 
@@ -34,7 +40,7 @@ export function ScrollReveal({
     <motion.div
       initial={{ opacity: 0, x: offset.x, y: offset.y }}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
+      viewport={{ once: true, amount: 0.1 }}
       transition={{
         duration: 0.6,
         delay,

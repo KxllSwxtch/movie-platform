@@ -82,8 +82,8 @@ export function SeriesCard({ content, className }: SeriesCardProps) {
           </div>
         </div>
 
-        {/* Series info badge at bottom */}
-        <div className="absolute bottom-3 left-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+        {/* Series info badge at bottom (hover-only on desktop) */}
+        <div className="absolute bottom-3 left-3 right-3 hidden md:block opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
           <span className="text-xs text-white/90 font-medium">
             {formatSeriesInfo(content.seasonCount, content.episodeCount)}
           </span>
