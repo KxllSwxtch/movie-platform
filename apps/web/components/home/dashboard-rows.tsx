@@ -21,6 +21,22 @@ interface DashboardRowsProps {
   data: DashboardData;
 }
 
+/** Convert Prisma enum (ZERO_PLUS) or display format (0+) to display format */
+const AGE_ENUM_MAP: Record<string, string> = {
+  ZERO_PLUS: '0+',
+  SIX_PLUS: '6+',
+  TWELVE_PLUS: '12+',
+  SIXTEEN_PLUS: '16+',
+  EIGHTEEN_PLUS: '18+',
+};
+
+function normalizeAgeCategory(value: unknown): '0+' | '6+' | '12+' | '16+' | '18+' {
+  if (typeof value !== 'string') return '0+';
+  if (AGE_ENUM_MAP[value]) return AGE_ENUM_MAP[value] as '0+' | '6+' | '12+' | '16+' | '18+';
+  if (['0+', '6+', '12+', '16+', '18+'].includes(value)) return value as '0+' | '6+' | '12+' | '16+' | '18+';
+  return '0+';
+}
+
 /**
  * All content rows for the authenticated dashboard, connected to real API data.
  */
@@ -124,7 +140,7 @@ function mapToRatedContent(item: any): RatedMovieContent {
     id: item.slug || item.id,
     title: item.title,
     year: item.year || new Date().getFullYear(),
-    thumbnailUrl: item.thumbnailUrl || '/images/placeholder-card.jpg',
+    thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
     rating: item.rating || 0,
   };
 }
@@ -135,11 +151,11 @@ function mapToSeriesContent(item: any): SeriesContent {
     slug: item.slug || item.id,
     title: item.title,
     year: item.year || new Date().getFullYear(),
-    thumbnailUrl: item.thumbnailUrl || '/images/placeholder-card.jpg',
+    thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
     rating: item.rating || 0,
     seasonCount: item.seasonCount || 1,
     episodeCount: item.episodeCount || 0,
-    ageCategory: item.ageCategory || '0+',
+    ageCategory: normalizeAgeCategory(item.ageCategory),
   };
 }
 
@@ -148,11 +164,11 @@ function mapToTutorialContent(item: any): TutorialContent {
     id: item.id,
     slug: item.slug || item.id,
     title: item.title,
-    thumbnailUrl: item.thumbnailUrl || '/images/placeholder-card.jpg',
+    thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
     instructor: item.instructor || item.creator || '',
     lessonCount: item.lessonCount || 0,
     completedLessons: item.completedLessons || 0,
-    ageCategory: item.ageCategory || '0+',
+    ageCategory: normalizeAgeCategory(item.ageCategory),
     duration: item.duration ? `${Math.floor(item.duration / 3600)}h ${Math.floor((item.duration % 3600) / 60)}m` : undefined,
   };
 }
@@ -162,9 +178,9 @@ function mapToClipContent(item: any): ClipContent {
     id: item.id,
     slug: item.slug || item.id,
     title: item.title,
-    thumbnailUrl: item.thumbnailUrl || '/images/placeholder-card.jpg',
+    thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
     viewCount: item.viewCount || 0,
     duration: item.duration || 0,
-    ageCategory: item.ageCategory || '0+',
+    ageCategory: normalizeAgeCategory(item.ageCategory),
   };
 }

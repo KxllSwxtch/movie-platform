@@ -29,8 +29,8 @@ const MOCK_SERIES = {
   originalTitle: 'Breaking Point',
   description:
     'Захватывающая история о детективе, расследующем серию загадочных преступлений в маленьком городе. Каждый новый поворот приближает его к ужасающей правде, которая навсегда изменит его жизнь и представления о добре и зле.',
-  thumbnailUrl: '/images/hero-placeholder.jpg',
-  bannerUrl: '/images/hero-placeholder.jpg',
+  thumbnailUrl: '/images/movie-placeholder.jpg',
+  bannerUrl: '/images/movie-placeholder.jpg',
   seasonCount: 3,
   episodeCount: 24,
   ageCategory: '16+' as AgeCategory,

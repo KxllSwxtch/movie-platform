@@ -30,7 +30,7 @@ interface MovieCardRatedProps {
 export function MovieCardRated({ content, className, featured = false }: MovieCardRatedProps) {
   return (
     <Link
-      href={`/content/${content.id}`}
+      href={`/watch/${content.id}`}
       className={cn(
         'group block shrink-0 content-card',
         featured ? 'w-[85vw] sm:w-[380px]' : 'w-[70vw] sm:w-[260px] md:w-[280px]',

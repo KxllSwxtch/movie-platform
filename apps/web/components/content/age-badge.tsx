@@ -51,7 +51,7 @@ const SIZE_CLASSES = {
  * - 18+: Red (#EF4444) - Adults only
  */
 export function AgeBadge({ age, size = 'md', className }: AgeBadgeProps) {
-  const colors = AGE_COLORS[age];
+  const colors = AGE_COLORS[age] ?? AGE_COLORS['0+'];
 
   return (
     <span

@@ -19,7 +19,7 @@ export default function DashboardPage() {
         year: heroItem.year || new Date().getFullYear(),
         genre: (typeof heroItem.category === 'object' && heroItem.category !== null) ? heroItem.category.name || '' : heroItem.category || '',
         description: '',
-        thumbnailUrl: heroItem.thumbnailUrl || '/images/hero-placeholder.jpg',
+        thumbnailUrl: heroItem.thumbnailUrl || '/images/movie-placeholder.jpg',
         rank: 1,
       }
     : null;
