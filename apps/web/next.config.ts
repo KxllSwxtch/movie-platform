@@ -15,8 +15,9 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
-  // Transpile monorepo packages
-  transpilePackages: ['@movie-platform/shared', '@movie-platform/ui'],
+  // Transpile monorepo packages + @phosphor-icons/react (forces SWC to process
+  // the library through Next.js compilation pipeline, fixing createContext in standalone)
+  transpilePackages: ['@movie-platform/shared', '@movie-platform/ui', '@phosphor-icons/react'],
 
   // Image optimization
   images: {
@@ -52,6 +53,17 @@ const nextConfig: NextConfig = {
         hostname: 'fastly.picsum.photos',
       },
     ],
+  },
+
+  // Redirect /admin to /admin/dashboard
+  async redirects() {
+    return [
+      {
+        source: '/admin',
+        destination: '/admin/dashboard',
+        permanent: false,
+      },
+    ];
   },
 
   // Environment variables exposed to the browser
