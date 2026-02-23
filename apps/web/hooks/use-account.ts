@@ -201,7 +201,7 @@ export function useDeleteWatchHistoryItem() {
 
   return useMutation({
     mutationFn: async (contentId: string) => {
-      const response = await api.delete<any>(`/watch-history/${contentId}`);
+      const response = await api.delete<any>(`/users/me/watch-history/${contentId}`);
       return response.data;
     },
     onSuccess: () => {
@@ -219,7 +219,7 @@ export function useClearWatchHistory() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await api.delete<any>('/watch-history');
+      const response = await api.delete<any>('/users/me/watch-history');
       return response.data;
     },
     onSuccess: () => {

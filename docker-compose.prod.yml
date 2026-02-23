@@ -139,6 +139,8 @@ services:
       - EDGECENTER_CDN_SECRET=${EDGECENTER_CDN_SECRET:-}
       - YOOKASSA_SHOP_ID=${YOOKASSA_SHOP_ID:-}
       - YOOKASSA_SECRET_KEY=${YOOKASSA_SECRET_KEY:-}
+      - YOOKASSA_MOCK_MODE=${YOOKASSA_MOCK_MODE:-true}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-MoviePlatform}
       - PORT=4000
     volumes:
       - api_video_uploads:/tmp/video-uploads

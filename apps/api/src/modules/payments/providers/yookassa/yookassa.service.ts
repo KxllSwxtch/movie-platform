@@ -26,16 +26,28 @@ export class YooKassaService {
   private readonly sdk: ReturnType<typeof YooKassa> | null;
 
   constructor(private readonly configService: ConfigService) {
+    const shopId = this.configService.get<string>('YOOKASSA_SHOP_ID');
+    const secretKey = this.configService.get<string>('YOOKASSA_SECRET_KEY');
+    const webhookSecret = this.configService.get<string>('YOOKASSA_WEBHOOK_SECRET');
+    const isMockMode = this.configService.get<string>('YOOKASSA_MOCK_MODE', 'true') === 'true';
+
+    // In production mode, require real credentials
+    if (!isMockMode && (!shopId || !secretKey)) {
+      throw new Error(
+        'YOOKASSA_SHOP_ID and YOOKASSA_SECRET_KEY are required when YOOKASSA_MOCK_MODE is not "true"',
+      );
+    }
+
     this.config = {
-      shopId: this.configService.get<string>('YOOKASSA_SHOP_ID', 'test_shop_id'),
-      secretKey: this.configService.get<string>('YOOKASSA_SECRET_KEY', 'test_secret_key'),
+      shopId: shopId || '',
+      secretKey: secretKey || '',
       returnUrl: this.configService.get<string>('APP_URL', 'http://localhost:3000') + '/payment/callback',
-      webhookSecret: this.configService.get<string>('YOOKASSA_WEBHOOK_SECRET', 'test_webhook_secret'),
-      isMockMode: this.configService.get<string>('YOOKASSA_MOCK_MODE', 'true') === 'true',
+      webhookSecret: webhookSecret || '',
+      isMockMode,
     };
 
-    // Initialize SDK only in production mode
-    if (!this.config.isMockMode) {
+    // Initialize SDK only in production mode with valid credentials
+    if (!this.config.isMockMode && shopId && secretKey) {
       this.sdk = YooKassa({
         shop_id: this.config.shopId,
         secret_key: this.config.secretKey,
@@ -43,7 +55,11 @@ export class YooKassaService {
       this.logger.log('YooKassa SDK initialized in production mode');
     } else {
       this.sdk = null;
-      this.logger.log('YooKassa running in mock mode');
+      if (isMockMode) {
+        this.logger.log('YooKassa running in mock mode');
+      } else {
+        this.logger.warn('YooKassa credentials not configured — payments disabled');
+      }
     }
   }
 

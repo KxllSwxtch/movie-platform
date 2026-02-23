@@ -582,9 +582,9 @@ export const endpoints = {
 
   // Watch history
   watchHistory: {
-    list: '/watch-history',
-    continueWatching: '/watch-history/continue',
-    updateProgress: (contentId: string) => `/watch-history/${contentId}/progress`,
+    list: '/users/me/watch-history',
+    continueWatching: '/users/me/watch-history/continue',
+    updateProgress: (contentId: string) => `/users/me/watch-history/${contentId}/progress`,
   },
 
   // Subscriptions

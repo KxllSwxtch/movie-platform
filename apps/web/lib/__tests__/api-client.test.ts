@@ -560,9 +560,9 @@ describe('endpoints', () => {
 
   describe('watchHistory', () => {
     it('should have correct watch history endpoints', () => {
-      expect(endpoints.watchHistory.list).toBe('/watch-history');
-      expect(endpoints.watchHistory.continueWatching).toBe('/watch-history/continue');
-      expect(endpoints.watchHistory.updateProgress('content-123')).toBe('/watch-history/content-123/progress');
+      expect(endpoints.watchHistory.list).toBe('/users/me/watch-history');
+      expect(endpoints.watchHistory.continueWatching).toBe('/users/me/watch-history/continue');
+      expect(endpoints.watchHistory.updateProgress('content-123')).toBe('/users/me/watch-history/content-123/progress');
     });
   });
 

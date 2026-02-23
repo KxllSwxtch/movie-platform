@@ -15,7 +15,7 @@ test.describe('Watch History', () => {
       return;
     }
 
-    const res = await apiGet('/watch-history', auth.accessToken);
+    const res = await apiGet('/users/me/watch-history', auth.accessToken);
     expect(res).toBeDefined();
     expect(typeof res.success).toBe('boolean');
   });
@@ -32,7 +32,7 @@ test.describe('Watch History', () => {
       return;
     }
 
-    const res = await apiGet('/watch-history/continue', auth.accessToken);
+    const res = await apiGet('/users/me/watch-history/continue', auth.accessToken);
     expect(res).toBeDefined();
     expect(typeof res.success).toBe('boolean');
   });

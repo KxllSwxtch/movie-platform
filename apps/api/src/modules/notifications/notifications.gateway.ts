@@ -11,7 +11,15 @@ import * as jwt from 'jsonwebtoken';
 @WebSocketGateway({
   namespace: 'notifications',
   cors: {
-    origin: '*',
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      // Allow connections without origin (e.g., server-side or mobile)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      // Will be validated against CORS_ORIGINS in afterInit
+      callback(null, true);
+    },
     credentials: true,
   },
 })
@@ -19,13 +27,27 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly configService: ConfigService) {}
+  private allowedOrigins: string[];
+
+  constructor(private readonly configService: ConfigService) {
+    this.allowedOrigins = this.configService
+      .get<string>('CORS_ORIGINS', 'http://localhost:3000')
+      .split(',')
+      .map((o) => o.trim());
+  }
 
   /**
    * Handle WebSocket connection. Verify JWT and join user room.
    */
   async handleConnection(client: Socket) {
     try {
+      // Validate origin
+      const origin = client.handshake.headers?.origin;
+      if (origin && !this.allowedOrigins.includes(origin)) {
+        client.disconnect();
+        return;
+      }
+
       const token = client.handshake.auth?.token || client.handshake.headers?.authorization?.replace('Bearer ', '');
 
       if (!token) {
@@ -33,7 +55,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         return;
       }
 
-      const secret = this.configService.get<string>('JWT_SECRET', 'default-secret');
+      const secret = this.configService.get<string>('JWT_SECRET');
+      if (!secret) {
+        throw new Error('JWT_SECRET environment variable is required');
+      }
       const payload = jwt.verify(token, secret) as { sub: string };
 
       if (!payload?.sub) {
