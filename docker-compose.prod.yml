@@ -99,6 +99,25 @@ services:
     networks:
       - internal
 
+  # Mailpit (Email catcher — captures all outgoing emails)
+  # Web UI available at http://localhost:8025 (internal only)
+  # When real SMTP is needed, replace SMTP_HOST with external provider
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: movieplatform-mailpit
+    restart: always
+    environment:
+      - MP_SMTP_AUTH_ACCEPT_ANY=true
+      - MP_SMTP_AUTH_ALLOW_INSECURE=true
+    volumes:
+      - mailpit_data:/data
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
   # NestJS API
   api:
     build:
@@ -125,9 +144,9 @@ services:
       - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT:-http://minio:9000}
       - VIDEO_PROCESSING_CONCURRENCY=${VIDEO_PROCESSING_CONCURRENCY:-1}
       - CORS_ORIGINS=${CORS_ORIGINS}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_SECURE=${SMTP_SECURE:-true}
+      - SMTP_HOST=${SMTP_HOST:-mailpit}
+      - SMTP_PORT=${SMTP_PORT:-1025}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@movieplatform.ru}
@@ -194,6 +213,7 @@ services:
       - web
       - api
       - minio
+      - mailpit
     networks:
       - internal
     deploy:
@@ -209,6 +229,8 @@ volumes:
   minio_data:
     driver: local
   api_video_uploads:
+    driver: local
+  mailpit_data:
     driver: local
 
 networks:
