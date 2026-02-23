@@ -2,8 +2,8 @@
 
 import {
   FilmStrip,
-  FileCheck,
-  FilePenLine,
+  CheckCircle,
+  NotePencil,
   Archive,
   Plus,
 } from '@phosphor-icons/react';
@@ -93,12 +93,12 @@ export default function AdminContentPage() {
         <StatsCard
           title="Опубликовано"
           value={publishedCount}
-          icon={FileCheck}
+          icon={CheckCircle}
         />
         <StatsCard
           title="Черновики"
           value={draftCount}
-          icon={FilePenLine}
+          icon={NotePencil}
         />
         <StatsCard
           title="Архив"
