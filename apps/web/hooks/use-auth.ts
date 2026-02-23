@@ -41,7 +41,10 @@ export function useAuth() {
    */
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginRequest) => {
-      const response = await api.post<LoginResponse>(endpoints.auth.login, credentials);
+      const response = await api.post<LoginResponse>(endpoints.auth.login, credentials, {
+        skipRefresh: true,
+        skipAuth: true,
+      });
       return response.data;
     },
     onSuccess: (data) => {
@@ -60,7 +63,10 @@ export function useAuth() {
    */
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterRequest) => {
-      const response = await api.post<LoginResponse>(endpoints.auth.register, data);
+      const response = await api.post<LoginResponse>(endpoints.auth.register, data, {
+        skipRefresh: true,
+        skipAuth: true,
+      });
       return response.data;
     },
     onSuccess: (data) => {
@@ -104,7 +110,10 @@ export function useAuth() {
    */
   const forgotPasswordMutation = useMutation({
     mutationFn: async (data: ForgotPasswordRequest) => {
-      await api.post(endpoints.auth.forgotPassword, data);
+      await api.post(endpoints.auth.forgotPassword, data, {
+        skipRefresh: true,
+        skipAuth: true,
+      });
     },
     onSuccess: () => {
       toast.success('Инструкции по сбросу пароля отправлены на вашу почту.');
@@ -120,7 +129,10 @@ export function useAuth() {
    */
   const resetPasswordMutation = useMutation({
     mutationFn: async (data: ResetPasswordRequest) => {
-      await api.post(endpoints.auth.resetPassword, data);
+      await api.post(endpoints.auth.resetPassword, data, {
+        skipRefresh: true,
+        skipAuth: true,
+      });
     },
     onSuccess: () => {
       toast.success('Пароль успешно изменён. Войдите с новым паролем.');
