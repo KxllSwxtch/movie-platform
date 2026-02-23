@@ -18,7 +18,7 @@ import { EMAIL_QUEUE } from './email.constants';
         transport: {
           host: config.get<string>('SMTP_HOST', 'localhost'),
           port: config.get<number>('SMTP_PORT', 1025),
-          secure: config.get<boolean>('SMTP_SECURE', false),
+          secure: config.get<string>('SMTP_SECURE', 'false') === 'true',
           auth: config.get<string>('SMTP_USER')
             ? {
                 user: config.get<string>('SMTP_USER'),
