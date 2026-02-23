@@ -58,7 +58,7 @@ export default function TutorialsPage() {
       lessonCount: item.lessonCount || 0,
       completedLessons: item.completedLessons || 0,
       ageCategory: (item.ageCategory || '0+') as AgeCategory,
-      category: item.category,
+      category: typeof item.category === 'object' && item.category !== null ? item.category.name : item.category,
       duration: item.duration ? `${Math.floor(item.duration / 3600)}ч ${Math.floor((item.duration % 3600) / 60)}мин` : undefined,
       instructor: item.instructor,
     }));
