@@ -7,7 +7,7 @@ import {
   Clock,
   Users,
   ArrowRight,
-  Activity,
+  Heartbeat,
   Wallet,
 } from '@phosphor-icons/react';
 import Link from 'next/link';
@@ -119,14 +119,14 @@ export default function AdminBonusesPage() {
           formatFn={formatCurrency}
         />
         <StatsCard
-          icon={Activity}
+          icon={Heartbeat}
           iconColor="text-cyan-400"
           label="Транзакций сегодня"
           value={stats?.transactionsToday}
           isLoading={isLoadingStats}
         />
         <StatsCard
-          icon={Activity}
+          icon={Heartbeat}
           iconColor="text-emerald-400"
           label="Транзакций за месяц"
           value={stats?.transactionsThisMonth}
