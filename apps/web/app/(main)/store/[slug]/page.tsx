@@ -41,7 +41,7 @@ export default function ProductDetailPage() {
         id: item.id,
         slug: item.slug,
         name: item.name,
-        thumbnailUrl: item.images[0],
+        thumbnailUrl: Array.isArray(item.images) ? item.images[0] : undefined,
         price: item.price,
         bonusPrice: item.bonusPrice,
         status: item.status,
@@ -91,7 +91,7 @@ export default function ProductDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Left — Image gallery */}
-        <ProductImageGallery images={product.images} productName={product.name} />
+        <ProductImageGallery images={Array.isArray(product.images) ? product.images : []} productName={product.name} />
 
         {/* Right — Product info */}
         <div className="space-y-6">

@@ -38,84 +38,97 @@ export class AdminBonusesService {
    * Get system-wide bonus statistics.
    */
   async getBonusStats(): Promise<AdminBonusStatsDto> {
-    const now = new Date();
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
+    try {
+      const now = new Date();
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
 
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-    // Run all queries in parallel
-    const [
-      totalBalance,
-      todayStats,
-      expiringSum,
-      pendingWithdrawals,
-      usersWithBalance,
-    ] = await Promise.all([
-      // Total bonuses in circulation (sum of all user balances)
-      this.prisma.user.aggregate({
-        _sum: { bonusBalance: true },
-      }),
+      // Run all queries in parallel
+      const [
+        totalBalance,
+        todayStats,
+        expiringSum,
+        pendingWithdrawals,
+        usersWithBalance,
+      ] = await Promise.all([
+        // Total bonuses in circulation (sum of all user balances)
+        this.prisma.user.aggregate({
+          _sum: { bonusBalance: true },
+        }),
 
-      // Today's earned and spent
-      this.prisma.bonusTransaction.groupBy({
-        by: ['type'],
-        where: {
-          createdAt: { gte: startOfDay },
-        },
-        _sum: { amount: true },
-      }),
-
-      // Bonuses expiring in next 30 days
-      this.prisma.bonusTransaction.aggregate({
-        where: {
-          type: BonusTransactionType.EARNED,
-          expiresAt: {
-            gt: now,
-            lte: thirtyDaysFromNow,
+        // Today's earned and spent
+        this.prisma.bonusTransaction.groupBy({
+          by: ['type'],
+          where: {
+            createdAt: { gte: startOfDay },
           },
-          amount: { gt: 0 },
-        },
-        _sum: { amount: true },
-      }),
+          _sum: { amount: true },
+        }),
 
-      // Pending bonus withdrawals
-      this.prisma.bonusWithdrawal.aggregate({
-        where: { status: 'PENDING' },
-        _sum: { bonusAmount: true },
-      }),
+        // Bonuses expiring in next 30 days
+        this.prisma.bonusTransaction.aggregate({
+          where: {
+            type: BonusTransactionType.EARNED,
+            expiresAt: {
+              gt: now,
+              lte: thirtyDaysFromNow,
+            },
+            amount: { gt: 0 },
+          },
+          _sum: { amount: true },
+        }),
 
-      // Users with positive balance
-      this.prisma.user.count({
-        where: { bonusBalance: { gt: 0 } },
-      }),
-    ]);
+        // Pending bonus withdrawals
+        this.prisma.bonusWithdrawal.aggregate({
+          where: { status: 'PENDING' },
+          _sum: { bonusAmount: true },
+        }),
 
-    // Calculate today's earned and spent
-    let earnedToday = 0;
-    let spentToday = 0;
-    for (const stat of todayStats) {
-      const amount = Number(stat._sum.amount) || 0;
-      if (stat.type === BonusTransactionType.EARNED) {
-        earnedToday += amount;
-      } else if (stat.type === BonusTransactionType.SPENT) {
-        spentToday += Math.abs(amount);
+        // Users with positive balance
+        this.prisma.user.count({
+          where: { bonusBalance: { gt: 0 } },
+        }),
+      ]);
+
+      // Calculate today's earned and spent
+      let earnedToday = 0;
+      let spentToday = 0;
+      for (const stat of todayStats) {
+        const amount = Number(stat._sum.amount) || 0;
+        if (stat.type === BonusTransactionType.EARNED) {
+          earnedToday += amount;
+        } else if (stat.type === BonusTransactionType.SPENT) {
+          spentToday += Math.abs(amount);
+        }
       }
+
+      const totalInCirculation = Number(totalBalance._sum.bonusBalance) || 0;
+      const averageBalance = usersWithBalance > 0 ? totalInCirculation / usersWithBalance : 0;
+
+      return {
+        totalInCirculation,
+        earnedToday,
+        spentToday,
+        expiringIn30Days: Number(expiringSum._sum.amount) || 0,
+        pendingWithdrawals: Number(pendingWithdrawals._sum.bonusAmount) || 0,
+        usersWithBalance,
+        averageBalance: Math.round(averageBalance * 100) / 100,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get bonus stats', error);
+      return {
+        totalInCirculation: 0,
+        earnedToday: 0,
+        spentToday: 0,
+        expiringIn30Days: 0,
+        pendingWithdrawals: 0,
+        usersWithBalance: 0,
+        averageBalance: 0,
+      };
     }
-
-    const totalInCirculation = Number(totalBalance._sum.bonusBalance) || 0;
-    const averageBalance = usersWithBalance > 0 ? totalInCirculation / usersWithBalance : 0;
-
-    return {
-      totalInCirculation,
-      earnedToday,
-      spentToday,
-      expiringIn30Days: Number(expiringSum._sum.amount) || 0,
-      pendingWithdrawals: Number(pendingWithdrawals._sum.bonusAmount) || 0,
-      usersWithBalance,
-      averageBalance: Math.round(averageBalance * 100) / 100,
-    };
   }
 
   /**

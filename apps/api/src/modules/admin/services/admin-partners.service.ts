@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CommissionStatus, Prisma, TransactionStatus, WithdrawalStatus } from '@prisma/client';
 
 import { PrismaService } from '../../../config/prisma.service';
@@ -27,116 +27,136 @@ import {
 
 @Injectable()
 export class AdminPartnersService {
+  private readonly logger = new Logger(AdminPartnersService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get partner program statistics.
    */
   async getPartnersStats(): Promise<AdminPartnerStatsDto> {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    try {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [
-      totalPartners,
-      newPartnersThisMonth,
-      partnersWithReferrals,
-      pendingCommissions,
-      pendingCommissionCount,
-      approvedCommissions,
-      pendingWithdrawals,
-      pendingWithdrawalCount,
-      completedWithdrawals,
-      commissionsThisMonth,
-      withdrawalsThisMonth,
-    ] = await Promise.all([
-      // Total partners (users with at least one referral OR with commissions)
-      this.prisma.user.count({
-        where: {
-          OR: [
-            { partnerRelationships: { some: {} } },
-            { partnerCommissions: { some: {} } },
-          ],
-        },
-      }),
-      // New partners this month
-      this.prisma.user.count({
-        where: {
-          createdAt: { gte: startOfMonth },
-          OR: [
-            { partnerRelationships: { some: {} } },
-            { referredById: { not: null } },
-          ],
-        },
-      }),
-      // Active partners (those with referrals)
-      this.prisma.user.count({
-        where: {
-          partnerRelationships: { some: { level: 1 } },
-        },
-      }),
-      // Pending commissions total
-      this.prisma.partnerCommission.aggregate({
-        where: { status: CommissionStatus.PENDING },
-        _sum: { amount: true },
-      }),
-      // Pending commission count
-      this.prisma.partnerCommission.count({
-        where: { status: CommissionStatus.PENDING },
-      }),
-      // Total approved commissions
-      this.prisma.partnerCommission.aggregate({
-        where: { status: { in: [CommissionStatus.APPROVED, CommissionStatus.PAID] } },
-        _sum: { amount: true },
-      }),
-      // Pending withdrawals
-      this.prisma.withdrawalRequest.aggregate({
-        where: { status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED] } },
-        _sum: { amount: true },
-      }),
-      // Pending withdrawal count
-      this.prisma.withdrawalRequest.count({
-        where: { status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED] } },
-      }),
-      // Completed withdrawals
-      this.prisma.withdrawalRequest.aggregate({
-        where: { status: WithdrawalStatus.COMPLETED },
-        _sum: { amount: true },
-      }),
-      // Commissions this month
-      this.prisma.partnerCommission.aggregate({
-        where: {
-          createdAt: { gte: startOfMonth },
-          status: { in: [CommissionStatus.APPROVED, CommissionStatus.PAID] },
-        },
-        _sum: { amount: true },
-      }),
-      // Withdrawals this month
-      this.prisma.withdrawalRequest.aggregate({
-        where: {
-          createdAt: { gte: startOfMonth },
-          status: WithdrawalStatus.COMPLETED,
-        },
-        _sum: { amount: true },
-      }),
-    ]);
+      const [
+        totalPartners,
+        newPartnersThisMonth,
+        partnersWithReferrals,
+        pendingCommissions,
+        pendingCommissionCount,
+        approvedCommissions,
+        pendingWithdrawals,
+        pendingWithdrawalCount,
+        completedWithdrawals,
+        commissionsThisMonth,
+        withdrawalsThisMonth,
+      ] = await Promise.all([
+        // Total partners (users with at least one referral OR with commissions)
+        this.prisma.user.count({
+          where: {
+            OR: [
+              { partnerRelationships: { some: {} } },
+              { partnerCommissions: { some: {} } },
+            ],
+          },
+        }),
+        // New partners this month
+        this.prisma.user.count({
+          where: {
+            createdAt: { gte: startOfMonth },
+            OR: [
+              { partnerRelationships: { some: {} } },
+              { referredById: { not: null } },
+            ],
+          },
+        }),
+        // Active partners (those with referrals)
+        this.prisma.user.count({
+          where: {
+            partnerRelationships: { some: { level: 1 } },
+          },
+        }),
+        // Pending commissions total
+        this.prisma.partnerCommission.aggregate({
+          where: { status: CommissionStatus.PENDING },
+          _sum: { amount: true },
+        }),
+        // Pending commission count
+        this.prisma.partnerCommission.count({
+          where: { status: CommissionStatus.PENDING },
+        }),
+        // Total approved commissions
+        this.prisma.partnerCommission.aggregate({
+          where: { status: { in: [CommissionStatus.APPROVED, CommissionStatus.PAID] } },
+          _sum: { amount: true },
+        }),
+        // Pending withdrawals
+        this.prisma.withdrawalRequest.aggregate({
+          where: { status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED] } },
+          _sum: { amount: true },
+        }),
+        // Pending withdrawal count
+        this.prisma.withdrawalRequest.count({
+          where: { status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED] } },
+        }),
+        // Completed withdrawals
+        this.prisma.withdrawalRequest.aggregate({
+          where: { status: WithdrawalStatus.COMPLETED },
+          _sum: { amount: true },
+        }),
+        // Commissions this month
+        this.prisma.partnerCommission.aggregate({
+          where: {
+            createdAt: { gte: startOfMonth },
+            status: { in: [CommissionStatus.APPROVED, CommissionStatus.PAID] },
+          },
+          _sum: { amount: true },
+        }),
+        // Withdrawals this month
+        this.prisma.withdrawalRequest.aggregate({
+          where: {
+            createdAt: { gte: startOfMonth },
+            status: WithdrawalStatus.COMPLETED,
+          },
+          _sum: { amount: true },
+        }),
+      ]);
 
-    // Count partners by level (this is more complex)
-    const partnersByLevel = await this.getPartnersByLevel();
+      // Count partners by level (this is more complex)
+      const partnersByLevel = await this.getPartnersByLevel();
 
-    return {
-      totalPartners,
-      newPartnersThisMonth,
-      activePartners: partnersWithReferrals,
-      partnersByLevel,
-      totalCommissionsPaid: Number(approvedCommissions._sum.amount) || 0,
-      pendingCommissions: Number(pendingCommissions._sum.amount) || 0,
-      pendingCommissionCount,
-      totalWithdrawals: Number(completedWithdrawals._sum.amount) || 0,
-      pendingWithdrawals: Number(pendingWithdrawals._sum.amount) || 0,
-      pendingWithdrawalCount,
-      commissionsThisMonth: Number(commissionsThisMonth._sum.amount) || 0,
-      withdrawalsThisMonth: Number(withdrawalsThisMonth._sum.amount) || 0,
-    };
+      return {
+        totalPartners,
+        newPartnersThisMonth,
+        activePartners: partnersWithReferrals,
+        partnersByLevel,
+        totalCommissionsPaid: Number(approvedCommissions._sum.amount) || 0,
+        pendingCommissions: Number(pendingCommissions._sum.amount) || 0,
+        pendingCommissionCount,
+        totalWithdrawals: Number(completedWithdrawals._sum.amount) || 0,
+        pendingWithdrawals: Number(pendingWithdrawals._sum.amount) || 0,
+        pendingWithdrawalCount,
+        commissionsThisMonth: Number(commissionsThisMonth._sum.amount) || 0,
+        withdrawalsThisMonth: Number(withdrawalsThisMonth._sum.amount) || 0,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get partners stats', error);
+      return {
+        totalPartners: 0,
+        newPartnersThisMonth: 0,
+        activePartners: 0,
+        partnersByLevel: {},
+        totalCommissionsPaid: 0,
+        pendingCommissions: 0,
+        pendingCommissionCount: 0,
+        totalWithdrawals: 0,
+        pendingWithdrawals: 0,
+        pendingWithdrawalCount: 0,
+        commissionsThisMonth: 0,
+        withdrawalsThisMonth: 0,
+      };
+    }
   }
 
   /**

@@ -95,6 +95,15 @@ export function useContentList(params: ContentListParams) {
           freeOnly,
         },
       });
+      // Normalize: API returns { items, meta: { total, page, limit } }
+      // Frontend expects { items, total, page, limit } at data level
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawData = response.data as any;
+      if (rawData && rawData.meta && rawData.total === undefined) {
+        rawData.total = rawData.meta.total;
+        rawData.page = rawData.meta.page;
+        rawData.limit = rawData.meta.limit;
+      }
       return response;
     },
     staleTime: 60_000,
@@ -123,6 +132,14 @@ export function useContentInfinite(params: Omit<ContentListParams, 'page'>) {
           freeOnly,
         },
       });
+      // Normalize meta fields to root level
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawData = response.data as any;
+      if (rawData && rawData.meta && rawData.total === undefined) {
+        rawData.total = rawData.meta.total;
+        rawData.page = rawData.meta.page;
+        rawData.limit = rawData.meta.limit;
+      }
       return response.data;
     },
     initialPageParam: 1,

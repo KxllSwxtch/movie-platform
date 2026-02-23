@@ -13,10 +13,11 @@ interface ProductImageGalleryProps {
 }
 
 export function ProductImageGallery({ images, productName, className }: ProductImageGalleryProps) {
+  const safeImages = Array.isArray(images) ? images : [];
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
-  const hasImages = images.length > 0;
-  const currentImage = hasImages ? images[selectedIndex] : null;
+  const hasImages = safeImages.length > 0;
+  const currentImage = hasImages ? safeImages[selectedIndex] : null;
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -39,9 +40,9 @@ export function ProductImageGallery({ images, productName, className }: ProductI
       </div>
 
       {/* Thumbnail row */}
-      {images.length > 1 && (
+      {safeImages.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {images.map((image, index) => (
+          {safeImages.map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}

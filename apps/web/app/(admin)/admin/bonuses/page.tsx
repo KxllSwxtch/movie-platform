@@ -193,7 +193,7 @@ export default function AdminBonusesPage() {
                   </div>
                 ))}
               </div>
-            ) : campaigns?.items.length ? (
+            ) : campaigns?.items?.length ? (
               <div className="space-y-3">
                 {campaigns.items.map((campaign) => (
                   <div

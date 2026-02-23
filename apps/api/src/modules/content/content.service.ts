@@ -396,6 +396,14 @@ export class ContentService {
     });
   }
 
+  private readonly AGE_CATEGORY_MAP: Record<string, string> = {
+    ZERO_PLUS: '0+',
+    SIX_PLUS: '6+',
+    TWELVE_PLUS: '12+',
+    SIXTEEN_PLUS: '16+',
+    EIGHTEEN_PLUS: '18+',
+  };
+
   /**
    * Map content entity to list DTO.
    */
@@ -406,7 +414,7 @@ export class ContentService {
       slug: content.slug,
       description: content.description,
       contentType: content.contentType,
-      ageCategory: content.ageCategory,
+      ageCategory: this.AGE_CATEGORY_MAP[content.ageCategory] ?? content.ageCategory,
       thumbnailUrl: content.thumbnailUrl,
       duration: content.duration,
       isFree: content.isFree,

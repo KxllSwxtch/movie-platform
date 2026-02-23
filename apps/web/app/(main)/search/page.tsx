@@ -99,6 +99,7 @@ export default function SearchPage() {
   // Handle search submit
   const handleSearch = (value: string) => {
     if (value.trim()) {
+      setQuery(value.trim());
       saveRecentSearch(value.trim());
       setRecentSearches(getRecentSearches());
     }

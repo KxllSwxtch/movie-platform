@@ -10,6 +10,7 @@ import type {
   PartnerDashboard,
   PartnerLevelConfig,
   ReferralTree,
+  ReferralNode,
   Commission,
   CommissionList,
   CommissionQueryParams,
@@ -116,10 +117,55 @@ export function useReferralTree(depth: number = 3) {
   return useQuery({
     queryKey: queryKeys.partners.referrals(depth),
     queryFn: async () => {
-      const response = await api.get<ReferralTree>(endpoints.partners.referrals, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await api.get<any>(endpoints.partners.referrals, {
         params: { depth },
       });
-      return response.data;
+      const d = response.data;
+
+      // Normalize API ReferralNodeDto → frontend ReferralNode
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mapNode = (node: any): ReferralNode => ({
+        id: node.userId ?? node.id ?? '',
+        email: node.email ?? '',
+        firstName: node.firstName ?? '',
+        lastName: node.lastName,
+        level: node.level ?? 1,
+        registeredAt: node.joinedAt ?? node.registeredAt ?? new Date().toISOString(),
+        isActive: node.isActive ?? true,
+        totalPaid: node.totalSpent ?? node.totalPaid ?? 0,
+        commissionsGenerated: node.commissionsGenerated ?? 0,
+        children: Array.isArray(node.children) ? node.children.map(mapNode) : [],
+      });
+
+      const nodes = Array.isArray(d.directReferrals)
+        ? d.directReferrals.map(mapNode)
+        : Array.isArray(d.nodes)
+          ? d.nodes.map(mapNode)
+          : [];
+
+      // Count nodes by level
+      const byLevel: Record<number, number> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const countByLevel = (nodeList: any[], lvl: number) => {
+        byLevel[lvl] = (byLevel[lvl] ?? 0) + nodeList.length;
+        nodeList.forEach((n) => n.children && countByLevel(n.children, lvl + 1));
+      };
+      countByLevel(nodes, 1);
+
+      const totalCount = d.totalTeamSize ?? d.totalCount ?? nodes.length;
+
+      return {
+        nodes,
+        totalCount,
+        depth: d.depth ?? depth,
+        stats: d.stats ?? {
+          totalReferrals: totalCount,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          activeReferrals: d.activeReferrals ?? nodes.filter((n: any) => n.isActive).length,
+          byLevel,
+        },
+      } as ReferralTree;
     },
     enabled: isAuthenticated && isHydrated,
     staleTime: 2 * 60 * 1000, // 2 minutes

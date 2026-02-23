@@ -17,6 +17,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { ClipCard, VideoCardSkeletonGrid, type AgeCategory } from '@/components/content';
 import { useContentList } from '@/hooks/use-content';
+import { normalizeAgeCategory } from '@/lib/age-category';
 import { cn } from '@/lib/utils';
 
 const SORT_OPTIONS = [
@@ -57,7 +58,7 @@ export default function ClipsPage() {
       thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
       duration: item.duration,
       viewCount: item.viewCount,
-      ageCategory: (item.ageCategory || '0+') as AgeCategory,
+      ageCategory: normalizeAgeCategory(item.ageCategory || '0+'),
       category: typeof item.category === 'object' && item.category !== null ? item.category.name : item.category,
     }));
   }, [data]);
