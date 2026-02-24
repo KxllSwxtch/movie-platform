@@ -60,10 +60,10 @@ interface TutorialDetail {
   description: string;
   thumbnailUrl: string;
   ageCategory: string;
-  category: string;
-  instructor: string;
-  duration: string;
-  lessons: TutorialLesson[];
+  category: string | { id: string; name: string; slug: string };
+  instructor?: string;
+  duration?: string;
+  lessons?: TutorialLesson[];
 }
 
 export interface TutorialLesson {

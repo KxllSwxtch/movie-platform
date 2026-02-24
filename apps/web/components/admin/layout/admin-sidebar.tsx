@@ -82,7 +82,7 @@ const adminNavGroups: NavGroup[] = [
     label: 'ПАРТНЁРЫ',
     items: [
       { href: '/admin/partners', icon: UsersThree, label: 'Партнёры' },
-      { href: '/admin/withdrawals', icon: Wallet, label: 'Выводы' },
+      { href: '/admin/partners/withdrawals', icon: Wallet, label: 'Выводы' },
     ],
     collapsible: true,
   },

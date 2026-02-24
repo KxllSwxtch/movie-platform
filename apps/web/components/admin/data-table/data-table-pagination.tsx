@@ -36,7 +36,8 @@ export function DataTablePagination<TData>({
   // Use external pagination if provided, otherwise use table state
   const currentPage = pagination?.page ?? table.getState().pagination.pageIndex + 1;
   const pageSize = pagination?.limit ?? table.getState().pagination.pageSize;
-  const totalPages = pagination?.totalPages ?? table.getPageCount();
+  const rawPageCount = pagination?.totalPages ?? table.getPageCount();
+  const totalPages = Math.max(rawPageCount, 1);
   const totalItems = pagination?.total ?? table.getFilteredRowModel().rows.length;
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
@@ -65,10 +66,10 @@ export function DataTablePagination<TData>({
       <div className="flex-1 text-sm text-mp-text-secondary">
         {selectedCount > 0 ? (
           <>
-            {selectedCount} of {totalItems} row(s) selected.
+            Выбрано {selectedCount} из {totalItems}
           </>
         ) : (
-          <>{totalItems} row(s) total.</>
+          <>Всего записей: {totalItems}</>
         )}
       </div>
 
@@ -77,7 +78,7 @@ export function DataTablePagination<TData>({
         {/* Rows per page selector */}
         <div className="flex items-center gap-2">
           <p className="text-sm text-mp-text-secondary whitespace-nowrap">
-            Rows per page
+            Строк на странице
           </p>
           <Select
             value={`${pageSize}`}
@@ -98,7 +99,7 @@ export function DataTablePagination<TData>({
 
         {/* Page indicator */}
         <div className="flex items-center justify-center text-sm text-mp-text-secondary whitespace-nowrap">
-          Page {currentPage} of {totalPages}
+          Стр. {currentPage} из {totalPages}
         </div>
 
         {/* Navigation buttons */}
@@ -109,7 +110,7 @@ export function DataTablePagination<TData>({
             onClick={() => handlePageChange(1)}
             disabled={!canPreviousPage}
           >
-            <span className="sr-only">Go to first page</span>
+            <span className="sr-only">Перейти к первой странице</span>
             <CaretDoubleLeft className="h-4 w-4" />
           </Button>
           <Button
@@ -118,7 +119,7 @@ export function DataTablePagination<TData>({
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={!canPreviousPage}
           >
-            <span className="sr-only">Go to previous page</span>
+            <span className="sr-only">Предыдущая страница</span>
             <CaretLeft className="h-4 w-4" />
           </Button>
           <Button
@@ -127,7 +128,7 @@ export function DataTablePagination<TData>({
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={!canNextPage}
           >
-            <span className="sr-only">Go to next page</span>
+            <span className="sr-only">Следующая страница</span>
             <CaretRight className="h-4 w-4" />
           </Button>
           <Button
@@ -136,7 +137,7 @@ export function DataTablePagination<TData>({
             onClick={() => handlePageChange(totalPages)}
             disabled={!canNextPage}
           >
-            <span className="sr-only">Go to last page</span>
+            <span className="sr-only">Перейти к последней странице</span>
             <CaretDoubleRight className="h-4 w-4" />
           </Button>
         </div>

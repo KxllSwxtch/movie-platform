@@ -100,11 +100,11 @@ export function DataTableToolbar<TData>({
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-9 ml-auto">
             <SlidersHorizontal className="mr-2 h-4 w-4" />
-            Columns
+            Столбцы
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[180px]">
-          <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+          <DropdownMenuLabel>Видимые столбцы</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {table
             .getAllColumns()

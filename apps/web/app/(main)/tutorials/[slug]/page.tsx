@@ -75,7 +75,7 @@ export default function TutorialDetailPage() {
             <AgeBadge age={(tutorial.ageCategory || '0+') as AgeCategory} size="md" />
             {tutorial.category && (
               <span className="text-sm text-white/70 bg-white/10 px-2 py-1 rounded backdrop-blur-sm">
-                {tutorial.category}
+                {typeof tutorial.category === 'object' ? (tutorial.category as { name?: string }).name : tutorial.category}
               </span>
             )}
           </div>
