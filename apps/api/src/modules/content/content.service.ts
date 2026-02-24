@@ -493,6 +493,8 @@ export class ContentService {
       items: items.map((item) => ({
         ...this.mapContentToDto(item),
         status: item.status,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
       })),
       meta: {
         page,
