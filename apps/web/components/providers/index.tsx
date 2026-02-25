@@ -1,10 +1,15 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 
 import { NetworkStatus } from '@/components/ui/network-status';
-import { Toaster } from '@/components/ui/toaster';
 import { useAuthStore } from '@/stores/auth.store';
+
+const Toaster = dynamic(
+  () => import('@/components/ui/toaster').then((m) => m.Toaster),
+  { ssr: false },
+);
 
 import { QueryProvider } from './query-provider';
 import { ThemeProvider } from './theme-provider';
