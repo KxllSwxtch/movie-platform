@@ -102,7 +102,7 @@ export class BonusesService {
     const pendingCommissions = await this.prisma.partnerCommission.aggregate({
       where: {
         partnerId: userId,
-        status: 'PENDING',
+        status: CommissionStatus.PENDING,
       },
       _sum: { amount: true },
     });

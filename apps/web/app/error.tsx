@@ -69,7 +69,7 @@ export default function Error({
         {/* Support link */}
         <div className="mt-8">
           <Link
-            href="/documents/support"
+            href="/support"
             className="inline-flex items-center gap-1.5 text-sm text-mp-text-disabled hover:text-mp-text-secondary transition-colors"
           >
             <Lifebuoy className="w-3.5 h-3.5" />

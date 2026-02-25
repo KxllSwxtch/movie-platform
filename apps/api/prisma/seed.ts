@@ -1,8 +1,23 @@
 import { PrismaClient, UserRole, AgeCategory, VerificationStatus, ContentType, ContentStatus, SubscriptionPlanType, LegalDocumentType, NotificationType, ProductStatus } from '@prisma/client';
+import { S3Client, PutObjectCommand, CreateBucketCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 
 const prisma = new PrismaClient();
+
+// S3/MinIO client for thumbnail uploads
+const s3Client = new S3Client({
+  endpoint: process.env.MINIO_ENDPOINT || 'http://localhost:9000',
+  region: 'us-east-1',
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: process.env.MINIO_ACCESS_KEY || 'minioadmin',
+    secretAccessKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
+  },
+});
+
+const MINIO_PUBLIC_ENDPOINT = process.env.MINIO_PUBLIC_ENDPOINT || process.env.MINIO_ENDPOINT || 'http://localhost:9000';
+const THUMBNAILS_BUCKET = 'thumbnails';
 
 // Helper to generate referral codes
 function generateReferralCode(): string {
@@ -24,6 +39,81 @@ function calculateAgeCategory(dateOfBirth: Date): AgeCategory {
   if (age >= 12) return AgeCategory.TWELVE_PLUS;
   if (age >= 6) return AgeCategory.SIX_PLUS;
   return AgeCategory.ZERO_PLUS;
+}
+
+// ============================================
+// THUMBNAIL HELPERS
+// ============================================
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+const CONTENT_TYPE_GRADIENTS: Record<string, [string, string]> = {
+  SERIES: ['#C94BFF', '#6B21A8'],
+  CLIP: ['#28E0C4', '#0D9488'],
+  SHORT: ['#FF6B5A', '#DC2626'],
+  TUTORIAL: ['#3B82F6', '#1D4ED8'],
+};
+
+function generatePlaceholderSvg(title: string, contentType: string): string {
+  const [color1, color2] = CONTENT_TYPE_GRADIENTS[contentType] || ['#C94BFF', '#28E0C4'];
+  const displayTitle = escapeXml(title.length > 30 ? title.substring(0, 27) + '...' : title);
+
+  return `<svg width="640" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:${color1};stop-opacity:1" />
+      <stop offset="100%" style="stop-color:${color2};stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#bg)" />
+  <text x="320" y="190" text-anchor="middle" dominant-baseline="middle"
+        font-family="Inter,Arial,sans-serif" font-size="28" font-weight="600"
+        fill="rgba(255,255,255,0.9)">${displayTitle}</text>
+  <text x="320" y="230" text-anchor="middle" font-family="Inter,Arial,sans-serif"
+        font-size="14" fill="rgba(255,255,255,0.5)">${escapeXml(contentType)}</text>
+</svg>`;
+}
+
+async function ensureBucketExists(bucket: string): Promise<void> {
+  try {
+    await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+  } catch {
+    try {
+      await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
+      console.log(`  📦 Created bucket: ${bucket}`);
+    } catch (createErr: any) {
+      // Bucket may already exist (race condition)
+      if (createErr?.name !== 'BucketAlreadyOwnedByYou' && createErr?.name !== 'BucketAlreadyExists') {
+        console.warn(`  ⚠️ Could not create bucket "${bucket}":`, createErr?.message || createErr);
+      }
+    }
+  }
+}
+
+async function uploadPlaceholderThumbnail(contentId: string, title: string, contentType: string): Promise<string | null> {
+  try {
+    const svg = generatePlaceholderSvg(title, contentType);
+    const key = `${contentId}/placeholder.svg`;
+
+    await s3Client.send(new PutObjectCommand({
+      Bucket: THUMBNAILS_BUCKET,
+      Key: key,
+      Body: Buffer.from(svg),
+      ContentType: 'image/svg+xml',
+    }));
+
+    return `${MINIO_PUBLIC_ENDPOINT}/${THUMBNAILS_BUCKET}/${key}`;
+  } catch (err: any) {
+    console.warn(`  ⚠️ Failed to upload thumbnail for "${title}":`, err?.message || err);
+    return null;
+  }
 }
 
 // ============================================
@@ -649,6 +739,9 @@ async function seedContent() {
     },
   ];
 
+  // Ensure thumbnails bucket exists before uploading
+  await ensureBucketExists(THUMBNAILS_BUCKET);
+
   for (const content of contentItems) {
     const existing = await prisma.content.findUnique({
       where: { slug: content.slug },
@@ -659,6 +752,19 @@ async function seedContent() {
         data: content,
       });
 
+      // Generate and upload placeholder thumbnail
+      const thumbnailUrl = await uploadPlaceholderThumbnail(
+        created.id,
+        content.title,
+        content.contentType,
+      );
+      if (thumbnailUrl) {
+        await prisma.content.update({
+          where: { id: created.id },
+          data: { thumbnailUrl },
+        });
+      }
+
       // Create series entries for SERIES type content
       if (content.contentType === ContentType.SERIES) {
         await prisma.series.create({
@@ -667,6 +773,19 @@ async function seedContent() {
             seasonNumber: 1,
             episodeNumber: 1,
           },
+        });
+      }
+    } else if (!existing.thumbnailUrl) {
+      // Existing content without thumbnail — generate one
+      const thumbnailUrl = await uploadPlaceholderThumbnail(
+        existing.id,
+        content.title,
+        content.contentType,
+      );
+      if (thumbnailUrl) {
+        await prisma.content.update({
+          where: { id: existing.id },
+          data: { thumbnailUrl },
         });
       }
     }

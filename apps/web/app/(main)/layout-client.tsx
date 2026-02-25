@@ -1,7 +1,7 @@
 'use client';
 
 import { AppHeader } from '@/components/layout/app-header';
-import { AppSidebar, SIDEBAR_WIDTH } from '@/components/layout/app-sidebar';
+import { AppSidebar } from '@/components/layout/app-sidebar';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { PageTransition } from '@/components/layout/page-transition';
 import { MobileSearchOverlay } from '@/components/search/mobile-search-overlay';
@@ -25,8 +25,7 @@ export default function MainLayoutClient({
 
       {/* Main content area */}
       <div
-        className="min-h-screen transition-all duration-300"
-        style={{ marginLeft: isMobile ? 0 : SIDEBAR_WIDTH }}
+        className={`min-h-screen transition-all duration-300 ${isMobile ? 'ml-0' : 'ml-[230px]'}`}
       >
         {/* Header */}
         <AppHeader />
