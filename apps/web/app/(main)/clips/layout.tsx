@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Клипы — MoviePlatform',
+  title: 'Клипы',
   description: 'Смотрите лучшие клипы из фильмов и сериалов на MoviePlatform. Яркие моменты, закулисье и эксклюзивные фрагменты.',
   openGraph: {
-    title: 'Клипы — MoviePlatform',
+    title: 'Клипы',
     description: 'Смотрите лучшие клипы из фильмов и сериалов на MoviePlatform.',
   },
 };

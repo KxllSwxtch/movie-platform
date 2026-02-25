@@ -182,4 +182,39 @@ export function useTutorialDetail(slug: string) {
   });
 }
 
-export type { ContentListItem, CategoryDetail, TutorialDetail };
+interface ContentDetail {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  contentType: string;
+  ageCategory: string;
+  duration: number;
+  viewCount: number;
+  category?: string | { id: string; name: string; slug: string };
+  creator?: string;
+  instructor?: string;
+  likeCount?: number;
+  commentCount?: number;
+  shareCount?: number;
+  isFree?: boolean;
+  publishedAt?: string;
+}
+
+/**
+ * Hook for fetching a single content item by slug (any content type)
+ */
+export function useContentDetail(slug: string) {
+  return useQuery({
+    queryKey: [...queryKeys.content.details(), slug],
+    queryFn: async () => {
+      const response = await api.get<ContentDetail>(endpoints.content.detail(slug));
+      return response.data;
+    },
+    enabled: !!slug,
+    staleTime: 60_000,
+  });
+}
+
+export type { ContentListItem, ContentDetail, CategoryDetail, TutorialDetail };

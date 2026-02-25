@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Шортсы — MoviePlatform',
+  title: 'Шортсы',
   description: 'Короткие видео на MoviePlatform — за кадром, интересные факты и лучшие моменты.',
   openGraph: {
-    title: 'Шортсы — MoviePlatform',
+    title: 'Шортсы',
     description: 'Короткие видео на MoviePlatform.',
   },
 };

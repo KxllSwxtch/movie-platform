@@ -9,7 +9,6 @@ const PROTECTED_ROUTES = [
   '/checkout',
   '/store/checkout',
   '/store/orders',
-  '/notifications',
   '/bonuses',
 ];
 
@@ -77,7 +76,6 @@ export const config = {
     '/checkout',
     '/store/checkout',
     '/store/orders/:path*',
-    '/notifications/:path*',
     '/bonuses/:path*',
     '/login',
     '/register',

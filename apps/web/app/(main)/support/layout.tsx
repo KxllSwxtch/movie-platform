@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Поддержка — MoviePlatform',
+  title: 'Поддержка',
   description: 'Свяжитесь с нашей командой поддержки или найдите ответ в разделе часто задаваемых вопросов.',
 };
 

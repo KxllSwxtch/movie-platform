@@ -29,7 +29,7 @@ interface ClipCardProps {
 export function ClipCard({ content, className }: ClipCardProps) {
   return (
     <Link
-      href={`/watch/${content.id}`}
+      href={`/clips/${content.slug}`}
       className={cn(
         'group block shrink-0 content-card w-full',
         className

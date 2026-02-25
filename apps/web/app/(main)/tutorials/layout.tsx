@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Обучение — MoviePlatform',
+  title: 'Обучение',
   description: 'Видеокурсы по кинопроизводству: монтаж, цветокоррекция, сценарий, съёмка, звук и анимация от профессионалов индустрии.',
   openGraph: {
-    title: 'Обучение — MoviePlatform',
+    title: 'Обучение',
     description: 'Видеокурсы по кинопроизводству от профессионалов индустрии.',
   },
 };
