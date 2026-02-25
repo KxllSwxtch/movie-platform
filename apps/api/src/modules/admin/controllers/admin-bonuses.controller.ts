@@ -65,7 +65,7 @@ export class AdminBonusesController {
   async adjustUserBalance(
     @Param('userId') userId: string,
     @Body() dto: AdjustBalanceDto,
-    @CurrentUser('sub') adminId: string,
+    @CurrentUser('id') adminId: string,
   ) {
     return this.adminBonusesService.adjustUserBalance(userId, dto, adminId);
   }
@@ -84,7 +84,7 @@ export class AdminBonusesController {
   @ApiResponse({ status: 201, type: BonusRateResponseDto })
   async createRate(
     @Body() dto: CreateBonusRateDto,
-    @CurrentUser('sub') adminId: string,
+    @CurrentUser('id') adminId: string,
   ): Promise<BonusRateResponseDto> {
     return this.adminBonusesService.createBonusRate(dto, adminId);
   }
@@ -95,7 +95,7 @@ export class AdminBonusesController {
   async updateRate(
     @Param('id') id: string,
     @Body() dto: UpdateBonusRateDto,
-    @CurrentUser('sub') adminId: string,
+    @CurrentUser('id') adminId: string,
   ): Promise<BonusRateResponseDto> {
     return this.adminBonusesService.updateBonusRate(id, dto, adminId);
   }
@@ -105,7 +105,7 @@ export class AdminBonusesController {
   @ApiResponse({ status: 200, description: 'Rate deactivated' })
   async deactivateRate(
     @Param('id') id: string,
-    @CurrentUser('sub') adminId: string,
+    @CurrentUser('id') adminId: string,
   ): Promise<void> {
     return this.adminBonusesService.deactivateRate(id, adminId);
   }
@@ -136,7 +136,7 @@ export class AdminBonusesController {
   @ApiResponse({ status: 201, type: BonusCampaignDto })
   async createCampaign(
     @Body() dto: CreateBonusCampaignDto,
-    @CurrentUser('sub') adminId: string,
+    @CurrentUser('id') adminId: string,
   ): Promise<BonusCampaignDto> {
     return this.adminBonusesService.createCampaign(dto, adminId);
   }
@@ -147,7 +147,7 @@ export class AdminBonusesController {
   async updateCampaign(
     @Param('id') id: string,
     @Body() dto: UpdateBonusCampaignDto,
-    @CurrentUser('sub') adminId: string,
+    @CurrentUser('id') adminId: string,
   ): Promise<BonusCampaignDto> {
     return this.adminBonusesService.updateCampaign(id, dto, adminId);
   }
@@ -157,7 +157,7 @@ export class AdminBonusesController {
   @ApiResponse({ status: 200, type: CampaignExecutionResultDto })
   async executeCampaign(
     @Param('id') id: string,
-    @CurrentUser('sub') adminId: string,
+    @CurrentUser('id') adminId: string,
   ): Promise<CampaignExecutionResultDto> {
     return this.adminBonusesService.executeCampaign(id, adminId);
   }
@@ -167,7 +167,7 @@ export class AdminBonusesController {
   @ApiResponse({ status: 200, description: 'Campaign cancelled' })
   async cancelCampaign(
     @Param('id') id: string,
-    @CurrentUser('sub') adminId: string,
+    @CurrentUser('id') adminId: string,
   ): Promise<void> {
     return this.adminBonusesService.cancelCampaign(id, adminId);
   }

@@ -31,14 +31,14 @@ export class BonusesController {
   @Get('balance')
   @ApiOperation({ summary: 'Get current bonus balance and statistics' })
   @ApiResponse({ status: 200, type: BonusBalanceDto })
-  async getBalance(@CurrentUser('sub') userId: string): Promise<BonusBalanceDto> {
+  async getBalance(@CurrentUser('id') userId: string): Promise<BonusBalanceDto> {
     return this.bonusesService.getBalance(userId);
   }
 
   @Get('statistics')
   @ApiOperation({ summary: 'Get detailed bonus usage statistics' })
   @ApiResponse({ status: 200, type: BonusStatisticsDto })
-  async getStatistics(@CurrentUser('sub') userId: string): Promise<BonusStatisticsDto> {
+  async getStatistics(@CurrentUser('id') userId: string): Promise<BonusStatisticsDto> {
     return this.bonusesService.getStatistics(userId);
   }
 
@@ -57,7 +57,7 @@ export class BonusesController {
     },
   })
   async getTransactions(
-    @CurrentUser('sub') userId: string,
+    @CurrentUser('id') userId: string,
     @Query() query: BonusQueryDto,
   ): Promise<{ items: BonusTransactionDto[]; total: number; page: number; limit: number }> {
     return this.bonusesService.getTransactionHistory(userId, query);
@@ -67,7 +67,7 @@ export class BonusesController {
   @ApiOperation({ summary: 'Get bonuses expiring within specified days' })
   @ApiResponse({ status: 200, type: ExpiringBonusSummaryDto })
   async getExpiringBonuses(
-    @CurrentUser('sub') userId: string,
+    @CurrentUser('id') userId: string,
     @Query() query: ExpiringBonusQueryDto,
   ): Promise<ExpiringBonusSummaryDto> {
     return this.bonusesService.getExpiringBonuses(userId, query.withinDays);
@@ -77,7 +77,7 @@ export class BonusesController {
   @ApiOperation({ summary: 'Calculate maximum bonus applicable for checkout' })
   @ApiResponse({ status: 200, type: MaxApplicableBonusDto })
   async getMaxApplicable(
-    @CurrentUser('sub') userId: string,
+    @CurrentUser('id') userId: string,
     @Query() query: MaxApplicableQueryDto,
   ): Promise<MaxApplicableBonusDto> {
     return this.bonusesService.calculateMaxApplicable(userId, query.orderTotal);
@@ -87,7 +87,7 @@ export class BonusesController {
   @ApiOperation({ summary: 'Preview bonus withdrawal with tax calculation' })
   @ApiResponse({ status: 200, type: WithdrawalPreviewDto })
   async previewWithdrawal(
-    @CurrentUser('sub') userId: string,
+    @CurrentUser('id') userId: string,
     @Query('amount') amount: number,
     @Query('taxStatus') taxStatus: TaxStatus,
   ): Promise<WithdrawalPreviewDto> {
@@ -99,7 +99,7 @@ export class BonusesController {
   @ApiResponse({ status: 201, type: WithdrawalResultDto })
   @ApiResponse({ status: 400, description: 'Insufficient balance or below minimum amount' })
   async withdraw(
-    @CurrentUser('sub') userId: string,
+    @CurrentUser('id') userId: string,
     @Body() dto: WithdrawBonusDto,
   ): Promise<WithdrawalResultDto> {
     return this.bonusesService.withdrawBonusesToCurrency(userId, dto);
