@@ -24,7 +24,7 @@ export function useSubscriptionPlans() {
   return useQuery({
     queryKey: queryKeys.subscriptions.plans(),
     queryFn: async () => {
-      const response = await api.get<SubscriptionPlan[]>(endpoints.subscriptions.plans);
+      const response = await api.get<SubscriptionPlan[]>(endpoints.subscriptions.plans, { skipAuth: true });
       // API may return features as a JSON string — normalize to array
       return (response.data ?? []).map((plan) => ({
         ...plan,
@@ -47,7 +47,7 @@ export function useSubscriptionPlan(planId: string | undefined) {
     queryKey: queryKeys.subscriptions.plan(planId || ''),
     queryFn: async () => {
       if (!planId) throw new Error('Plan ID required');
-      const response = await api.get<SubscriptionPlan>(endpoints.subscriptions.plan(planId));
+      const response = await api.get<SubscriptionPlan>(endpoints.subscriptions.plan(planId), { skipAuth: true });
       const plan = response.data;
       // API may return features as a JSON string — normalize to array
       return {

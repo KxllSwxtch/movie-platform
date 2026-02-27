@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CacheControl, CACHE_PRESETS } from '../../common/interceptors/cache-control.interceptor';
 import { SubscriptionPlansService } from './subscription-plans.service';
@@ -46,6 +47,7 @@ export class SubscriptionsController {
   /**
    * Get all available subscription plans.
    */
+  @Public()
   @Get('plans')
   @CacheControl(CACHE_PRESETS.CDN_MEDIUM)
   @ApiOperation({ summary: 'Get available subscription plans (public)' })
@@ -57,6 +59,7 @@ export class SubscriptionsController {
   /**
    * Get a single plan by ID.
    */
+  @Public()
   @Get('plans/:planId')
   @ApiOperation({ summary: 'Get subscription plan by ID (public)' })
   @ApiParam({ name: 'planId', description: 'Plan ID' })
