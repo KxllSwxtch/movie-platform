@@ -15,6 +15,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { SeriesCard, VideoCardSkeletonGrid, type AgeCategory } from '@/components/content';
 import { useContentList } from '@/hooks/use-content';
 import { normalizeAgeCategory } from '@/lib/age-category';
@@ -81,6 +87,39 @@ export default function SeriesPage() {
   };
 
   const hasActiveFilters = selectedAges.length > 0;
+
+  const filterContent = (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-sm font-medium text-mp-text-primary mb-3">Возрастной рейтинг</h3>
+        <div className="space-y-2">
+          {AGE_FILTERS.map((age) => (
+            <label
+              key={age.value}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Checkbox
+                checked={selectedAges.includes(age.value)}
+                onCheckedChange={() => handleAgeToggle(age.value)}
+              />
+              <span className="text-sm text-mp-text-secondary">{age.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleClearFilters}
+          className="w-full"
+        >
+          Сбросить фильтры
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <Container size="full" className="py-6">
@@ -151,38 +190,23 @@ export default function SeriesPage() {
         </div>
       </div>
 
-      <div className="flex gap-6">
-        {/* Filters sidebar */}
-        {showFilters && (
-          <aside className="w-64 shrink-0 space-y-6">
-            <div>
-              <h3 className="text-sm font-medium text-mp-text-primary mb-3">Возрастной рейтинг</h3>
-              <div className="space-y-2">
-                {AGE_FILTERS.map((age) => (
-                  <label
-                    key={age.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={selectedAges.includes(age.value)}
-                      onCheckedChange={() => handleAgeToggle(age.value)}
-                    />
-                    <span className="text-sm text-mp-text-secondary">{age.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+      {/* Mobile: Sheet overlay */}
+      <Sheet open={showFilters} onOpenChange={setShowFilters}>
+        <SheetContent side="left" className="w-80 md:hidden">
+          <SheetHeader>
+            <SheetTitle>Фильтры</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            {filterContent}
+          </div>
+        </SheetContent>
+      </Sheet>
 
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearFilters}
-                className="w-full"
-              >
-                Сбросить фильтры
-              </Button>
-            )}
+      <div className="flex gap-6">
+        {/* Desktop: inline aside */}
+        {showFilters && (
+          <aside className="hidden md:block w-64 shrink-0">
+            {filterContent}
           </aside>
         )}
 

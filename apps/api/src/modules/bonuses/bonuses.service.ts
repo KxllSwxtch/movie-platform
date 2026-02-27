@@ -143,7 +143,7 @@ export class BonusesService {
 
     for (const stat of monthlyStats) {
       const amount = Number(stat._sum.amount) || 0;
-      transactionsThisMonth += stat._count;
+      transactionsThisMonth += (stat._count as any)?._all ?? 0;
       if (stat.type === BonusTransactionType.EARNED) {
         earnedThisMonth += amount;
       } else if (stat.type === BonusTransactionType.SPENT) {

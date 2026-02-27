@@ -77,7 +77,8 @@ model User {
   transactions       Transaction[]
   partnerAsPartner   PartnerRelationship[] @relation("PartnerRelation")
   partnerAsReferral  PartnerRelationship[] @relation("ReferralRelation")
-  commissions        PartnerCommission[]
+  commissions             PartnerCommission[] @relation("PartnerCommissions")
+  sourceUserCommissions   PartnerCommission[] @relation("SourceUserCommissions")
   withdrawals        WithdrawalRequest[]
   bonusTransactions  BonusTransaction[]
   orders             Order[]
@@ -617,7 +618,8 @@ model PartnerCommission {
   createdAt           DateTime         @default(now()) @map("created_at")
   paidAt              DateTime?        @map("paid_at")
 
-  partner           User        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partner           User        @relation("PartnerCommissions", fields: [partnerId], references: [id], onDelete: Cascade)
+  sourceUser        User        @relation("SourceUserCommissions", fields: [sourceUserId], references: [id])
   sourceTransaction Transaction @relation(fields: [sourceTransactionId], references: [id])
 
   @@index([partnerId])

@@ -63,7 +63,7 @@ export function ReferralNodeComponent({
       {/* Node content */}
       <div
         className={cn(
-          'flex items-center gap-3 p-3 rounded-lg bg-mp-surface border-l-4 hover:bg-mp-surface-elevated transition-colors',
+          'flex items-center gap-2 sm:gap-3 p-3 rounded-lg bg-mp-surface border-l-4 hover:bg-mp-surface-elevated transition-colors overflow-hidden',
           borderColor
         )}
       >
@@ -122,7 +122,7 @@ export function ReferralNodeComponent({
         </div>
 
         {/* Stats */}
-        <div className="text-right shrink-0">
+        <div className="hidden sm:block text-right shrink-0">
           <div className="text-sm font-medium">
             {formatCurrency(node.commissionsGenerated)}
           </div>

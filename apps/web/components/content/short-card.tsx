@@ -52,7 +52,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
         {/* Bottom info */}
-        <div className="absolute bottom-6 left-4 right-16 z-10">
+        <div className="absolute bottom-6 left-4 right-[4.5rem] z-10">
           <h3 className="text-white font-semibold text-lg leading-tight mb-1 line-clamp-2">
             {content.title}
           </h3>

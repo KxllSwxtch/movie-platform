@@ -30,7 +30,12 @@ interface ProductCardProps {
  */
 export function ProductCard({ product, onAddToCart, className }: ProductCardProps) {
   const isOutOfStock = product.stockQuantity === 0 || product.status === 'OUT_OF_STOCK';
-  const imageUrl = product.images[0];
+  const safeImages = Array.isArray(product.images)
+    ? product.images
+    : typeof product.images === 'string'
+      ? (() => { try { return JSON.parse(product.images); } catch { return []; } })()
+      : [];
+  const imageUrl = safeImages[0];
 
   return (
     <div

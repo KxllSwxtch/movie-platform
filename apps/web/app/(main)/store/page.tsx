@@ -16,6 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { useStoreProducts, useStoreCategories, useAddToCart } from '@/hooks/use-store';
 import { ProductStatus } from '@movie-platform/shared';
 import type { ProductQueryParams } from '@/types/store.types';
@@ -67,15 +73,22 @@ export default function StorePage() {
 
   const products = React.useMemo(() => {
     const items = data?.items ?? [];
-    return items.map((item): ProductContent => ({
-      id: item.id,
-      slug: item.slug,
-      name: item.name,
-      thumbnailUrl: item.images[0],
-      price: item.price,
-      bonusPrice: item.bonusPrice,
-      status: item.status,
-    }));
+    return items.map((item): ProductContent => {
+      const images = Array.isArray(item.images)
+        ? item.images
+        : typeof item.images === 'string'
+          ? (() => { try { return JSON.parse(item.images); } catch { return []; } })()
+          : [];
+      return {
+        id: item.id,
+        slug: item.slug,
+        name: item.name,
+        thumbnailUrl: images[0],
+        price: item.price,
+        bonusPrice: item.bonusPrice,
+        status: item.status,
+      };
+    });
   }, [data]);
 
   const total = data?.total ?? 0;
@@ -170,8 +183,32 @@ export default function StorePage() {
         </div>
       </div>
 
+      {/* Mobile: Sheet overlay */}
+      <Sheet open={showFilters} onOpenChange={setShowFilters}>
+        <SheetContent side="left" className="w-80 md:hidden">
+          <SheetHeader>
+            <SheetTitle>Фильтры</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <StoreFilters
+              categories={categories ?? []}
+              selectedCategories={selectedCategories}
+              onCategoryToggle={handleCategoryToggle}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              onMinPriceChange={(v) => { setMinPrice(v); setCurrentPage(1); }}
+              onMaxPriceChange={(v) => { setMaxPrice(v); setCurrentPage(1); }}
+              inStockOnly={inStockOnly}
+              onInStockChange={(v) => { setInStockOnly(v); setCurrentPage(1); }}
+              onClearAll={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
       <div className="flex gap-6">
-        {/* Filters sidebar */}
+        {/* Desktop: inline aside */}
         {showFilters && (
           <StoreFilters
             categories={categories ?? []}

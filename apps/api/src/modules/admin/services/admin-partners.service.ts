@@ -420,7 +420,7 @@ export class AdminPartnersService {
         where: { id },
         data: {
           status: CommissionStatus.APPROVED,
-          approvedAt: new Date(),
+          paidAt: new Date(),
         },
         include: {
           partner: {
@@ -640,7 +640,7 @@ export class AdminPartnersService {
         where: { id },
         data: {
           status: WithdrawalStatus.APPROVED,
-          approvedAt: new Date(),
+          processedAt: new Date(),
           processedById: adminId,
         },
         include: {
@@ -1027,7 +1027,7 @@ export class AdminPartnersService {
       amount: Number(commission.amount),
       status: commission.status,
       createdAt: commission.createdAt,
-      approvedAt: commission.approvedAt,
+      approvedAt: commission.paidAt,
       paidAt: commission.paidAt,
       reviewedBy: null, // Would need to fetch separately if needed
     };
@@ -1065,7 +1065,7 @@ export class AdminPartnersService {
         recipientName: paymentDetails?.recipientName || '',
       },
       createdAt: withdrawal.createdAt,
-      approvedAt: withdrawal.approvedAt,
+      approvedAt: withdrawal.processedAt,
       completedAt: withdrawal.processedAt,
       rejectionReason: withdrawal.rejectionReason,
       processedBy: null, // Would need to fetch separately if needed

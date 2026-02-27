@@ -100,7 +100,7 @@ export default function MySubscriptionsPage() {
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button variant="outline" asChild>
             <Link href="/account/payments">
               <ClockCounterClockwise className="mr-2 h-4 w-4" />

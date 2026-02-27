@@ -1,6 +1,6 @@
 # CLAUDE.md - MoviePlatform Development Guidelines
 
-You're a Senior Full-Stack Developer with 40+ years of experience, you know everything about how to make a high-quality, production ready, safe and secured code that will be working 100%. You're also an expert in UI/UX design with 20+ years of experience, you always double check for the latest design ideas, design rules, what colors and ui components will fit the best to create a stunning, minimalistic and professional UI. You're also a well-organized developer that is always creating structured plans to implement a feature and always running E2E tests, Unit Tests, performance tests, usability and compatibility and accessibility tests to make sure the project fits everyone perfectly.
+You're a Senior Full-Stack Developer with 40+ years of experience, you know everything about how to make a high-quality, production ready, safe and secured code that will be working 100%. You're also an expert in UI/UX design with 20+ years of experience, you always double check for the latest design ideas, design rules, what colors and ui components will fit the best to create a stunning, minimalistic and professional UI. You're also a well-organized developer that is always creating structured plans to implement a feature and always running E2E tests, Unit Tests, performance tests, usability and compatibility and accessibility tests to make sure the project fits everyone perfectly. Remember, before you start coding a new feature or debugging anything, you make a deep-research to find out all nuances, to find the best solution possible, and you always think about the performance optimization, safe-code, and that the code you're writing is high-quality and there won't be any need to debug it.
 
 ---
 
@@ -21,37 +21,37 @@ MoviePlatform is a next-generation video streaming platform combining Netflix/Sp
 
 ### Frontend (apps/web, apps/admin)
 
-| Technology | Purpose |
-|------------|---------|
-| **Next.js 15** | React framework with App Router |
-| **shadcn/ui + Radix UI** | Accessible UI components |
-| **Tailwind CSS 4** | Utility-first styling |
-| **TanStack Query** | Server state management |
-| **Zustand** | Client state management |
-| **HLS.js** | Adaptive video streaming |
-| **React Hook Form + Zod** | Form handling and validation |
-| **Vitest** | Unit testing |
-| **Playwright** | E2E testing |
+| Technology                | Purpose                         |
+| ------------------------- | ------------------------------- |
+| **Next.js 15**            | React framework with App Router |
+| **shadcn/ui + Radix UI**  | Accessible UI components        |
+| **Tailwind CSS 4**        | Utility-first styling           |
+| **TanStack Query**        | Server state management         |
+| **Zustand**               | Client state management         |
+| **HLS.js**                | Adaptive video streaming        |
+| **React Hook Form + Zod** | Form handling and validation    |
+| **Vitest**                | Unit testing                    |
+| **Playwright**            | E2E testing                     |
 
 ### Backend (apps/api)
 
-| Technology | Purpose |
-|------------|---------|
-| **NestJS + Fastify** | API framework |
-| **PostgreSQL 16** | Primary database |
-| **Prisma ORM** | Database access layer |
-| **Redis 7** | Cache, sessions, queues |
-| **BullMQ** | Background job processing |
+| Technology            | Purpose                    |
+| --------------------- | -------------------------- |
+| **NestJS + Fastify**  | API framework              |
+| **PostgreSQL 16**     | Primary database           |
+| **Prisma ORM**        | Database access layer      |
+| **Redis 7**           | Cache, sessions, queues    |
+| **BullMQ**            | Background job processing  |
 | **MinIO / Bunny CDN** | Video storage and delivery |
-| **Jest + Supertest** | API testing |
+| **Jest + Supertest**  | API testing                |
 
 ### Infrastructure
 
-| Technology | Purpose |
-|------------|---------|
-| **Turborepo** | Monorepo orchestration |
-| **Docker Compose** | Local development |
-| **GitHub Actions** | CI/CD pipelines |
+| Technology         | Purpose                |
+| ------------------ | ---------------------- |
+| **Turborepo**      | Monorepo orchestration |
+| **Docker Compose** | Local development      |
+| **GitHub Actions** | CI/CD pipelines        |
 
 ---
 
@@ -62,44 +62,44 @@ MoviePlatform is a next-generation video streaming platform combining Netflix/Sp
 ```css
 :root {
   /* Backgrounds */
-  --mp-bg-primary: #05060A;
-  --mp-bg-secondary: #080B12;
-  --mp-surface: #10131C;
+  --mp-bg-primary: #05060a;
+  --mp-bg-secondary: #080b12;
+  --mp-surface: #10131c;
   --mp-surface-elevated: #151824;
 
   /* Accents */
-  --mp-accent-primary: #C94BFF;    /* Neon violet-magenta */
-  --mp-accent-secondary: #28E0C4;  /* Turquoise-cyan */
-  --mp-accent-tertiary: #FF6B5A;   /* Warm coral */
+  --mp-accent-primary: #c94bff; /* Neon violet-magenta */
+  --mp-accent-secondary: #28e0c4; /* Turquoise-cyan */
+  --mp-accent-tertiary: #ff6b5a; /* Warm coral */
 
   /* Text */
-  --mp-text-primary: #F5F7FF;
-  --mp-text-secondary: #9CA2BC;
-  --mp-text-disabled: #5A6072;
+  --mp-text-primary: #f5f7ff;
+  --mp-text-secondary: #9ca2bc;
+  --mp-text-disabled: #5a6072;
 
   /* Borders */
-  --mp-border: #272B38;
+  --mp-border: #272b38;
 
   /* Gradients */
-  --mp-gradient-cta: linear-gradient(135deg, #C94BFF 0%, #28E0C4 100%);
-  --mp-gradient-hero: linear-gradient(180deg, transparent 0%, #05060A 100%);
+  --mp-gradient-cta: linear-gradient(135deg, #c94bff 0%, #28e0c4 100%);
+  --mp-gradient-hero: linear-gradient(180deg, transparent 0%, #05060a 100%);
 
   /* Notifications */
-  --mp-success-bg: #12352E;
-  --mp-success-text: #7CF2CF;
-  --mp-error-bg: #35141A;
-  --mp-error-text: #FF9AA8;
+  --mp-success-bg: #12352e;
+  --mp-success-text: #7cf2cf;
+  --mp-error-bg: #35141a;
+  --mp-error-text: #ff9aa8;
 }
 ```
 
 ### Age Category Colors
 
-| Category | Color | Hex |
-|----------|-------|-----|
-| 0+ / 6+ | Turquoise | `#28E0C4` |
-| 12+ | Blue | `#3B82F6` |
-| 16+ | Orange | `#F97316` |
-| 18+ | Red | `#EF4444` |
+| Category | Color     | Hex       |
+| -------- | --------- | --------- |
+| 0+ / 6+  | Turquoise | `#28E0C4` |
+| 12+      | Blue      | `#3B82F6` |
+| 16+      | Orange    | `#F97316` |
+| 18+      | Red       | `#EF4444` |
 
 ### Typography
 
@@ -175,26 +175,26 @@ MoviePlatform/
 ```typescript
 // DO: Use strict typing
 interface User {
-  id: string;
-  email: string;
-  role: UserRole;
+  id: string
+  email: string
+  role: UserRole
 }
 
 // DON'T: Use any
-const user: any = getUser(); // Bad
+const user: any = getUser() // Bad
 
 // DO: Use unknown with type guards
 function processData(data: unknown): void {
   if (isUser(data)) {
-    console.log(data.email);
+    console.log(data.email)
   }
 }
 
 // DO: Use enums from shared package
-import { UserRole, ContentType } from '@movie-platform/shared';
+import { UserRole, ContentType } from "@movie-platform/shared"
 
 // DON'T: Duplicate enums across packages
-enum LocalUserRole { } // Bad - creates drift
+enum LocalUserRole {} // Bad - creates drift
 ```
 
 ### React/Next.js
@@ -202,17 +202,17 @@ enum LocalUserRole { } // Bad - creates drift
 ```tsx
 // Server Component (default)
 export default async function SeriesPage({ params }: Props) {
-  const series = await getSeries(params.id);
-  return <SeriesView series={series} />;
+  const series = await getSeries(params.id)
+  return <SeriesView series={series} />
 }
 
 // Client Component (explicit)
-'use client';
+;("use client")
 
-import { useState } from 'react';
+import { useState } from "react"
 
 export function VideoPlayer({ src }: Props) {
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(false)
   // Interactive component logic
 }
 ```
@@ -307,58 +307,58 @@ async create(@Body() dto: unknown) {
 
 ```typescript
 // Minimum 80% coverage for business logic
-describe('CommissionCalculator', () => {
-  it('should calculate level 1 commission correctly', () => {
-    const result = calculateCommission(10000, 1);
-    expect(result).toBe(1000); // 10%
-  });
+describe("CommissionCalculator", () => {
+  it("should calculate level 1 commission correctly", () => {
+    const result = calculateCommission(10000, 1)
+    expect(result).toBe(1000) // 10%
+  })
 
-  it('should cap commission at level 5', () => {
-    const result = calculateCommission(10000, 6);
-    expect(result).toBe(0);
-  });
-});
+  it("should cap commission at level 5", () => {
+    const result = calculateCommission(10000, 6)
+    expect(result).toBe(0)
+  })
+})
 ```
 
 ### Integration Tests
 
 ```typescript
 // Test API with database
-describe('POST /api/v1/auth/login', () => {
-  it('should return tokens for valid credentials', async () => {
+describe("POST /api/v1/auth/login", () => {
+  it("should return tokens for valid credentials", async () => {
     const response = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: 'test@example.com', password: 'password' });
+      .post("/api/v1/auth/login")
+      .send({ email: "test@example.com", password: "password" })
 
-    expect(response.status).toBe(200);
-    expect(response.body.data).toHaveProperty('accessToken');
-  });
-});
+    expect(response.status).toBe(200)
+    expect(response.body.data).toHaveProperty("accessToken")
+  })
+})
 ```
 
 ### E2E Tests (Playwright)
 
 ```typescript
 // Critical user journeys
-test('user can register and watch free content', async ({ page }) => {
-  await page.goto('/register');
-  await page.fill('[name="email"]', 'test@example.com');
+test("user can register and watch free content", async ({ page }) => {
+  await page.goto("/register")
+  await page.fill('[name="email"]', "test@example.com")
   // ... complete registration
 
-  await page.goto('/series/free-series');
-  await expect(page.locator('video')).toBeVisible();
-});
+  await page.goto("/series/free-series")
+  await expect(page.locator("video")).toBeVisible()
+})
 ```
 
 ### Performance Benchmarks
 
-| Metric | Target |
-|--------|--------|
-| Page Load | < 3s |
-| Video Start | < 2s |
-| API Response | < 200ms |
-| Lighthouse Score | > 90 |
-| Core Web Vitals | Pass |
+| Metric           | Target  |
+| ---------------- | ------- |
+| Page Load        | < 3s    |
+| Video Start      | < 2s    |
+| API Response     | < 200ms |
+| Lighthouse Score | > 90    |
+| Core Web Vitals  | Pass    |
 
 ---
 
@@ -481,20 +481,24 @@ chore(deps): update dependencies
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests pass
 - [ ] E2E tests pass
 - [ ] Manual testing completed
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Documentation updated
@@ -506,21 +510,27 @@ Brief description of changes
 ## CLAUDE Skills
 
 ### /video-upload
+
 Video content upload and transcoding pipeline. Handles file validation, chunked uploads, multi-quality transcoding, HLS manifest generation, and thumbnail extraction.
 
 ### /age-filter
+
 Age-based content filtering implementation. Extracts user age from session, calculates accessible categories, applies database filters, and logs access attempts for compliance.
 
 ### /partner-commission
+
 Partner commission calculation engine. Traverses 5-level referral tree, calculates commissions using configured rates, creates pending records, and updates partner statistics.
 
 ### /payment-flow
+
 Russian payment integration handler. Supports YooKassa, SBP, and bank transfers. Handles payment intents, webhooks, signature verification, and access grants.
 
 ### /streaming-secure
+
 Secure video streaming implementation. Verifies access rights, generates signed URLs, configures HLS.js with adaptive bitrate, and tracks watch progress.
 
 ### /verification-flow
+
 User identity/age verification pipeline. Supports payment verification, document upload, and third-party integration. Manages admin review queue and status updates.
 
 ---
@@ -530,6 +540,7 @@ User identity/age verification pipeline. Supports payment verification, document
 ### Common Issues
 
 **Database connection fails:**
+
 ```bash
 # Check PostgreSQL is running
 docker compose ps postgres
@@ -539,6 +550,7 @@ npm run db:push -- --force-reset
 ```
 
 **Video playback issues:**
+
 ```bash
 # Check MinIO is accessible
 curl http://localhost:9000/minio/health/live
@@ -548,6 +560,7 @@ docker compose exec minio mc ls local/videos
 ```
 
 **Build failures:**
+
 ```bash
 # Clean and rebuild
 npm run clean
@@ -556,6 +569,7 @@ npm run build
 ```
 
 **Test failures:**
+
 ```bash
 # Reset test database
 DATABASE_URL=... npm run db:push -- --force-reset

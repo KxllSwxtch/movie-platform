@@ -474,7 +474,7 @@ function SessionsTab() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Globe className="h-5 w-5 text-mp-accent-primary" />
@@ -521,7 +521,7 @@ function SessionsTab() {
                 <div
                   key={session.id}
                   className={cn(
-                    'flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-mp-surface/50',
+                    'flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-4 transition-colors hover:bg-mp-surface/50',
                     isCurrentSession
                       ? 'border-green-500/30 bg-green-500/5'
                       : 'border-mp-border bg-mp-surface/30'
