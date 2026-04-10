@@ -301,7 +301,7 @@ test.describe('Referral System — Withdrawal Email Gate', () => {
           recipientName: 'Test User',
           bankName: 'Test Bank',
           bik: '044525225',
-          accountNumber: '40817810099910004312',
+          bankAccount: '40817810099910004312',
         },
       },
       userToken,
