@@ -75,6 +75,7 @@ export interface RegisterRequest {
   username?: string;
   referralCode?: string;
   acceptTerms: boolean;
+  turnstileToken?: string;
 }
 
 /**

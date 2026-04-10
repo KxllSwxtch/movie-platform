@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -27,12 +28,15 @@ import { VerificationRequired } from '../../common/decorators/verification-requi
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PartnersService } from './partners.service';
 import {
+  ApproveCommissionsDto,
   AvailableBalanceDto,
+  CommissionActionResultDto,
   CommissionDto,
   CommissionQueryDto,
   CreateWithdrawalDto,
   PartnerDashboardDto,
   PartnerLevelDto,
+  RejectCommissionsDto,
   ReferralTreeDto,
   TaxCalculationDto,
   WithdrawalDto,
@@ -229,5 +233,40 @@ export class PartnersController {
   @ApiOkResponse({ type: [PartnerLevelDto] })
   getPartnerLevels(): PartnerLevelDto[] {
     return this.partnersService.getPartnerLevels();
+  }
+
+  // ============ Admin Endpoints ============
+
+  /**
+   * Approve pending commissions (admin only).
+   */
+  @Patch('admin/commissions/approve')
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Approve pending commissions (admin only)' })
+  @ApiOkResponse({ type: CommissionActionResultDto })
+  async approveCommissions(
+    @Body() dto: ApproveCommissionsDto,
+  ): Promise<CommissionActionResultDto> {
+    const count = await this.partnersService.approveCommissions(dto.commissionIds);
+    return { count };
+  }
+
+  /**
+   * Reject pending commissions (admin only).
+   */
+  @Patch('admin/commissions/reject')
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reject pending commissions (admin only)' })
+  @ApiOkResponse({ type: CommissionActionResultDto })
+  async rejectCommissions(
+    @Body() dto: RejectCommissionsDto,
+  ): Promise<CommissionActionResultDto> {
+    const count = await this.partnersService.rejectCommissions(
+      dto.commissionIds,
+      dto.reason || 'Отклонено администратором',
+    );
+    return { count };
   }
 }
