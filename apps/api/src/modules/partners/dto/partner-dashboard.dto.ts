@@ -30,6 +30,12 @@ export class PartnerDashboardDto {
   @ApiProperty({ example: 'Стартер', description: 'Current level name' })
   levelName!: string;
 
+  @ApiProperty({ example: 'ABC12345', description: 'Unique referral code' })
+  referralCode!: string;
+
+  @ApiProperty({ example: 'https://movieplatform.ru/register?ref=ABC12345', description: 'Full referral URL' })
+  referralUrl!: string;
+
   @ApiProperty({ example: 10, description: 'Total number of direct referrals' })
   totalReferrals!: number;
 

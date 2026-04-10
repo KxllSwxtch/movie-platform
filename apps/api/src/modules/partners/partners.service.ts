@@ -1,9 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommissionStatus, Prisma, TaxStatus, TransactionStatus, WithdrawalStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 import { PrismaService } from '../../config/prisma.service';
 import { COMMISSION_RATES_BY_DEPTH, PARTNER_LEVELS, TAX_RATES } from '@movie-platform/shared';
+
+const MIN_COMMISSION_AMOUNT = 0.01; // Minimum 1 kopeck
 import {
   AvailableBalanceDto,
   CommissionDto,
@@ -20,7 +23,12 @@ import {
 
 @Injectable()
 export class PartnersService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(PartnersService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * Get partner dashboard statistics.
@@ -29,7 +37,7 @@ export class PartnersService {
     // Get current partner level
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true },
+      select: { id: true, referralCode: true },
     });
 
     if (!user) {
@@ -97,9 +105,13 @@ export class PartnersService {
       teamVolume,
     );
 
+    const frontendBaseUrl = this.configService.get<string>('FRONTEND_BASE_URL', 'https://movieplatform.ru');
+
     return {
       currentLevel,
       levelName: levelInfo.name,
+      referralCode: user.referralCode,
+      referralUrl: `${frontendBaseUrl}/register?ref=${user.referralCode}`,
       totalReferrals: directReferrals,
       activeReferrals,
       teamSize,
@@ -250,40 +262,55 @@ export class PartnersService {
    * Get available balance for withdrawal.
    */
   async getAvailableBalance(userId: string): Promise<AvailableBalanceDto> {
-    const [approvedCommissions, pendingWithdrawals, completedWithdrawals] = await Promise.all([
-      this.prisma.partnerCommission.aggregate({
-        where: { partnerId: userId, status: CommissionStatus.APPROVED },
-        _sum: { amount: true },
-      }),
-      this.prisma.withdrawalRequest.aggregate({
-        where: {
-          userId,
-          status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.PROCESSING] },
-        },
-        _sum: { amount: true },
-      }),
-      this.prisma.withdrawalRequest.aggregate({
-        where: { userId, status: WithdrawalStatus.COMPLETED },
-        _sum: { amount: true },
-      }),
-    ]);
+    return this.prisma.$transaction(async (tx) => {
+      const [approvedCommissions, pendingWithdrawals, completedWithdrawals] = await Promise.all([
+        tx.partnerCommission.aggregate({
+          where: { partnerId: userId, status: CommissionStatus.APPROVED },
+          _sum: { amount: true },
+        }),
+        tx.withdrawalRequest.aggregate({
+          where: {
+            userId,
+            status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.PROCESSING] },
+          },
+          _sum: { amount: true },
+        }),
+        tx.withdrawalRequest.aggregate({
+          where: { userId, status: WithdrawalStatus.COMPLETED },
+          _sum: { amount: true },
+        }),
+      ]);
 
-    const totalEarnings = Number(approvedCommissions._sum.amount) || 0;
-    const pendingAmount = Number(pendingWithdrawals._sum.amount) || 0;
-    const withdrawnAmount = Number(completedWithdrawals._sum.amount) || 0;
+      const totalEarnings = Number(approvedCommissions._sum.amount) || 0;
+      const pendingAmount = Number(pendingWithdrawals._sum.amount) || 0;
+      const withdrawnAmount = Number(completedWithdrawals._sum.amount) || 0;
 
-    return {
-      totalEarnings,
-      pendingWithdrawals: pendingAmount,
-      withdrawnAmount,
-      availableBalance: totalEarnings - pendingAmount - withdrawnAmount,
-    };
+      return {
+        totalEarnings,
+        pendingWithdrawals: pendingAmount,
+        withdrawnAmount,
+        availableBalance: totalEarnings - pendingAmount - withdrawnAmount,
+      };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   }
 
   /**
    * Create withdrawal request.
    */
   async createWithdrawal(userId: string, dto: CreateWithdrawalDto): Promise<WithdrawalDto> {
+    // Check user status
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isActive: true, emailVerified: true },
+    });
+
+    if (!user?.isActive) {
+      throw new BadRequestException('Аккаунт деактивирован');
+    }
+    if (!user?.emailVerified) {
+      throw new BadRequestException('Необходимо подтвердить email для вывода средств');
+    }
+
     // Check available balance
     const balance = await this.getAvailableBalance(userId);
 
@@ -425,6 +452,17 @@ export class PartnersService {
     purchaserUserId: string,
     amount: Decimal,
   ): Promise<void> {
+    // Email verification gate: only create commissions for verified purchasers
+    const purchaser = await this.prisma.user.findUnique({
+      where: { id: purchaserUserId },
+      select: { emailVerified: true },
+    });
+
+    if (!purchaser?.emailVerified) {
+      this.logger.log(`Skipping commissions for unverified user ${purchaserUserId}`);
+      return;
+    }
+
     // Get all partners (upline) for this user, up to 5 levels
     const partnerRelationships = await this.prisma.partnerRelationship.findMany({
       where: { referralId: purchaserUserId },
@@ -440,7 +478,7 @@ export class PartnersService {
         const rate = COMMISSION_RATES_BY_DEPTH[rel.level as keyof typeof COMMISSION_RATES_BY_DEPTH] || 0;
         const commissionAmount = amount.mul(rate);
 
-        if (commissionAmount.lte(0)) return null;
+        if (commissionAmount.lt(MIN_COMMISSION_AMOUNT)) return null;
 
         return {
           partnerId: rel.partnerId,
@@ -476,6 +514,96 @@ export class PartnersService {
         },
       });
     });
+  }
+
+  /**
+   * Clawback commissions when a transaction is refunded.
+   * PENDING commissions are auto-cancelled.
+   * APPROVED/PAID commissions are flagged for admin review.
+   */
+  async clawbackCommissions(transactionId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Auto-cancel PENDING commissions
+      const cancelResult = await tx.partnerCommission.updateMany({
+        where: { sourceTransactionId: transactionId, status: CommissionStatus.PENDING },
+        data: { status: CommissionStatus.CANCELLED },
+      });
+
+      // Flag APPROVED/PAID commissions for admin review
+      const approvedOrPaid = await tx.partnerCommission.findMany({
+        where: {
+          sourceTransactionId: transactionId,
+          status: { in: [CommissionStatus.APPROVED, CommissionStatus.PAID] },
+        },
+        select: { id: true, amount: true, partnerId: true, level: true },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: 'COMMISSION_CLAWBACK',
+          entityType: 'Transaction',
+          entityId: transactionId,
+          newValue: {
+            cancelledCount: cancelResult.count,
+            flaggedForReview: approvedOrPaid.map(c => ({
+              id: c.id,
+              amount: c.amount.toString(),
+              partnerId: c.partnerId,
+              level: c.level,
+            })),
+            reason: 'Transaction refunded',
+          },
+        },
+      });
+
+      if (approvedOrPaid.length > 0) {
+        this.logger.warn(
+          `${approvedOrPaid.length} APPROVED/PAID commissions for transaction ${transactionId} require admin review`,
+        );
+      }
+    });
+  }
+
+  /**
+   * Approve pending commissions (admin only).
+   */
+  async approveCommissions(commissionIds: string[]): Promise<number> {
+    const result = await this.prisma.partnerCommission.updateMany({
+      where: {
+        id: { in: commissionIds },
+        status: CommissionStatus.PENDING,
+      },
+      data: { status: CommissionStatus.APPROVED },
+    });
+    return result.count;
+  }
+
+  /**
+   * Reject pending commissions (admin only).
+   */
+  async rejectCommissions(commissionIds: string[], reason: string): Promise<number> {
+    const result = await this.prisma.$transaction(async (tx) => {
+      const updateResult = await tx.partnerCommission.updateMany({
+        where: {
+          id: { in: commissionIds },
+          status: CommissionStatus.PENDING,
+        },
+        data: { status: CommissionStatus.CANCELLED },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: 'COMMISSIONS_REJECTED',
+          entityType: 'PartnerCommission',
+          entityId: commissionIds.join(','),
+          newValue: { reason, count: updateResult.count },
+        },
+      });
+
+      return updateResult;
+    });
+
+    return result.count;
   }
 
   // ============ Private Helper Methods ============

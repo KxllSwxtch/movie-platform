@@ -1,10 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { Eye, EyeSlash, Envelope, Lock, User, Calendar, Gift } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
+
 
 /**
  * Registration form validation schema
@@ -42,7 +44,11 @@ const registerSchema = z
         'Пароль должен содержать заглавную букву, строчную букву и цифру'
       ),
     confirmPassword: z.string().min(1, 'Подтвердите пароль'),
-    referralCode: z.string().optional(),
+    referralCode: z
+      .string()
+      .max(12, 'Код не может превышать 12 символов')
+      .optional()
+      .or(z.literal('')),
     acceptTerms: z.literal(true, {
       errorMap: () => ({ message: 'Необходимо принять условия использования' }),
     }),
@@ -60,8 +66,18 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const referralCode = searchParams.get('ref') || '';
+
+  // Persist referral code in sessionStorage (always uppercase)
+  const refParam = (searchParams.get('ref') || '').toUpperCase().trim();
+  const referralCode = refParam || (typeof window !== 'undefined' ? sessionStorage.getItem('mp-referral-code') || '' : '');
+
+  useEffect(() => {
+    if (refParam) {
+      sessionStorage.setItem('mp-referral-code', refParam.toUpperCase());
+    }
+  }, [refParam]);
 
   const { register: registerUser, isRegistering } = useAuth();
 
@@ -84,15 +100,21 @@ export default function RegisterPage() {
   });
 
   const onSubmit = (data: RegisterFormData) => {
+    // Normalize referral code: uppercase + trim
+    const normalizedCode = data.referralCode?.toUpperCase().trim() || undefined;
+
     registerUser({
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
       dateOfBirth: data.dateOfBirth,
       password: data.password,
-      referralCode: data.referralCode || undefined,
+      referralCode: normalizedCode,
       acceptTerms: data.acceptTerms,
+      turnstileToken: turnstileToken || undefined,
     });
+    // Clear persisted referral code on submission
+    sessionStorage.removeItem('mp-referral-code');
   };
 
   return (
@@ -282,12 +304,27 @@ export default function RegisterPage() {
             </label>
             <Input
               id="referralCode"
-              placeholder="ABC123"
+              placeholder="ABC12345"
+              className="uppercase"
               error={!!errors.referralCode}
               leftIcon={<Gift className="w-4 h-4" />}
               {...register('referralCode')}
             />
+            {errors.referralCode && (
+              <p className="text-sm text-mp-error-text">
+                {errors.referralCode.message}
+              </p>
+            )}
           </div>
+
+          {/* Turnstile bot protection */}
+          {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+            <Turnstile
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+              onSuccess={setTurnstileToken}
+              options={{ theme: 'dark', size: 'flexible' }}
+            />
+          )}
 
           {/* Terms acceptance */}
           <div className="flex items-start gap-3">

@@ -29,6 +29,8 @@ export interface MockUser {
   referralCode: string;
   referredById: string | null;
   bonusBalance: Prisma.Decimal;
+  emailVerified: boolean;
+  referralCodeActive: boolean;
   isActive: boolean;
   lastLoginAt: Date | null;
   createdAt: Date;
@@ -120,6 +122,8 @@ export function createMockUser(options: CreateUserOptions = {}): MockUser {
     referralCode: options.referralCode || generateReferralCode(),
     referredById: options.referredById ?? null,
     bonusBalance: new Prisma.Decimal(options.bonusBalance ?? 0),
+    emailVerified: false,
+    referralCodeActive: true,
     isActive: options.isActive ?? true,
     lastLoginAt: null,
     createdAt: new Date(),

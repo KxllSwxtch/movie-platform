@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -15,18 +16,24 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { TaxStatus } from '@prisma/client';
+import { UserRole } from '@movie-platform/shared';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { PartnersService } from './partners.service';
 import {
+  ApproveCommissionsDto,
   AvailableBalanceDto,
+  CommissionActionResultDto,
   CommissionDto,
   CommissionQueryDto,
   CreateWithdrawalDto,
   PartnerDashboardDto,
   PartnerLevelDto,
   ReferralTreeDto,
+  RejectCommissionsDto,
   TaxCalculationDto,
   WithdrawalDto,
   WithdrawalQueryDto,
@@ -172,5 +179,42 @@ export class PartnersController {
   @ApiOkResponse({ type: [PartnerLevelDto] })
   getPartnerLevels(): PartnerLevelDto[] {
     return this.partnersService.getPartnerLevels();
+  }
+
+  // ============ Admin Endpoints ============
+
+  /**
+   * Approve pending commissions (admin only).
+   */
+  @Patch('admin/commissions/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Approve pending commissions (admin only)' })
+  @ApiOkResponse({ type: CommissionActionResultDto })
+  async approveCommissions(
+    @Body() dto: ApproveCommissionsDto,
+  ): Promise<CommissionActionResultDto> {
+    const count = await this.partnersService.approveCommissions(dto.commissionIds);
+    return { count };
+  }
+
+  /**
+   * Reject pending commissions (admin only).
+   */
+  @Patch('admin/commissions/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reject pending commissions (admin only)' })
+  @ApiOkResponse({ type: CommissionActionResultDto })
+  async rejectCommissions(
+    @Body() dto: RejectCommissionsDto,
+  ): Promise<CommissionActionResultDto> {
+    const count = await this.partnersService.rejectCommissions(
+      dto.commissionIds,
+      dto.reason || 'Отклонено администратором',
+    );
+    return { count };
   }
 }

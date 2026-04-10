@@ -72,6 +72,7 @@ export interface RegisterRequest {
   dateOfBirth: string;
   referralCode?: string;
   acceptTerms: boolean;
+  turnstileToken?: string;
 }
 
 /**

@@ -226,6 +226,9 @@ export class PaymentsService {
       },
     });
 
+    // Clawback partner commissions for this transaction
+    await this.partnersService.clawbackCommissions(dto.transactionId);
+
     // Restore bonus if used
     if (Number(transaction.bonusAmountUsed) > 0) {
       await this.bonusesService.earnBonuses({
