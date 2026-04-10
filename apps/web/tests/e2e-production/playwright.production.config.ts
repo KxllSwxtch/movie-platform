@@ -241,5 +241,15 @@ export default defineConfig({
       },
       dependencies: ['auth'],
     },
+
+    // Phase 19: Referral System Hardening — no auth needed for most tests
+    {
+      name: 'referral',
+      testDir: './phase-19-referral',
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+      dependencies: ['smoke'],
+    },
   ],
 });
