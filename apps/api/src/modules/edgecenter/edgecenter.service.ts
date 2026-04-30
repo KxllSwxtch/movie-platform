@@ -66,10 +66,19 @@ export class EdgeCenterService {
     // Get content to verify it exists and get title
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
+      include: { series: true },
     });
 
     if (!content) {
       throw new NotFoundException(`Контент с ID ${contentId} не найден`);
+    }
+
+    if (
+      (content.contentType === 'SERIES' || content.contentType === 'TUTORIAL') &&
+      content.series &&
+      !content.series.parentSeriesId
+    ) {
+      throw new BadRequestException('Видео для сериалов и обучения загружается только на уровне серии или урока');
     }
 
     // If content already has a video, delete it first

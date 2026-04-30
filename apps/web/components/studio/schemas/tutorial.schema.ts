@@ -3,7 +3,7 @@ import { fullMetadataSchema } from './base.schema';
 
 export const lessonItemSchema = z.object({
   id: z.string(),
-  title: z.string().min(1, 'Название урока обязательно').max(200),
+  title: z.string().min(1, 'Lesson title is required').max(200),
   description: z.string().max(5000).optional().default(''),
   order: z.number().int().min(1),
 });
@@ -11,12 +11,12 @@ export const lessonItemSchema = z.object({
 export const chapterGroupSchema = z.object({
   id: z.string(),
   order: z.number().int().min(1),
-  items: z.array(lessonItemSchema).min(1, 'Добавьте хотя бы один урок'),
+  items: z.array(lessonItemSchema).default([]),
 });
 
 export const tutorialFormSchema = fullMetadataSchema.extend({
   contentType: z.literal('TUTORIAL'),
-  chapters: z.array(chapterGroupSchema).min(1, 'Добавьте хотя бы одну главу'),
+  chapters: z.array(chapterGroupSchema).default([]),
 });
 
 export type LessonItem = z.infer<typeof lessonItemSchema>;

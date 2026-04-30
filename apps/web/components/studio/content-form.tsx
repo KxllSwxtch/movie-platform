@@ -310,6 +310,7 @@ export function ContentForm({
   const description = watch('description');
   const isFree = watch('isFree');
   const slug = watch('slug');
+  const selectedContentType = watch('contentType');
   const allValues = watch();
 
   // Auto-generate slug from title
@@ -628,7 +629,7 @@ export function ContentForm({
           </Card>
 
           {/* Video upload — only on edit (when contentId provided) */}
-          {contentId && (
+          {contentId && selectedContentType !== 'SERIES' && selectedContentType !== 'TUTORIAL' && (
             <Card className="border-mp-border bg-mp-surface/50">
               <CardHeader>
                 <CardTitle className="text-lg">Видео контент</CardTitle>

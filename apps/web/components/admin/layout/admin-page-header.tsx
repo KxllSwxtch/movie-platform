@@ -25,7 +25,7 @@ export function AdminPageHeader({
   breadcrumbItems,
 }: AdminPageHeaderProps) {
   return (
-    <div className={cn('mb-6', className)}>
+    <div className={cn('mb-6 rounded-lg border border-white/10 bg-mp-bg-secondary/50 p-5 shadow-lg shadow-black/10 backdrop-blur', className)}>
       {/* Breadcrumbs */}
       <AdminBreadcrumbs customItems={breadcrumbItems} className="mb-4" />
 

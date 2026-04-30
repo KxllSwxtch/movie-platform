@@ -392,14 +392,15 @@ export class ContentService {
 
   // ===================== Admin endpoints =====================
 
-  async findAllAdmin(query: { status?: string; contentType?: string; search?: string; page: number; limit: number; includeEpisodes?: boolean }) {
-    const { status, contentType, search, page, limit, includeEpisodes } = query;
+  async findAllAdmin(query: { status?: string; contentType?: string; search?: string; isFree?: boolean; page: number; limit: number; includeEpisodes?: boolean }) {
+    const { status, contentType, search, isFree, page, limit, includeEpisodes } = query;
 
     const where: Prisma.ContentWhereInput = {};
 
     if (status) where.status = status as any;
     if (contentType) where.contentType = contentType as any;
     if (search) where.title = { contains: search, mode: 'insensitive' };
+    if (isFree !== undefined) where.isFree = isFree;
 
     if (!includeEpisodes) {
       where.OR = [
@@ -433,14 +434,10 @@ export class ContentService {
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
       })),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
+      page,
+      limit,
+      total,
+      totalPages,
     };
   }
 
@@ -486,30 +483,44 @@ export class ContentService {
         ? dto.status
         : ContentStatus.DRAFT;
 
-    const content = await this.prisma.content.create({
-      data: {
-        title: dto.title,
-        slug,
-        description: dto.description,
-        contentType: dto.contentType,
-        categoryId,
-        ageCategory: dto.ageCategory,
-        thumbnailUrl: dto.thumbnailUrl,
-        previewUrl: dto.previewUrl,
-        duration: dto.duration ?? 0,
-        isFree: dto.isFree ?? false,
-        individualPrice: dto.individualPrice,
-        status: finalStatus,
-        ...(finalStatus === ContentStatus.PUBLISHED && { publishedAt: new Date() }),
-        tags: dto.tagIds?.length ? { create: dto.tagIds.map((tagId) => ({ tagId })) } : undefined,
-        genres: dto.genreIds?.length ? { create: dto.genreIds.map((genreId) => ({ genreId })) } : undefined,
-      },
-      include: {
-        category: { select: { id: true, name: true, slug: true } },
-        tags: { include: { tag: { select: { id: true, name: true, slug: true } } } },
-        genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
-        _count: { select: { comments: true } },
-      },
+    const content = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.content.create({
+        data: {
+          title: dto.title,
+          slug,
+          description: dto.description,
+          contentType: dto.contentType,
+          categoryId,
+          ageCategory: dto.ageCategory,
+          thumbnailUrl: dto.thumbnailUrl,
+          previewUrl: dto.previewUrl,
+          duration: dto.duration ?? 0,
+          isFree: dto.isFree ?? false,
+          individualPrice: dto.individualPrice,
+          status: finalStatus,
+          ...(finalStatus === ContentStatus.PUBLISHED && { publishedAt: new Date() }),
+          tags: dto.tagIds?.length ? { create: dto.tagIds.map((tagId) => ({ tagId })) } : undefined,
+          genres: dto.genreIds?.length ? { create: dto.genreIds.map((genreId) => ({ genreId })) } : undefined,
+        },
+        include: {
+          category: { select: { id: true, name: true, slug: true } },
+          tags: { include: { tag: { select: { id: true, name: true, slug: true } } } },
+          genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
+          _count: { select: { comments: true } },
+        },
+      });
+
+      if (dto.contentType === 'SERIES' || dto.contentType === 'TUTORIAL') {
+        await tx.series.create({
+          data: {
+            contentId: created.id,
+            seasonNumber: 0,
+            episodeNumber: 0,
+          },
+        });
+      }
+
+      return created;
     });
 
     await this.cache.invalidatePattern('content:*');

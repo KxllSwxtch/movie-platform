@@ -7,4 +7,5 @@ export * from './watch-history-response.dto';
 export * from './create-series.dto';
 export * from './series-structure.dto';
 export * from './add-episode.dto';
+export * from './add-season.dto';
 export * from './update-structure.dto';

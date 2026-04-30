@@ -26,8 +26,9 @@ export class AddEpisodeDto {
   @Min(1)
   seasonNumber!: number;
 
-  @ApiProperty({ example: 1, description: 'Episode/lesson number within the season' })
+  @ApiPropertyOptional({ example: 1, description: 'Episode/lesson number within the season. Defaults to next available number.' })
+  @IsOptional()
   @IsInt()
   @Min(1)
-  episodeNumber!: number;
+  episodeNumber?: number;
 }

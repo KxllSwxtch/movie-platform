@@ -1,6 +1,6 @@
 'use client';
 
-import { CaretDown, User, BookmarkSimple, Crown, Gear, SignOut } from '@phosphor-icons/react';
+import { CaretDown, User, BookmarkSimple, Crown, Gear, SignOut, ShieldCheck } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -23,6 +23,7 @@ export function ProfileDropdown() {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const { logout } = useAuth();
+  const canModerate = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
 
   // Close dropdown on route change (App Router keeps layout mounted)
   useEffect(() => {
@@ -74,6 +75,14 @@ export function ProfileDropdown() {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
+          {canModerate && (
+            <DropdownMenuItem asChild onClick={() => setOpen(false)}>
+              <Link href="/admin/content" className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                Модерация контента
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild onClick={() => setOpen(false)}>
             <Link href="/account" className="flex items-center gap-2">
               <User className="w-4 h-4" />

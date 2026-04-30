@@ -3,7 +3,7 @@ import { fullMetadataSchema } from './base.schema';
 
 export const episodeItemSchema = z.object({
   id: z.string(),
-  title: z.string().min(1, 'Название эпизода обязательно').max(200),
+  title: z.string().min(1, 'Episode title is required').max(200),
   description: z.string().max(5000).optional().default(''),
   order: z.number().int().min(1),
 });
@@ -11,12 +11,12 @@ export const episodeItemSchema = z.object({
 export const seasonGroupSchema = z.object({
   id: z.string(),
   order: z.number().int().min(1),
-  items: z.array(episodeItemSchema).min(1, 'Добавьте хотя бы один эпизод'),
+  items: z.array(episodeItemSchema).default([]),
 });
 
 export const seriesFormSchema = fullMetadataSchema.extend({
   contentType: z.literal('SERIES'),
-  seasons: z.array(seasonGroupSchema).min(1, 'Добавьте хотя бы один сезон'),
+  seasons: z.array(seasonGroupSchema).default([]),
 });
 
 export type EpisodeItem = z.infer<typeof episodeItemSchema>;

@@ -203,6 +203,7 @@ model Content {
   // Relations
   category        Category      @relation(fields: [categoryId], references: [id])
   series          Series?
+  seasons         ContentSeason[]
   videoFiles      VideoFile[]
   tags            ContentTag[]
   genres          ContentGenre[]
@@ -252,13 +253,32 @@ model Series {
   seasonNumber   Int     @default(1) @map("season_number")
   episodeNumber  Int     @default(1) @map("episode_number")
   parentSeriesId String? @map("parent_series_id")
+  seasonId       String? @map("season_id")
 
   content      Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
   parentSeries Series?  @relation("SeriesEpisodes", fields: [parentSeriesId], references: [id])
   episodes     Series[] @relation("SeriesEpisodes")
+  season        ContentSeason? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
 
   @@index([parentSeriesId])
+  @@index([seasonId])
   @@map("series")
+}
+
+model ContentSeason {
+  id           String   @id @default(uuid())
+  contentId    String   @map("content_id")
+  seasonNumber Int      @map("season_number")
+  title        String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  content  Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  episodes Series[]
+
+  @@unique([contentId, seasonNumber])
+  @@index([contentId])
+  @@map("content_seasons")
 }
 
 model VideoFile {

@@ -5,6 +5,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { CacheService } from '../../common/cache/cache.service';
 import {
   CreateSeriesContentDto,
+  AddSeasonDto,
   AddEpisodeDto,
   UpdateEpisodeDto,
   UpdateStructureDto,
@@ -86,8 +87,16 @@ export class SeriesService {
         },
       });
 
-      // 3. Create episodes for each season
-      for (const season of dto.seasons) {
+      // 3. Optionally create initial seasons/episodes for backwards compatibility.
+      for (const season of dto.seasons ?? []) {
+        const seasonRecord = await tx.contentSeason.create({
+          data: {
+            contentId: rootContent.id,
+            seasonNumber: season.order,
+            title: season.title || this.getDefaultSeasonTitle(dto.contentType, season.order),
+          },
+        });
+
         for (const episode of season.episodes) {
           const episodeContent = await tx.content.create({
             data: {
@@ -107,6 +116,7 @@ export class SeriesService {
               seasonNumber: season.order,
               episodeNumber: episode.order,
               parentSeriesId: rootSeries.id,
+              seasonId: seasonRecord.id,
             },
           });
         }
@@ -147,6 +157,11 @@ export class SeriesService {
       throw new BadRequestException('Этот контент не является сериалом или курсом');
     }
 
+    const explicitSeasons = await tx.contentSeason.findMany({
+      where: { contentId: rootContent.id },
+      orderBy: { seasonNumber: 'asc' },
+    });
+
     // Get all episodes (children of root series)
     const episodes = await tx.series.findMany({
       where: { parentSeriesId: rootContent.series.id },
@@ -165,13 +180,27 @@ export class SeriesService {
       ],
     });
 
-    // Group episodes by season number
+    // Group episodes by season number. Explicit seasons allow empty groups.
     const seasonMap = new Map<number, SeriesEpisodeResponseDto[]>();
+    const seasonMeta = new Map<number, { id?: string; title: string }>();
+
+    for (const season of explicitSeasons) {
+      seasonMap.set(season.seasonNumber, []);
+      seasonMeta.set(season.seasonNumber, {
+        id: season.id,
+        title: season.title,
+      });
+    }
 
     for (const ep of episodes) {
       const seasonNum = ep.seasonNumber;
       if (!seasonMap.has(seasonNum)) {
         seasonMap.set(seasonNum, []);
+      }
+      if (!seasonMeta.has(seasonNum)) {
+        seasonMeta.set(seasonNum, {
+          title: this.getDefaultSeasonTitle(rootContent.contentType, seasonNum),
+        });
       }
 
       const hasVideo = !!ep.content.edgecenterVideoId || ep.content.videoFiles.length > 0;
@@ -198,13 +227,12 @@ export class SeriesService {
     const sortedSeasonNums = [...seasonMap.keys()].sort((a, b) => a - b);
 
     for (const seasonNum of sortedSeasonNums) {
-      const label = rootContent.contentType === ContentType.TUTORIAL
-        ? `Глава ${seasonNum}`
-        : `Сезон ${seasonNum}`;
+      const meta = seasonMeta.get(seasonNum);
 
       seasons.push({
+        id: meta?.id,
         seasonNumber: seasonNum,
-        title: label,
+        title: meta?.title ?? this.getDefaultSeasonTitle(rootContent.contentType, seasonNum),
         episodes: seasonMap.get(seasonNum)!,
       });
     }
@@ -214,6 +242,40 @@ export class SeriesService {
       title: rootContent.title,
       contentType: rootContent.contentType,
       seasons,
+    };
+  }
+
+  /**
+   * Add a season/chapter to an existing series/tutorial.
+   */
+  async addSeason(rootContentId: string, dto: AddSeasonDto): Promise<SeriesSeasonResponseDto> {
+    const rootContent = await this.prisma.content.findUnique({
+      where: { id: rootContentId },
+      include: { series: true },
+    });
+
+    if (!rootContent || !rootContent.series || rootContent.series.parentSeriesId) {
+      throw new NotFoundException('РЎРµСЂРёР°Р»/РєСѓСЂСЃ РЅРµ РЅР°Р№РґРµРЅ');
+    }
+
+    const seasonNumber = dto.seasonNumber ?? await this.getNextSeasonNumber(rootContentId);
+    const title = dto.title || this.getDefaultSeasonTitle(rootContent.contentType, seasonNumber);
+
+    const season = await this.prisma.contentSeason.create({
+      data: {
+        contentId: rootContentId,
+        seasonNumber,
+        title,
+      },
+    });
+
+    await this.cache.invalidatePattern('content:*');
+
+    return {
+      id: season.id,
+      seasonNumber: season.seasonNumber,
+      title: season.title,
+      episodes: [],
     };
   }
 
@@ -230,37 +292,60 @@ export class SeriesService {
       throw new NotFoundException('Сериал/курс не найден');
     }
 
-    const episodeContent = await this.prisma.content.create({
-      data: {
-        title: dto.title,
-        slug: this.generateSlug(`${rootContent.title}-s${dto.seasonNumber}e${dto.episodeNumber}`),
-        description: dto.description || '',
-        contentType: rootContent.contentType,
-        categoryId: rootContent.categoryId,
-        ageCategory: rootContent.ageCategory,
-        status: ContentStatus.DRAFT,
-      },
-    });
+    const result = await this.prisma.$transaction(async (tx) => {
+      const season = await tx.contentSeason.upsert({
+        where: {
+          contentId_seasonNumber: {
+            contentId: rootContentId,
+            seasonNumber: dto.seasonNumber,
+          },
+        },
+        update: {},
+        create: {
+          contentId: rootContentId,
+          seasonNumber: dto.seasonNumber,
+          title: this.getDefaultSeasonTitle(rootContent.contentType, dto.seasonNumber),
+        },
+      });
 
-    const series = await this.prisma.series.create({
-      data: {
-        contentId: episodeContent.id,
-        seasonNumber: dto.seasonNumber,
-        episodeNumber: dto.episodeNumber,
-        parentSeriesId: rootContent.series.id,
-      },
+      const episodeNumber = dto.episodeNumber
+        ?? await this.getNextEpisodeNumber(rootContent.series!.id, dto.seasonNumber);
+
+      const episodeContent = await tx.content.create({
+        data: {
+          title: dto.title,
+          slug: this.generateSlug(`${rootContent.title}-s${dto.seasonNumber}e${episodeNumber}`),
+          description: dto.description || '',
+          contentType: rootContent.contentType,
+          categoryId: rootContent.categoryId,
+          ageCategory: rootContent.ageCategory,
+          status: ContentStatus.DRAFT,
+        },
+      });
+
+      const series = await tx.series.create({
+        data: {
+          contentId: episodeContent.id,
+          seasonNumber: dto.seasonNumber,
+          episodeNumber,
+          parentSeriesId: rootContent.series!.id,
+          seasonId: season.id,
+        },
+      });
+
+      return { series, episodeContent, episodeNumber };
     });
 
     await this.cache.invalidatePattern('content:*');
 
     return {
-      id: series.id,
-      contentId: episodeContent.id,
-      seriesId: series.id,
-      title: episodeContent.title,
-      description: episodeContent.description,
+      id: result.series.id,
+      contentId: result.episodeContent.id,
+      seriesId: result.series.id,
+      title: result.episodeContent.title,
+      description: result.episodeContent.description,
       seasonNumber: dto.seasonNumber,
-      episodeNumber: dto.episodeNumber,
+      episodeNumber: result.episodeNumber,
       hasVideo: false,
       thumbnailUrl: undefined,
     };
@@ -340,5 +425,38 @@ export class SeriesService {
     );
 
     await this.cache.invalidatePattern('content:*');
+  }
+
+  private getDefaultSeasonTitle(contentType: ContentType, seasonNumber: number): string {
+    return contentType === ContentType.TUTORIAL
+      ? `Глава ${seasonNumber}`
+      : `Сезон ${seasonNumber}`;
+  }
+
+  private async getNextSeasonNumber(rootContentId: string): Promise<number> {
+    const [lastSeason, lastEpisodeSeason] = await Promise.all([
+      this.prisma.contentSeason.findFirst({
+        where: { contentId: rootContentId },
+        orderBy: { seasonNumber: 'desc' },
+        select: { seasonNumber: true },
+      }),
+      this.prisma.series.findFirst({
+        where: { parentSeries: { contentId: rootContentId } },
+        orderBy: { seasonNumber: 'desc' },
+        select: { seasonNumber: true },
+      }),
+    ]);
+
+    return Math.max(lastSeason?.seasonNumber ?? 0, lastEpisodeSeason?.seasonNumber ?? 0) + 1;
+  }
+
+  private async getNextEpisodeNumber(rootSeriesId: string, seasonNumber: number): Promise<number> {
+    const lastEpisode = await this.prisma.series.findFirst({
+      where: { parentSeriesId: rootSeriesId, seasonNumber },
+      orderBy: { episodeNumber: 'desc' },
+      select: { episodeNumber: true },
+    });
+
+    return (lastEpisode?.episodeNumber ?? 0) + 1;
   }
 }

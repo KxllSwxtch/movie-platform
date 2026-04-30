@@ -18,6 +18,7 @@ import { MediaUploadCard } from '@/components/studio/shared/media-upload-card';
 import { PublishingCard } from '@/components/studio/shared/publishing-card';
 import { SummaryPanel } from '@/components/studio/shared/summary-panel';
 import { TitleDescriptionFields } from '@/components/studio/shared/title-description-fields';
+import { StructuredContentVideoManager } from '@/components/studio/structured-content-video-manager';
 import {
   WizardShell,
   type WizardStep,
@@ -312,7 +313,17 @@ export function SeriesEditor({ content, contentId }: SeriesEditorProps) {
 
       {/* Step 3: Media */}
       {currentStep === 3 && (
-        <MediaUploadCard form={form} contentId={contentId} />
+        <div className="space-y-6">
+          <MediaUploadCard
+            form={form}
+            contentId={contentId}
+            showMainVideoUpload={false}
+          />
+          <StructuredContentVideoManager
+            rootContentId={contentId}
+            contentType="SERIES"
+          />
+        </div>
       )}
 
       {/* Step 4: Publishing */}

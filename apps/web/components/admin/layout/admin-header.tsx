@@ -40,7 +40,7 @@ export function AdminHeader({ className }: AdminHeaderProps) {
   return (
     <header
       className={cn(
-        'fixed top-0 right-0 z-40 h-16 bg-mp-bg-secondary/80 backdrop-blur-xl border-b border-mp-border flex items-center justify-between px-4 md:px-6 left-0 md:left-[250px]',
+        'fixed top-0 right-0 z-40 h-16 bg-mp-bg-secondary/75 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-4 md:px-6 left-0 md:left-[250px] shadow-lg shadow-black/10',
         className
       )}
     >
@@ -60,7 +60,7 @@ export function AdminHeader({ className }: AdminHeaderProps) {
           <input
             type="text"
             placeholder="Поиск пользователей, контента, заказов..."
-            className="w-64 lg:w-80 h-9 pl-9 pr-4 bg-mp-surface border border-mp-border rounded-lg text-sm text-mp-text-primary placeholder:text-mp-text-disabled focus:outline-none focus:ring-2 focus:ring-mp-accent-primary/50 focus:border-mp-accent-primary transition-all"
+            className="w-64 lg:w-80 h-9 pl-9 pr-4 bg-white/5 border border-white/10 rounded-lg text-sm text-mp-text-primary placeholder:text-mp-text-disabled focus:outline-none focus:ring-2 focus:ring-mp-accent-primary/50 focus:border-mp-accent-primary transition-all hover:bg-white/[0.07]"
           />
         </div>
       </div>

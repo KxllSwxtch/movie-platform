@@ -38,6 +38,7 @@ export interface SeriesEpisode {
 }
 
 export interface SeriesSeason {
+  id?: string;
   seasonNumber: number;
   title: string;
   episodes: SeriesEpisode[];
@@ -62,7 +63,7 @@ export interface CreateSeriesInput {
   individualPrice?: number;
   tagIds?: string[];
   genreIds?: string[];
-  seasons: Array<{
+  seasons?: Array<{
     title: string;
     order: number;
     episodes: Array<{
@@ -77,7 +78,12 @@ export interface AddEpisodeInput {
   title: string;
   description?: string;
   seasonNumber: number;
-  episodeNumber: number;
+  episodeNumber?: number;
+}
+
+export interface AddSeasonInput {
+  title?: string;
+  seasonNumber?: number;
 }
 
 export interface UpdateEpisodeInput {
@@ -144,6 +150,35 @@ export function useCreateSeriesContent() {
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Не удалось создать контент');
+    },
+  });
+}
+
+/**
+ * Hook to add a season/chapter to an existing series/tutorial
+ */
+export function useAddSeason(rootContentId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: AddSeasonInput) => {
+      const response = await api.post<SeriesSeason>(
+        endpoints.adminContent.addSeason(rootContentId),
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.adminContent.structure(rootContentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.adminContent.detail(rootContentId),
+      });
+      toast.success('РЎРµР·РѕРЅ РґРѕР±Р°РІР»РµРЅ');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'РќРµ СѓРґР°Р»РѕСЃСЊ РґРѕР±Р°РІРёС‚СЊ СЃРµР·РѕРЅ');
     },
   });
 }

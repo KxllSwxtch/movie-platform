@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 
@@ -38,10 +38,18 @@ export class VideoProcessingService {
     // Verify content exists
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
+      include: { series: true },
     });
     if (!content) {
       this.logger.error(`[enqueueTranscoding] Content not found: ${contentId}`);
       throw new NotFoundException(`Контент ${contentId} не найден`);
+    }
+    if (
+      (content.contentType === 'SERIES' || content.contentType === 'TUTORIAL') &&
+      content.series &&
+      !content.series.parentSeriesId
+    ) {
+      throw new BadRequestException('Видео для сериалов и обучения загружается только на уровне серии или урока');
     }
     this.logger.debug(`[enqueueTranscoding] Content found: ${contentId}`);
 

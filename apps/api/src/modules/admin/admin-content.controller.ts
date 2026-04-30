@@ -31,6 +31,7 @@ import {
   UpdateContentDto,
   ContentDetailDto,
   CreateSeriesContentDto,
+  AddSeasonDto,
   AddEpisodeDto,
   UpdateEpisodeDto,
   UpdateStructureDto,
@@ -126,6 +127,7 @@ export class AdminContentController {
     @Query('status') status?: string,
     @Query('contentType') contentType?: string,
     @Query('search') search?: string,
+    @Query('isFree') isFree?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -133,6 +135,7 @@ export class AdminContentController {
       status,
       contentType,
       search,
+      isFree: isFree === undefined ? undefined : isFree === 'true',
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
     });
@@ -229,6 +232,22 @@ export class AdminContentController {
   ) {
     await this.seriesService.reorderStructure(id, dto);
     return { success: true, message: 'Structure reordered' };
+  }
+
+  /**
+   * Add season/chapter to an existing series/tutorial.
+   */
+  @Post(':id/seasons')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add season/chapter to series' })
+  @ApiParam({ name: 'id', description: 'Root content ID' })
+  @ApiResponse({ status: 201, description: 'Season added' })
+  @ApiResponse({ status: 404, description: 'Series not found' })
+  async addSeason(
+    @Param('id') id: string,
+    @Body() dto: AddSeasonDto,
+  ) {
+    return this.seriesService.addSeason(id, dto);
   }
 
   /**

@@ -33,6 +33,9 @@ export class SeriesEpisodeResponseDto {
 }
 
 export class SeriesSeasonResponseDto {
+  @ApiPropertyOptional()
+  id?: string;
+
   @ApiProperty()
   seasonNumber!: number;
 

@@ -1,50 +1,46 @@
 'use client';
 
-import {
-  FilmStrip,
-  CheckCircle,
-  NotePencil,
-  Archive,
-  Plus,
-} from '@phosphor-icons/react';
-import Link from 'next/link';
+import { Archive, CheckCircle, FilmStrip, NotePencil } from '@phosphor-icons/react';
 import * as React from 'react';
 
-import { DataTable } from '@/components/admin/data-table/data-table';
 import { contentColumns } from '@/components/admin/content/content-columns';
-import { AdminPageHeader } from '@/components/admin/layout/admin-page-header';
+import { DataTable } from '@/components/admin/data-table/data-table';
 import { StatsCard } from '@/components/admin/dashboard/stats-card';
-import { Button } from '@/components/ui/button';
+import { AdminPageHeader } from '@/components/admin/layout/admin-page-header';
 import { Container } from '@/components/ui/container';
 import {
-  useAdminContent,
-  useDeleteContent,
-} from '@/hooks/use-admin-content';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useAdminContent, useDeleteContent } from '@/hooks/use-admin-content';
 
-/**
- * Admin content management page
- */
 export default function AdminContentPage() {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(20);
   const [search, setSearch] = React.useState('');
+  const [status, setStatus] = React.useState('ALL');
+  const [contentType, setContentType] = React.useState('ALL');
+  const [accessType, setAccessType] = React.useState('ALL');
 
   const { data, isLoading } = useAdminContent({
     page,
     limit,
     search: search || undefined,
+    status: status === 'ALL' ? undefined : status,
+    contentType: contentType === 'ALL' ? undefined : contentType,
+    isFree: accessType === 'ALL' ? undefined : accessType === 'FREE',
   });
 
   const deleteContent = useDeleteContent();
 
-  // Listen for archive events from row actions
   React.useEffect(() => {
-    const handleArchive = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.id) {
-        if (window.confirm(`Архивировать "${detail.title}"?`)) {
-          deleteContent.mutate(detail.id);
-        }
+    const handleArchive = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.id && window.confirm(`Архивировать "${detail.title}"?`)) {
+        deleteContent.mutate(detail.id);
       }
     };
 
@@ -52,20 +48,14 @@ export default function AdminContentPage() {
     return () => window.removeEventListener('admin:archive-content', handleArchive);
   }, [deleteContent]);
 
-  // Calculate stats from data
   const items = data?.items || [];
   const totalContent = data?.total || 0;
-  const publishedCount = items.filter((i) => i.status === 'PUBLISHED').length;
-  const draftCount = items.filter((i) => i.status === 'DRAFT').length;
-  const archivedCount = items.filter((i) => i.status === 'ARCHIVED').length;
+  const publishedCount = items.filter((item) => item.status === 'PUBLISHED').length;
+  const draftCount = items.filter((item) => item.status === 'DRAFT').length;
+  const archivedCount = items.filter((item) => item.status === 'ARCHIVED').length;
 
-  const handlePaginationChange = (newPage: number, newLimit: number) => {
-    setPage(newPage);
-    setLimit(newLimit);
-  };
-
-  const handleSearch = (value: string) => {
-    setSearch(value);
+  const resetPage = (setter: (value: string) => void) => (value: string) => {
+    setter(value);
     setPage(1);
   };
 
@@ -73,41 +63,56 @@ export default function AdminContentPage() {
     <Container size="xl" className="py-8">
       <AdminPageHeader
         title="Контент"
-        description="Управление контентом платформы"
-      >
-        <Button asChild>
-          <Link href="/admin/content/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Добавить контент
-          </Link>
-        </Button>
-      </AdminPageHeader>
+        description="Библиотека контента и модерация публикаций"
+      />
 
-      {/* Stats cards */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Всего контента"
-          value={totalContent}
-          icon={FilmStrip}
-        />
-        <StatsCard
-          title="Опубликовано"
-          value={publishedCount}
-          icon={CheckCircle}
-        />
-        <StatsCard
-          title="Черновики"
-          value={draftCount}
-          icon={NotePencil}
-        />
-        <StatsCard
-          title="Архив"
-          value={archivedCount}
-          icon={Archive}
-        />
+        <StatsCard title="Всего контента" value={totalContent} icon={FilmStrip} />
+        <StatsCard title="Опубликовано" value={publishedCount} icon={CheckCircle} />
+        <StatsCard title="Черновики" value={draftCount} icon={NotePencil} />
+        <StatsCard title="Архив" value={archivedCount} icon={Archive} />
       </div>
 
-      {/* Content table */}
+      <div className="mb-4 grid gap-3 rounded-lg border border-white/10 bg-mp-bg-secondary/80 p-4 shadow-lg shadow-black/10 backdrop-blur sm:grid-cols-3">
+        <Select value={contentType} onValueChange={resetPage(setContentType)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Категория" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Все категории</SelectItem>
+            <SelectItem value="TUTORIAL">Обучение</SelectItem>
+            <SelectItem value="SERIES">Сериалы</SelectItem>
+            <SelectItem value="CLIP">Клипы</SelectItem>
+            <SelectItem value="SHORT">Шорты</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={status} onValueChange={resetPage(setStatus)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Статус" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Все статусы</SelectItem>
+            <SelectItem value="PUBLISHED">Опубликовано</SelectItem>
+            <SelectItem value="DRAFT">Черновик</SelectItem>
+            <SelectItem value="PENDING">Модерация</SelectItem>
+            <SelectItem value="REJECTED">Отклонено</SelectItem>
+            <SelectItem value="ARCHIVED">Архив</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={accessType} onValueChange={resetPage(setAccessType)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Доступ" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Платный и бесплатный</SelectItem>
+            <SelectItem value="PAID">Платный</SelectItem>
+            <SelectItem value="FREE">Бесплатный</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <DataTable
         columns={contentColumns}
         data={items}
@@ -116,7 +121,10 @@ export default function AdminContentPage() {
         searchPlaceholder="Поиск по названию..."
         manualPagination
         manualFiltering
-        onSearch={handleSearch}
+        onSearch={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
         pagination={
           data
             ? {
@@ -127,30 +135,10 @@ export default function AdminContentPage() {
               }
             : undefined
         }
-        onPaginationChange={handlePaginationChange}
-        filterOptions={[
-          {
-            id: 'status',
-            title: 'Статус',
-            options: [
-              { label: 'Черновик', value: 'DRAFT' },
-              { label: 'Опубликован', value: 'PUBLISHED' },
-              { label: 'На модерации', value: 'PENDING' },
-              { label: 'Отклонён', value: 'REJECTED' },
-              { label: 'Архив', value: 'ARCHIVED' },
-            ],
-          },
-          {
-            id: 'contentType',
-            title: 'Тип',
-            options: [
-              { label: 'Сериал', value: 'SERIES' },
-              { label: 'Клип', value: 'CLIP' },
-              { label: 'Шорт', value: 'SHORT' },
-              { label: 'Туториал', value: 'TUTORIAL' },
-            ],
-          },
-        ]}
+        onPaginationChange={(newPage, newLimit) => {
+          setPage(newPage);
+          setLimit(newLimit);
+        }}
       />
     </Container>
   );

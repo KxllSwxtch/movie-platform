@@ -6,6 +6,10 @@ import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { AdminPageHeader } from '@/components/admin/layout/admin-page-header';
+import { ImageUpload } from '@/components/admin/content/image-upload';
+import { VideoUpload } from '@/components/admin/content/video-upload';
+import { StructuredContentVideoManager } from '@/components/studio/structured-content-video-manager';
+import { TagInput } from '@/components/studio/tag-input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,9 +25,6 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ImageUpload } from '@/components/admin/content/image-upload';
-import { VideoUpload } from '@/components/admin/content/video-upload';
-import { TagInput } from '@/components/studio/tag-input';
 import {
   useAdminContentDetail,
   useUpdateContent,
@@ -31,9 +32,6 @@ import {
 } from '@/hooks/use-admin-content';
 import { useContentCategories, useContentTags } from '@/hooks/use-studio-data';
 
-/**
- * Admin content edit page
- */
 export default function AdminContentEditPage() {
   const params = useParams();
   const router = useRouter();
@@ -44,7 +42,6 @@ export default function AdminContentEditPage() {
   const { flat: categories } = useContentCategories();
   const { data: availableTags } = useContentTags();
 
-  // Form state
   const [title, setTitle] = React.useState('');
   const [slug, setSlug] = React.useState('');
   const [description, setDescription] = React.useState('');
@@ -58,33 +55,36 @@ export default function AdminContentEditPage() {
   const [status, setStatus] = React.useState('');
   const [tagIds, setTagIds] = React.useState<string[]>([]);
 
-  // Populate form when data loads
   React.useEffect(() => {
-    if (content) {
-      // content may be wrapped in ApiResponse { success, data } or be the data directly
-      const c = (content as { data?: Record<string, unknown> }).data ?? content;
-      setTitle((c as { title?: string }).title || '');
-      setSlug((c as { slug?: string }).slug || '');
-      setDescription((c as { description?: string }).description || '');
-      setContentType((c as { contentType?: string }).contentType || '');
-      const catObj = (c as { category?: { id: string } }).category;
-      setCategoryId((c as { categoryId?: string }).categoryId || catObj?.id || '');
-      const rawAge = (c as { ageCategory?: string }).ageCategory || '';
-      setAgeCategory(AGE_CATEGORY_FROM_BACKEND[rawAge] || rawAge);
-      setThumbnailUrl((c as { thumbnailUrl?: string }).thumbnailUrl || '');
-      setPreviewUrl((c as { previewUrl?: string }).previewUrl || '');
-      setIsFree(!!(c as { isFree?: boolean }).isFree);
-      const price = (c as { individualPrice?: number }).individualPrice;
-      setIndividualPrice(price != null ? String(price) : '');
-      setStatus((c as { status?: string }).status || '');
+    if (!content) return;
 
-      const tags = (c as { tags?: Array<{ id: string }> }).tags;
-      setTagIds(Array.isArray(tags) ? tags.map((t) => t.id).filter(Boolean) : []);
-    }
+    const c = (content as { data?: Record<string, unknown> }).data ?? content;
+    setTitle((c as { title?: string }).title || '');
+    setSlug((c as { slug?: string }).slug || '');
+    setDescription((c as { description?: string }).description || '');
+    setContentType((c as { contentType?: string }).contentType || '');
+
+    const category = (c as { category?: { id?: string } }).category;
+    setCategoryId((c as { categoryId?: string }).categoryId || category?.id || '');
+
+    const rawAge = (c as { ageCategory?: string }).ageCategory || '';
+    setAgeCategory(AGE_CATEGORY_FROM_BACKEND[rawAge] || rawAge);
+    setThumbnailUrl((c as { thumbnailUrl?: string }).thumbnailUrl || '');
+    setPreviewUrl((c as { previewUrl?: string }).previewUrl || '');
+    setIsFree(Boolean((c as { isFree?: boolean }).isFree));
+
+    const price = (c as { individualPrice?: number }).individualPrice;
+    setIndividualPrice(price != null ? String(price) : '');
+    setStatus((c as { status?: string }).status || '');
+
+    const tags = (c as { tags?: Array<{ id?: string }> }).tags;
+    setTagIds(Array.isArray(tags) ? tags.map((tag) => tag.id || '').filter(Boolean) : []);
   }, [content]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const isStructuredContent = contentType === 'SERIES' || contentType === 'TUTORIAL';
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
 
     updateContent.mutate(
       {
@@ -105,7 +105,7 @@ export default function AdminContentEditPage() {
         onSuccess: () => {
           router.push('/admin/content');
         },
-      }
+      },
     );
   };
 
@@ -116,9 +116,9 @@ export default function AdminContentEditPage() {
           <Skeleton className="h-8 w-48" />
         </div>
         <Card>
-          <CardContent className="p-6 space-y-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-2">
+          <CardContent className="space-y-6 p-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="space-y-2">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-10 w-full" />
               </div>
@@ -158,7 +158,7 @@ export default function AdminContentEditPage() {
 
       <AdminPageHeader
         title={title || 'Контент'}
-        description={`Редактирование контента`}
+        description="Редактирование контента"
         breadcrumbItems={[
           { label: 'Контент', href: '/admin/content' },
           { label: title || 'Контент' },
@@ -166,9 +166,8 @@ export default function AdminContentEditPage() {
       />
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 lg:grid-cols-3 mt-6">
-          {/* Main fields */}
-          <div className="lg:col-span-2 space-y-6">
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Основная информация</CardTitle>
@@ -179,7 +178,7 @@ export default function AdminContentEditPage() {
                   <Input
                     id="title"
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={(event) => setTitle(event.target.value)}
                     placeholder="Введите название"
                     required
                   />
@@ -190,7 +189,7 @@ export default function AdminContentEditPage() {
                   <Input
                     id="slug"
                     value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
+                    onChange={(event) => setSlug(event.target.value)}
                     placeholder="auto-generated-slug"
                   />
                 </div>
@@ -200,7 +199,7 @@ export default function AdminContentEditPage() {
                   <Textarea
                     id="description"
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(event) => setDescription(event.target.value)}
                     placeholder="Введите описание контента..."
                     rows={5}
                   />
@@ -229,24 +228,30 @@ export default function AdminContentEditPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Видео контент</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <VideoUpload
-                  contentId={contentId}
-                  label="Основное видео"
-                  description="Загрузите видео для транскодирования в HLS (MP4, WebM, MOV, MKV до 5GB)"
-                  accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
-                  maxSizeMB={5120}
-                  onChange={() => {}}
-                />
-              </CardContent>
-            </Card>
+            {isStructuredContent ? (
+              <StructuredContentVideoManager
+                rootContentId={contentId}
+                contentType={contentType as 'SERIES' | 'TUTORIAL'}
+              />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Видео контент</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <VideoUpload
+                    contentId={contentId}
+                    label="Основное видео"
+                    description="Загрузите видео для транскодирования в HLS (MP4, WebM, MOV, MKV до 5GB)"
+                    accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
+                    maxSizeMB={5120}
+                    onChange={() => {}}
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {/* Sidebar fields */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -269,7 +274,7 @@ export default function AdminContentEditPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Категория возраста</Label>
+                  <Label>Возрастная категория</Label>
                   <Select value={ageCategory} onValueChange={setAgeCategory}>
                     <SelectTrigger>
                       <SelectValue placeholder="Выберите возраст" />
@@ -307,9 +312,9 @@ export default function AdminContentEditPage() {
                       <SelectValue placeholder="Выберите тематику" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.depth > 0 ? `${'— '.repeat(cat.depth)}${cat.name}` : cat.name}
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.depth > 0 ? `${'— '.repeat(category.depth)}${category.name}` : category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -351,7 +356,7 @@ export default function AdminContentEditPage() {
                       id="individualPrice"
                       type="number"
                       value={individualPrice}
-                      onChange={(e) => setIndividualPrice(e.target.value)}
+                      onChange={(event) => setIndividualPrice(event.target.value)}
                       placeholder="0"
                       min="0"
                       step="1"
@@ -361,14 +366,9 @@ export default function AdminContentEditPage() {
               </CardContent>
             </Card>
 
-            {/* Actions */}
             <Card>
-              <CardContent className="p-4 space-y-2">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={updateContent.isPending}
-                >
+              <CardContent className="space-y-2 p-4">
+                <Button type="submit" className="w-full" disabled={updateContent.isPending}>
                   {updateContent.isPending ? (
                     <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
                   ) : (

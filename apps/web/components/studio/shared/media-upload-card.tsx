@@ -19,6 +19,7 @@ export interface MediaUploadCardProps {
   form: UseFormReturn<any>;
   /** When provided, shows the main video upload section with HLS encoding. */
   contentId?: string;
+  showMainVideoUpload?: boolean;
   disabled?: boolean;
 }
 
@@ -27,6 +28,7 @@ export interface MediaUploadCardProps {
 export function MediaUploadCard({
   form,
   contentId,
+  showMainVideoUpload = true,
   disabled = false,
 }: MediaUploadCardProps) {
   const { control } = form;
@@ -91,7 +93,7 @@ export function MediaUploadCard({
       </Card>
 
       {/* Main video upload — only available in edit mode with contentId */}
-      {contentId && (
+      {contentId && showMainVideoUpload && (
         <Card className="border-[#272b38] bg-[#10131c]/50">
           <CardHeader>
             <CardTitle className="text-lg text-[#f5f7ff]">

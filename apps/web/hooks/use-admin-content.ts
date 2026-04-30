@@ -39,6 +39,7 @@ export interface AdminContentQueryParams {
   status?: string;
   contentType?: string;
   search?: string;
+  isFree?: boolean;
   ageCategory?: string;
 }
 

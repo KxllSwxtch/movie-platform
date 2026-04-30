@@ -58,7 +58,6 @@ export default function AdminContentNewPage() {
     createContent.mutate(
       {
         title,
-        slug: slug || undefined,
         description,
         contentType,
         categoryId,

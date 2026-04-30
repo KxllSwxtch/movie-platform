@@ -139,10 +139,13 @@ export class CreateSeriesContentDto {
   @IsUUID('4', { each: true })
   genreIds?: string[];
 
-  @ApiProperty({ type: [CreateSeriesSeasonDto], description: 'Seasons/chapters with episodes/lessons' })
+  @ApiPropertyOptional({
+    type: [CreateSeriesSeasonDto],
+    description: 'Optional initial seasons/chapters with episodes/lessons. Omit to create empty structured content.',
+  })
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateSeriesSeasonDto)
-  seasons!: CreateSeriesSeasonDto[];
+  seasons?: CreateSeriesSeasonDto[];
 }

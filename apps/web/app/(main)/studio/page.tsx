@@ -62,13 +62,43 @@ export default function StudioPage() {
   const handlePublish = async (id: string) => {
     setPublishingId(id);
     try {
+      const content = items.find((item) => item.id === id);
+      const isStructuredContent =
+        content?.contentType === 'SERIES' || content?.contentType === 'TUTORIAL';
+
+      if (isStructuredContent) {
+        const structureResponse = await api.get<{
+          seasons?: Array<{
+            episodes?: Array<{ hasVideo?: boolean; encodingStatus?: string }>;
+          }>;
+        }>(endpoints.adminContent.structure(id));
+        const structure = (structureResponse as any)?.data || structureResponse;
+        const episodes = structure?.seasons?.flatMap(
+          (season: { episodes?: Array<{ hasVideo?: boolean; encodingStatus?: string }> }) =>
+            season.episodes ?? [],
+        ) ?? [];
+
+        const hasCompletedEpisodeVideo = episodes.some(
+          (episode: { hasVideo?: boolean; encodingStatus?: string }) =>
+            episode.hasVideo === true && episode.encodingStatus === 'COMPLETED',
+        );
+
+        if (!hasCompletedEpisodeVideo) {
+          toast.error('Нельзя опубликовать без готового видео у эпизода или урока.');
+          return;
+        }
+
+        updateContent.mutate({ id, status: 'PUBLISHED' });
+        return;
+      }
+
       const statusResponse = await api.get<{ hasVideo: boolean; status: string }>(
         endpoints.adminVideo.status(id),
       );
       const payload = (statusResponse as any)?.data || statusResponse;
 
       if (payload?.hasVideo === false) {
-        toast.error('Нельзя опубликовать без видео. Откройте контент и загрузите основное видео.');
+        toast.error('Нельзя опубликовать без видео. Откройте контент и загрузите видео для эпизода, урока или самого материала.');
         return;
       }
 

@@ -290,6 +290,7 @@ export const endpoints = {
     createSeries: '/admin/content/series',
     structure: (id: string) => `/admin/content/${id}/structure`,
     reorderStructure: (id: string) => `/admin/content/${id}/structure`,
+    addSeason: (id: string) => `/admin/content/${id}/seasons`,
     addEpisode: (id: string) => `/admin/content/${id}/episodes`,
     updateEpisode: (episodeId: string) => `/admin/content/episodes/${episodeId}`,
     deleteEpisode: (episodeId: string) => `/admin/content/episodes/${episodeId}`,

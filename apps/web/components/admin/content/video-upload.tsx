@@ -418,6 +418,10 @@ export function VideoUpload({
             ) : (
               <>
                 <VideoCamera className="h-10 w-10 mx-auto text-mp-text-disabled mb-2" />
+                <Button type="button" size="sm" className="mb-3" disabled={disabled}>
+                  <UploadSimple className="w-4 h-4 mr-1" />
+                  Загрузить видео
+                </Button>
                 <p className="text-sm text-mp-text-secondary">
                   Перетащите видео или нажмите для загрузки
                 </p>
@@ -467,4 +471,3 @@ export function VideoUpload({
     </div>
   );
 }
-
