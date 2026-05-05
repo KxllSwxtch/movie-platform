@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   FilmSlate,
@@ -6,28 +6,31 @@ import {
   FileText,
   CheckCircle,
   Plus,
-} from '@phosphor-icons/react';
-import Link from 'next/link';
-import * as React from 'react';
+} from "@phosphor-icons/react";
+import Link from "next/link";
+import * as React from "react";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { StudioPageHeader } from '@/components/studio/studio-page-header';
-import { StudioContentCard, StudioContentCardSkeleton } from '@/components/studio/content-card';
-import { ContentFilters } from '@/components/studio/content-filters';
-import { useAdminContent, useUpdateContent } from '@/hooks/use-admin-content';
-import { api, endpoints, ApiError } from '@/lib/api-client';
-import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { StudioPageHeader } from "@/components/studio/studio-page-header";
+import {
+  StudioContentCard,
+  StudioContentCardSkeleton,
+} from "@/components/studio/content-card";
+import { ContentFilters } from "@/components/studio/content-filters";
+import { useAdminContent, useUpdateContent } from "@/hooks/use-admin-content";
+import { api, endpoints, ApiError } from "@/lib/api-client";
+import { toast } from "sonner";
 
 /**
  * Studio dashboard — content list with stats, filters, and grid
  */
 export default function StudioPage() {
-  const [search, setSearch] = React.useState('');
-  const [contentType, setContentType] = React.useState('all');
-  const [status, setStatus] = React.useState('all');
+  const [search, setSearch] = React.useState("");
+  const [contentType, setContentType] = React.useState("all");
+  const [status, setStatus] = React.useState("all");
   const [page, setPage] = React.useState(1);
-  const [debouncedSearch, setDebouncedSearch] = React.useState('');
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
 
   // Debounce search input
   React.useEffect(() => {
@@ -42,21 +45,23 @@ export default function StudioPage() {
     page,
     limit: 12,
     search: debouncedSearch || undefined,
-    contentType: contentType !== 'all' ? contentType : undefined,
-    status: status !== 'all' ? status : undefined,
+    contentType: contentType !== "all" ? contentType : undefined,
+    status: status !== "all" ? status : undefined,
   });
 
   const updateContent = useUpdateContent();
   const [publishingId, setPublishingId] = React.useState<string | null>(null);
 
   const items = data?.items || [];
-  const meta = (data as unknown as { meta?: { total: number; totalPages: number } })?.meta;
+  const meta = (
+    data as unknown as { meta?: { total: number; totalPages: number } }
+  )?.meta;
   const total = meta?.total || data?.total || 0;
   const totalPages = meta?.totalPages || data?.totalPages || 1;
 
   // Compute stats from current data (simplified — ideally a separate endpoint)
-  const publishedCount = items.filter((c) => c.status === 'PUBLISHED').length;
-  const draftCount = items.filter((c) => c.status === 'DRAFT').length;
+  const publishedCount = items.filter((c) => c.status === "PUBLISHED").length;
+  const draftCount = items.filter((c) => c.status === "DRAFT").length;
   const totalViews = items.reduce((sum, c) => sum + (c.viewCount || 0), 0);
 
   const handlePublish = async (id: string) => {
@@ -64,7 +69,8 @@ export default function StudioPage() {
     try {
       const content = items.find((item) => item.id === id);
       const isStructuredContent =
-        content?.contentType === 'SERIES' || content?.contentType === 'TUTORIAL';
+        content?.contentType === "SERIES" ||
+        content?.contentType === "TUTORIAL";
 
       if (isStructuredContent) {
         const structureResponse = await api.get<{
@@ -73,47 +79,56 @@ export default function StudioPage() {
           }>;
         }>(endpoints.adminContent.structure(id));
         const structure = (structureResponse as any)?.data || structureResponse;
-        const episodes = structure?.seasons?.flatMap(
-          (season: { episodes?: Array<{ hasVideo?: boolean; encodingStatus?: string }> }) =>
-            season.episodes ?? [],
-        ) ?? [];
+        const episodes =
+          structure?.seasons?.flatMap(
+            (season: {
+              episodes?: Array<{ hasVideo?: boolean; encodingStatus?: string }>;
+            }) => season.episodes ?? [],
+          ) ?? [];
 
         const hasCompletedEpisodeVideo = episodes.some(
           (episode: { hasVideo?: boolean; encodingStatus?: string }) =>
-            episode.hasVideo === true && episode.encodingStatus === 'COMPLETED',
+            episode.hasVideo === true && episode.encodingStatus === "COMPLETED",
         );
 
         if (!hasCompletedEpisodeVideo) {
-          toast.error('Нельзя опубликовать без готового видео у эпизода или урока.');
+          toast.error(
+            "Нельзя опубликовать без готового видео у эпизода или урока.",
+          );
           return;
         }
 
-        updateContent.mutate({ id, status: 'PUBLISHED' });
+        updateContent.mutate({ id, status: "PENDING" });
         return;
       }
 
-      const statusResponse = await api.get<{ hasVideo: boolean; status: string }>(
-        endpoints.adminVideo.status(id),
-      );
+      const statusResponse = await api.get<{
+        hasVideo: boolean;
+        status: string;
+      }>(endpoints.adminVideo.status(id));
       const payload = (statusResponse as any)?.data || statusResponse;
 
       if (payload?.hasVideo === false) {
-        toast.error('Нельзя опубликовать без видео. Откройте контент и загрузите видео для эпизода, урока или самого материала.');
+        toast.error(
+          "Нельзя опубликовать без видео. Откройте контент и загрузите видео для эпизода, урока или самого материала.",
+        );
         return;
       }
 
-      if (payload?.status && payload.status !== 'COMPLETED') {
-        toast.error('Видео ещё обрабатывается. Дождитесь статуса «Готово» и повторите.');
+      if (payload?.status && payload.status !== "COMPLETED") {
+        toast.error(
+          "Видео ещё обрабатывается. Дождитесь статуса «Готово» и повторите.",
+        );
         return;
       }
 
-      updateContent.mutate({ id, status: 'PUBLISHED' });
+      updateContent.mutate({ id, status: "PENDING" });
     } catch (err) {
       const e = err as unknown;
       if (e instanceof ApiError) {
-        toast.error(e.message || 'Не удалось проверить статус видео');
+        toast.error(e.message || "Не удалось проверить статус видео");
       } else {
-        toast.error('Не удалось проверить статус видео');
+        toast.error("Не удалось проверить статус видео");
       }
     } finally {
       setPublishingId(null);
@@ -121,10 +136,14 @@ export default function StudioPage() {
   };
 
   const stats = [
-    { label: 'Всего контента', value: total, icon: FilmSlate },
-    { label: 'Опубликовано', value: publishedCount, icon: CheckCircle },
-    { label: 'Черновики', value: draftCount, icon: FileText },
-    { label: 'Просмотры', value: totalViews.toLocaleString('ru-RU'), icon: Eye },
+    { label: "Всего контента", value: total, icon: FilmSlate },
+    { label: "Опубликовано", value: publishedCount, icon: CheckCircle },
+    { label: "Черновики", value: draftCount, icon: FileText },
+    {
+      label: "Просмотры",
+      value: totalViews.toLocaleString("ru-RU"),
+      icon: Eye,
+    },
   ];
 
   return (
@@ -133,7 +152,10 @@ export default function StudioPage() {
         title="Мой контент"
         description="Управление контентом на платформе"
         action={
-          <Button asChild className="bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary text-white hover:opacity-90">
+          <Button
+            asChild
+            className="bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary text-white hover:opacity-90"
+          >
             <Link href="/studio/create">
               <Plus className="mr-2 h-4 w-4" />
               Создать контент
@@ -152,7 +174,9 @@ export default function StudioPage() {
               </div>
               <div>
                 <p className="text-xs text-mp-text-secondary">{stat.label}</p>
-                <p className="text-lg font-bold text-mp-text-primary">{stat.value}</p>
+                <p className="text-lg font-bold text-mp-text-primary">
+                  {stat.value}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -164,9 +188,15 @@ export default function StudioPage() {
         search={search}
         onSearchChange={setSearch}
         contentType={contentType}
-        onContentTypeChange={(v) => { setContentType(v); setPage(1); }}
+        onContentTypeChange={(v) => {
+          setContentType(v);
+          setPage(1);
+        }}
         status={status}
-        onStatusChange={(v) => { setStatus(v); setPage(1); }}
+        onStatusChange={(v) => {
+          setStatus(v);
+          setPage(1);
+        }}
       />
 
       {/* Content grid */}
@@ -184,12 +214,15 @@ export default function StudioPage() {
               Контент не найден
             </h3>
             <p className="text-sm text-mp-text-secondary mb-6 max-w-sm">
-              {debouncedSearch || contentType !== 'all' || status !== 'all'
-                ? 'Попробуйте изменить фильтры поиска'
-                : 'Создайте свой первый контент, чтобы он появился здесь'}
+              {debouncedSearch || contentType !== "all" || status !== "all"
+                ? "Попробуйте изменить фильтры поиска"
+                : "Создайте свой первый контент, чтобы он появился здесь"}
             </p>
-            {!debouncedSearch && contentType === 'all' && status === 'all' && (
-              <Button asChild className="bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary text-white">
+            {!debouncedSearch && contentType === "all" && status === "all" && (
+              <Button
+                asChild
+                className="bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary text-white"
+              >
                 <Link href="/studio/create">
                   <Plus className="mr-2 h-4 w-4" />
                   Создать контент
@@ -205,7 +238,9 @@ export default function StudioPage() {
               key={content.id}
               content={content}
               onPublish={handlePublish}
-              isPublishing={publishingId === content.id || updateContent.isPending}
+              isPublishing={
+                publishingId === content.id || updateContent.isPending
+              }
             />
           ))}
         </div>

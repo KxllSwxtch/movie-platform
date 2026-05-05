@@ -43,6 +43,7 @@ export function usePlayer({
   const hlsRef = useRef<Hls | null>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endedCallbackFiredRef = useRef(false);
 
   // Store actions
   const {
@@ -75,6 +76,8 @@ export function usePlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
+
+    endedCallbackFiredRef.current = false;
 
     // Clean up previous instance
     if (hlsRef.current) {
@@ -184,11 +187,20 @@ export function usePlayer({
     const handlePlay = () => play();
     const handlePause = () => pause();
     const handleEnded = () => {
+      if (endedCallbackFiredRef.current) return;
+      endedCallbackFiredRef.current = true;
       setEnded(true);
       onEnded?.();
     };
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
+      if (
+        Number.isFinite(video.duration) &&
+        video.duration > 0 &&
+        video.currentTime >= video.duration - 0.5
+      ) {
+        handleEnded();
+      }
     };
     const handleDurationChange = () => {
       setDuration(video.duration);

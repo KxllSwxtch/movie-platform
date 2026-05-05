@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ContentStatus, ContentType } from '@prisma/client';
 
 import { PrismaService } from '../../config/prisma.service';
@@ -23,6 +23,32 @@ export class SeriesService {
     private readonly cache: CacheService,
   ) {}
 
+  private canManageAll(actor?: { id?: string; role?: string }): boolean {
+    return actor?.role === 'ADMIN' || actor?.role === 'MODERATOR';
+  }
+
+  private async assertCanManageContent(
+    contentId: string,
+    actor?: { id?: string; role?: string },
+  ) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { id: true, creatorId: true },
+    });
+
+    if (!content) {
+      throw new NotFoundException(`Контент с ID "${contentId}" не найден`);
+    }
+
+    if (
+      actor?.id &&
+      !this.canManageAll(actor) &&
+      content.creatorId !== actor.id
+    ) {
+      throw new ForbiddenException('Недостаточно прав для управления контентом');
+    }
+  }
+
   /**
    * Generate URL-friendly slug from title.
    */
@@ -41,7 +67,10 @@ export class SeriesService {
   /**
    * Create a series/tutorial with full season/episode structure in a single transaction.
    */
-  async createWithStructure(dto: CreateSeriesContentDto): Promise<SeriesStructureResponseDto> {
+  async createWithStructure(
+    dto: CreateSeriesContentDto,
+    creatorId?: string,
+  ): Promise<SeriesStructureResponseDto> {
     if (dto.contentType !== ContentType.SERIES && dto.contentType !== ContentType.TUTORIAL) {
       throw new BadRequestException('contentType must be SERIES or TUTORIAL');
     }
@@ -66,6 +95,7 @@ export class SeriesService {
           ageCategory: dto.ageCategory,
           thumbnailUrl: dto.thumbnailUrl,
           previewUrl: dto.previewUrl,
+          creatorId,
           isFree: dto.isFree ?? false,
           individualPrice: dto.individualPrice,
           status: ContentStatus.DRAFT,
@@ -106,6 +136,7 @@ export class SeriesService {
               contentType: dto.contentType,
               categoryId: dto.categoryId,
               ageCategory: dto.ageCategory,
+              creatorId,
               status: ContentStatus.DRAFT,
             },
           });
@@ -133,7 +164,11 @@ export class SeriesService {
   /**
    * Get the full season/episode tree for a series/tutorial.
    */
-  async getStructure(contentId: string): Promise<SeriesStructureResponseDto> {
+  async getStructure(
+    contentId: string,
+    actor?: { id?: string; role?: string },
+  ): Promise<SeriesStructureResponseDto> {
+    await this.assertCanManageContent(contentId, actor);
     return this._getStructureFromTx(this.prisma, contentId);
   }
 
@@ -248,7 +283,13 @@ export class SeriesService {
   /**
    * Add a season/chapter to an existing series/tutorial.
    */
-  async addSeason(rootContentId: string, dto: AddSeasonDto): Promise<SeriesSeasonResponseDto> {
+  async addSeason(
+    rootContentId: string,
+    dto: AddSeasonDto,
+    actor?: { id?: string; role?: string },
+  ): Promise<SeriesSeasonResponseDto> {
+    await this.assertCanManageContent(rootContentId, actor);
+
     const rootContent = await this.prisma.content.findUnique({
       where: { id: rootContentId },
       include: { series: true },
@@ -282,7 +323,13 @@ export class SeriesService {
   /**
    * Add an episode to an existing series/tutorial.
    */
-  async addEpisode(rootContentId: string, dto: AddEpisodeDto): Promise<SeriesEpisodeResponseDto> {
+  async addEpisode(
+    rootContentId: string,
+    dto: AddEpisodeDto,
+    actor?: { id?: string; role?: string },
+  ): Promise<SeriesEpisodeResponseDto> {
+    await this.assertCanManageContent(rootContentId, actor);
+
     const rootContent = await this.prisma.content.findUnique({
       where: { id: rootContentId },
       include: { series: true },
@@ -319,6 +366,7 @@ export class SeriesService {
           contentType: rootContent.contentType,
           categoryId: rootContent.categoryId,
           ageCategory: rootContent.ageCategory,
+          creatorId: rootContent.creatorId,
           status: ContentStatus.DRAFT,
         },
       });
@@ -354,7 +402,13 @@ export class SeriesService {
   /**
    * Update an episode's metadata.
    */
-  async updateEpisode(episodeContentId: string, dto: UpdateEpisodeDto): Promise<void> {
+  async updateEpisode(
+    episodeContentId: string,
+    dto: UpdateEpisodeDto,
+    actor?: { id?: string; role?: string },
+  ): Promise<void> {
+    await this.assertCanManageContent(episodeContentId, actor);
+
     const content = await this.prisma.content.findUnique({
       where: { id: episodeContentId },
       include: { series: true },
@@ -380,7 +434,12 @@ export class SeriesService {
   /**
    * Delete an episode (Content + Series cascade).
    */
-  async deleteEpisode(episodeContentId: string): Promise<void> {
+  async deleteEpisode(
+    episodeContentId: string,
+    actor?: { id?: string; role?: string },
+  ): Promise<void> {
+    await this.assertCanManageContent(episodeContentId, actor);
+
     const content = await this.prisma.content.findUnique({
       where: { id: episodeContentId },
       include: { series: true },
@@ -401,7 +460,13 @@ export class SeriesService {
   /**
    * Bulk reorder episodes within a series.
    */
-  async reorderStructure(rootContentId: string, dto: UpdateStructureDto): Promise<void> {
+  async reorderStructure(
+    rootContentId: string,
+    dto: UpdateStructureDto,
+    actor?: { id?: string; role?: string },
+  ): Promise<void> {
+    await this.assertCanManageContent(rootContentId, actor);
+
     const rootContent = await this.prisma.content.findUnique({
       where: { id: rootContentId },
       include: { series: true },
@@ -415,7 +480,7 @@ export class SeriesService {
     await this.prisma.$transaction(
       dto.episodes.map((ep) =>
         this.prisma.series.updateMany({
-          where: { contentId: ep.id },
+          where: { contentId: ep.id, parentSeriesId: rootContent.series!.id },
           data: {
             seasonNumber: ep.seasonNumber,
             episodeNumber: ep.episodeNumber,

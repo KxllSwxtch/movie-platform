@@ -79,7 +79,11 @@ export interface UpdateContentInput extends Partial<CreateContentInput> {
  */
 export function useAdminContent(params?: AdminContentQueryParams) {
   const { isAuthenticated, isHydrated, user } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
+  const canUseStudio =
+    user?.role === 'ADMIN' ||
+    user?.role === 'MODERATOR' ||
+    user?.role === 'BUYER' ||
+    user?.role === 'PARTNER';
 
   return useQuery({
     queryKey: queryKeys.adminContent.list(params as Record<string, unknown> | undefined),
@@ -89,7 +93,7 @@ export function useAdminContent(params?: AdminContentQueryParams) {
       });
       return response.data;
     },
-    enabled: isAuthenticated && isHydrated && isAdmin,
+    enabled: isAuthenticated && isHydrated && canUseStudio,
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -99,7 +103,11 @@ export function useAdminContent(params?: AdminContentQueryParams) {
  */
 export function useAdminContentDetail(id: string | undefined) {
   const { isAuthenticated, isHydrated, user } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
+  const canUseStudio =
+    user?.role === 'ADMIN' ||
+    user?.role === 'MODERATOR' ||
+    user?.role === 'BUYER' ||
+    user?.role === 'PARTNER';
 
   return useQuery({
     queryKey: queryKeys.adminContent.detail(id || ''),
@@ -108,7 +116,7 @@ export function useAdminContentDetail(id: string | undefined) {
       const response = await api.get<Content>(endpoints.adminContent.detail(id));
       return response.data;
     },
-    enabled: !!id && isAuthenticated && isHydrated && isAdmin,
+    enabled: !!id && isAuthenticated && isHydrated && canUseStudio,
   });
 }
 

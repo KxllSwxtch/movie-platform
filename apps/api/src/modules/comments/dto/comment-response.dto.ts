@@ -32,6 +32,9 @@ export class CommentListResponseDto {
   @ApiProperty({ type: [CommentResponseDto] })
   items!: CommentResponseDto[];
 
+  @ApiProperty({ description: 'Total number of top-level comments' })
+  total!: number;
+
   @ApiPropertyOptional({ description: 'Cursor for the next page (comment ID)' })
   nextCursor!: string | null;
 

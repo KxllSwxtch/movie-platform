@@ -1,11 +1,15 @@
-'use client';
+"use client";
 
-import { useQuery, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
+import {
+  useQuery,
+  useInfiniteQuery,
+  keepPreviousData,
+} from "@tanstack/react-query";
 
-import { api, endpoints } from '@/lib/api-client';
-import { queryKeys } from '@/lib/query-client';
-import { formatDuration } from '@/lib/utils';
-import type { PaginatedList } from '@/types';
+import { api, endpoints } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-client";
+import { formatDuration } from "@/lib/utils";
+import type { PaginatedList } from "@/types";
 
 interface ContentListParams {
   type?: string;
@@ -13,7 +17,7 @@ interface ContentListParams {
   categoryId?: string;
   age?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
   search?: string;
@@ -32,6 +36,8 @@ interface ContentListItem {
   viewCount: number;
   category?: string | { id: string; name: string; slug: string };
   rating?: number;
+  averageRating?: number;
+  ratingCount?: number;
   year?: number;
   seasonCount?: number;
   episodeCount?: number;
@@ -90,23 +96,46 @@ export interface TutorialLesson {
  * Hook for fetching a paginated list of content with filters
  */
 export function useContentList(params: ContentListParams) {
-  const { type, categorySlug, categoryId, sortBy, sortOrder, page = 1, limit = 20, search, freeOnly } = params;
+  const {
+    type,
+    categorySlug,
+    categoryId,
+    sortBy,
+    sortOrder,
+    page = 1,
+    limit = 20,
+    search,
+    freeOnly,
+  } = params;
 
   return useQuery({
-    queryKey: queryKeys.content.list({ type, categorySlug, categoryId, sortBy, sortOrder, page, limit, search, freeOnly }),
+    queryKey: queryKeys.content.list({
+      type,
+      categorySlug,
+      categoryId,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+      search,
+      freeOnly,
+    }),
     queryFn: async () => {
-      const response = await api.get<PaginatedList<ContentListItem>>(endpoints.content.list, {
-        params: {
-          type,
-          categoryId: categoryId || undefined,
-          sortBy,
-          sortOrder,
-          page,
-          limit,
-          search,
-          freeOnly,
+      const response = await api.get<PaginatedList<ContentListItem>>(
+        endpoints.content.list,
+        {
+          params: {
+            type,
+            categoryId: categoryId || undefined,
+            sortBy,
+            sortOrder,
+            page,
+            limit,
+            search,
+            freeOnly,
+          },
         },
-      });
+      );
       // Normalize: API returns { items, meta: { total, page, limit } }
       // Frontend expects { items, total, page, limit } at data level
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -126,24 +155,40 @@ export function useContentList(params: ContentListParams) {
 /**
  * Hook for fetching infinite scrollable content (for shorts)
  */
-export function useContentInfinite(params: Omit<ContentListParams, 'page'>) {
-  const { type, categorySlug, categoryId, sortBy, sortOrder, limit = 10, search, freeOnly } = params;
+export function useContentInfinite(params: Omit<ContentListParams, "page">) {
+  const {
+    type,
+    categorySlug,
+    categoryId,
+    sortBy,
+    sortOrder,
+    limit = 10,
+    search,
+    freeOnly,
+  } = params;
 
   return useInfiniteQuery({
-    queryKey: [...queryKeys.content.lists(), 'infinite', { type, categorySlug, categoryId, sortBy, sortOrder }],
+    queryKey: [
+      ...queryKeys.content.lists(),
+      "infinite",
+      { type, categorySlug, categoryId, sortBy, sortOrder },
+    ],
     queryFn: async ({ pageParam = 1 }) => {
-      const response = await api.get<PaginatedList<ContentListItem>>(endpoints.content.list, {
-        params: {
-          type,
-          categoryId: categoryId || undefined,
-          sortBy,
-          sortOrder,
-          page: pageParam,
-          limit,
-          search,
-          freeOnly,
+      const response = await api.get<PaginatedList<ContentListItem>>(
+        endpoints.content.list,
+        {
+          params: {
+            type,
+            categoryId: categoryId || undefined,
+            sortBy,
+            sortOrder,
+            page: pageParam,
+            limit,
+            search,
+            freeOnly,
+          },
         },
-      });
+      );
       // Normalize meta fields to root level
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rawData = response.data as any;
@@ -169,9 +214,11 @@ export function useContentInfinite(params: Omit<ContentListParams, 'page'>) {
  */
 export function useCategoryDetail(slug: string) {
   return useQuery({
-    queryKey: [...queryKeys.categories.all, 'detail', slug],
+    queryKey: [...queryKeys.categories.all, "detail", slug],
     queryFn: async () => {
-      const response = await api.get<CategoryDetail>(`/categories/slug/${slug}`);
+      const response = await api.get<CategoryDetail>(
+        `/categories/slug/${slug}`,
+      );
       return response.data;
     },
     enabled: !!slug,
@@ -184,16 +231,18 @@ export function useCategoryDetail(slug: string) {
  */
 export function useTutorialDetail(slug: string) {
   return useQuery({
-    queryKey: [...queryKeys.content.details(), 'tutorial', slug],
+    queryKey: [...queryKeys.content.details(), "tutorial", slug],
     queryFn: async () => {
-      const response = await api.get<TutorialDetail>(endpoints.content.detail(slug));
+      const response = await api.get<TutorialDetail>(
+        endpoints.content.detail(slug),
+      );
 
       // Backend returns tutorials with SERIES-like structure: { seasons: [{ episodes: [...] }] }
       // UI expects a flat lessons list for CTA/progress.
       const raw = response.data as TutorialDetail;
 
       const duration =
-        typeof raw.duration === 'number'
+        typeof raw.duration === "number"
           ? formatDuration(raw.duration)
           : raw.duration;
 
@@ -253,7 +302,9 @@ export function useContentDetail(slug: string) {
   return useQuery({
     queryKey: [...queryKeys.content.details(), slug],
     queryFn: async () => {
-      const response = await api.get<ContentDetail>(endpoints.content.detail(slug));
+      const response = await api.get<ContentDetail>(
+        endpoints.content.detail(slug),
+      );
       return response.data;
     },
     enabled: !!slug,
@@ -294,6 +345,8 @@ export interface SeriesDetail {
   contentType: string;
   ageCategory: string;
   rating?: number;
+  averageRating?: number;
+  ratingCount?: number;
   year?: number;
   seasonCount?: number;
   episodeCount?: number;
@@ -312,9 +365,11 @@ export interface SeriesDetail {
  */
 export function useSeriesDetail(slug: string) {
   return useQuery({
-    queryKey: [...queryKeys.content.details(), 'series', slug],
+    queryKey: [...queryKeys.content.details(), "series", slug],
     queryFn: async () => {
-      const response = await api.get<SeriesDetail>(endpoints.content.detail(slug));
+      const response = await api.get<SeriesDetail>(
+        endpoints.content.detail(slug),
+      );
       return response.data;
     },
     enabled: !!slug,

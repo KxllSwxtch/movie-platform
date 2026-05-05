@@ -45,6 +45,7 @@ export interface Content {
   ageCategory: AgeCategory;
   thumbnailUrl?: string;
   previewUrl?: string;
+  creatorId?: string;
   duration: number; // in seconds
   isFree: boolean;
   individualPrice?: number;

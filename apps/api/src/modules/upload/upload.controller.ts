@@ -35,7 +35,7 @@ if (!fs.existsSync(VIDEO_UPLOAD_DIR)) {
 @ApiBearerAuth()
 @Controller('upload')
 @UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.BUYER, UserRole.PARTNER)
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 

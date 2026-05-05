@@ -115,6 +115,12 @@ export const queryKeys = {
     list: (contentId: string) => [...queryKeys.comments.all, 'list', contentId] as const,
   },
 
+  // Likes
+  likes: {
+    all: ['likes'] as const,
+    status: (contentId: string) => [...queryKeys.likes.all, 'status', contentId] as const,
+  },
+
   // Series
   series: {
     all: ['series'] as const,

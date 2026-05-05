@@ -437,7 +437,7 @@ export function ClipWizard({ onSuccess }: ClipWizardProps) {
       return;
     }
     
-    updateContent.mutate(buildUpdatePayload('PUBLISHED'), {
+    updateContent.mutate(buildUpdatePayload('PENDING'), {
       onSuccess: (data) => {
         clearDraft();
         onSuccess?.(data.id);
@@ -463,7 +463,7 @@ export function ClipWizard({ onSuccess }: ClipWizardProps) {
       onSubmit={handlePublish}
       onDraftSubmit={handleDraftSubmit}
       isSubmitting={createContent.isPending || updateContent.isPending}
-      submitLabel="Опубликовать"
+      submitLabel="Отправить на модерацию"
       submitIcon={<Rocket weight="fill" className="h-4 w-4" />}
       cancelHref="/studio"
     >

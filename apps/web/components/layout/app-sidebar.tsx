@@ -90,8 +90,8 @@ const baseNavGroups: NavGroup[] = [
 const studioNavGroup: NavGroup = {
   label: 'СТУДИЯ',
   items: [
+    { href: '/studio/create', icon: Plus, label: 'Создать контент' },
     { href: '/studio', icon: VideoCamera, label: 'Мой контент' },
-    { href: '/studio/create', icon: Plus, label: 'Создать' },
   ],
 };
 
@@ -125,13 +125,29 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const { user } = useAuthStore();
   const { isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
 
-  const isAdmin = user?.role === 'ADMIN';
+  const canUseStudio =
+    user?.role === 'ADMIN' ||
+    user?.role === 'MODERATOR' ||
+    user?.role === 'BUYER' ||
+    user?.role === 'PARTNER';
+  const canModerate = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
   const navGroups = React.useMemo(() => {
     const groups = [...baseNavGroups];
-    if (isAdmin) groups.push(studioNavGroup);
+    if (canUseStudio) {
+      groups.push({
+        ...studioNavGroup,
+        items: canModerate
+          ? [
+              studioNavGroup.items[0],
+              { href: '/admin/content', icon: ShieldCheck, label: 'Модерация контента' },
+              ...studioNavGroup.items.slice(1),
+            ]
+          : studioNavGroup.items,
+      });
+    }
     groups.push(partnerNavGroup);
     return groups;
-  }, [isAdmin]);
+  }, [canModerate, canUseStudio]);
 
   // State for add genre dialog
   const [isAddGenreDialogOpen, setAddGenreDialogOpen] = React.useState(false);

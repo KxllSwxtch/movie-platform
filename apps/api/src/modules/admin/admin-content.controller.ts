@@ -26,6 +26,7 @@ import { ContentService } from '../content/content.service';
 import { SeriesService } from '../content/series.service';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import {
   CreateContentDto,
   UpdateContentDto,
@@ -41,7 +42,7 @@ import {
 @ApiBearerAuth()
 @Controller('admin/content')
 @UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.BUYER, UserRole.PARTNER)
 export class AdminContentController {
   private readonly logger = new Logger(AdminContentController.name);
 
@@ -60,8 +61,11 @@ export class AdminContentController {
   @ApiOperation({ summary: 'Create series/tutorial with structure' })
   @ApiResponse({ status: 201, description: 'Series/tutorial created with structure' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
-  async createSeriesContent(@Body() dto: CreateSeriesContentDto) {
-    return this.seriesService.createWithStructure(dto);
+  async createSeriesContent(
+    @Body() dto: CreateSeriesContentDto,
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.seriesService.createWithStructure(dto, userId);
   }
 
   /**
@@ -86,8 +90,10 @@ export class AdminContentController {
   async updateEpisode(
     @Param('episodeId') episodeId: string,
     @Body() dto: UpdateEpisodeDto,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ) {
-    await this.seriesService.updateEpisode(episodeId, dto);
+    await this.seriesService.updateEpisode(episodeId, dto, { id: userId, role });
     return { success: true, message: 'Episode updated' };
   }
 
@@ -99,8 +105,12 @@ export class AdminContentController {
   @ApiParam({ name: 'episodeId', description: 'Episode content ID' })
   @ApiResponse({ status: 200, description: 'Episode deleted' })
   @ApiResponse({ status: 404, description: 'Episode not found' })
-  async deleteEpisode(@Param('episodeId') episodeId: string) {
-    await this.seriesService.deleteEpisode(episodeId);
+  async deleteEpisode(
+    @Param('episodeId') episodeId: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    await this.seriesService.deleteEpisode(episodeId, { id: userId, role });
     return { success: true, message: 'Episode deleted' };
   }
 
@@ -130,6 +140,8 @@ export class AdminContentController {
     @Query('isFree') isFree?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ) {
     return this.contentService.findAllAdmin({
       status,
@@ -138,7 +150,7 @@ export class AdminContentController {
       isFree: isFree === undefined ? undefined : isFree === 'true',
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
-    });
+    }, { id: userId, role });
   }
 
   /**
@@ -151,8 +163,12 @@ export class AdminContentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   @ApiResponse({ status: 404, description: 'Content not found' })
-  async findById(@Param('id') id: string) {
-    return this.contentService.findByIdAdmin(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    return this.contentService.findByIdAdmin(id, { id: userId, role });
   }
 
   /**
@@ -166,14 +182,18 @@ export class AdminContentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   @ApiResponse({ status: 404, description: 'Category not found' })
-  async create(@Body() dto: CreateContentDto) {
+  async create(
+    @Body() dto: CreateContentDto,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
     this.logger.debug(`Creating content with dto:`, JSON.stringify({
       title: dto.title,
       previewUrl: dto.previewUrl,
       previewUrlType: typeof dto.previewUrl,
       previewUrlLength: (dto.previewUrl as string)?.length,
     }));
-    return this.contentService.create(dto);
+    return this.contentService.create(dto, { id: userId, role });
   }
 
   /**
@@ -187,8 +207,13 @@ export class AdminContentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   @ApiResponse({ status: 404, description: 'Content or Category not found' })
-  async update(@Param('id') id: string, @Body() dto: UpdateContentDto) {
-    return this.contentService.update(id, dto);
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateContentDto,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    return this.contentService.update(id, dto, { id: userId, role });
   }
 
   /**
@@ -201,8 +226,12 @@ export class AdminContentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   @ApiResponse({ status: 404, description: 'Content not found' })
-  async delete(@Param('id') id: string) {
-    return this.contentService.delete(id);
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    return this.contentService.delete(id, { id: userId, role });
   }
 
   // ============ Series Structure Sub-routes ============
@@ -215,8 +244,12 @@ export class AdminContentController {
   @ApiParam({ name: 'id', description: 'Root content ID' })
   @ApiResponse({ status: 200, description: 'Series structure tree' })
   @ApiResponse({ status: 404, description: 'Content not found' })
-  async getStructure(@Param('id') id: string) {
-    return this.seriesService.getStructure(id);
+  async getStructure(
+    @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    return this.seriesService.getStructure(id, { id: userId, role });
   }
 
   /**
@@ -229,8 +262,10 @@ export class AdminContentController {
   async reorderStructure(
     @Param('id') id: string,
     @Body() dto: UpdateStructureDto,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ) {
-    await this.seriesService.reorderStructure(id, dto);
+    await this.seriesService.reorderStructure(id, dto, { id: userId, role });
     return { success: true, message: 'Structure reordered' };
   }
 
@@ -246,8 +281,10 @@ export class AdminContentController {
   async addSeason(
     @Param('id') id: string,
     @Body() dto: AddSeasonDto,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ) {
-    return this.seriesService.addSeason(id, dto);
+    return this.seriesService.addSeason(id, dto, { id: userId, role });
   }
 
   /**
@@ -262,7 +299,9 @@ export class AdminContentController {
   async addEpisode(
     @Param('id') id: string,
     @Body() dto: AddEpisodeDto,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ) {
-    return this.seriesService.addEpisode(id, dto);
+    return this.seriesService.addEpisode(id, dto, { id: userId, role });
   }
 }

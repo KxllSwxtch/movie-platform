@@ -150,9 +150,9 @@ export class CreateContentDto {
   genreIds?: string[];
 
   @ApiPropertyOptional({
-    enum: [ContentStatus.DRAFT, ContentStatus.PUBLISHED],
+    enum: [ContentStatus.DRAFT, ContentStatus.PENDING, ContentStatus.PUBLISHED],
     default: ContentStatus.DRAFT,
-    description: 'Initial content status (DRAFT or PUBLISHED)',
+    description: 'Initial content status (DRAFT, PENDING, or PUBLISHED)',
   })
   @IsOptional()
   @IsEnum(ContentStatus)

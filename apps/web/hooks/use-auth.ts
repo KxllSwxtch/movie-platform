@@ -179,9 +179,11 @@ export function useAuth() {
     }
   }, [userQuery.data, updateUser]);
 
+  const resolvedUser = userQuery.data ?? user;
+
   return {
     // State
-    user,
+    user: resolvedUser,
     accessToken,
     isAuthenticated,
     isHydrated,
@@ -222,9 +224,11 @@ export function useRequireAuth(redirectTo = '/login') {
   const router = useRouter();
   const { isAuthenticated, isHydrated } = useAuthStore();
 
-  if (isHydrated && !isAuthenticated) {
-    router.push(redirectTo);
-  }
+  React.useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push(redirectTo);
+    }
+  }, [isHydrated, isAuthenticated, redirectTo, router]);
 
   return { isAuthenticated, isHydrated };
 }
@@ -237,9 +241,11 @@ export function useRedirectIfAuthenticated(redirectTo = '/dashboard') {
   const router = useRouter();
   const { isAuthenticated, isHydrated } = useAuthStore();
 
-  if (isHydrated && isAuthenticated) {
-    router.push(redirectTo);
-  }
+  React.useEffect(() => {
+    if (isHydrated && isAuthenticated) {
+      router.push(redirectTo);
+    }
+  }, [isHydrated, isAuthenticated, redirectTo, router]);
 
   return { isAuthenticated, isHydrated };
 }

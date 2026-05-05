@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { FilmStrip } from '@phosphor-icons/react';
-import Image, { type ImageProps } from 'next/image';
-import { useEffect, useState } from 'react';
+import { FilmStrip } from "@phosphor-icons/react";
+import Image, { type ImageProps } from "next/image";
+import { useEffect, useState } from "react";
 
-import { normalizeMediaUrl } from '@/lib/media-url';
-import { cn } from '@/lib/utils';
+import { normalizeMediaUrl } from "@/lib/media-url";
+import { cn } from "@/lib/utils";
 
-interface ContentImageProps extends Omit<ImageProps, 'onError'> {
+interface ContentImageProps extends Omit<ImageProps, "onError"> {
   fallbackIcon?: React.ReactNode;
   fallbackClassName?: string;
 }
@@ -28,25 +28,28 @@ export function ContentImage({
 }: ContentImageProps) {
   const [hasError, setHasError] = useState(false);
 
-  const normalizedSrc =
-    typeof src === 'string' ? normalizeMediaUrl(src) : src;
+  const normalizedSrc = typeof src === "string" ? normalizeMediaUrl(src) : src;
 
   // Next.js Image optimizer is strict about upstream response headers.
   // Our MinIO proxy (/minio/*) can return objects without ideal metadata in dev,
   // so we bypass optimization for these URLs to avoid 400 from /_next/image.
   const isMinioProxyPath =
-    typeof normalizedSrc === 'string' && normalizedSrc.startsWith('/minio/');
+    typeof normalizedSrc === "string" && normalizedSrc.startsWith("/minio/");
 
   // In Docker dev, the Next.js server runs in a container where `localhost` points to itself.
   // If we try to optimize `http://localhost:4000/...` (API) or `http://localhost:9000/...` (MinIO),
   // the optimizer fetch will fail and return 500. For these URLs, bypass optimization so the
   // browser fetches them directly.
   const isLocalhostAbsoluteUrl = (() => {
-    if (typeof normalizedSrc !== 'string') return false;
-    if (!normalizedSrc.startsWith('http://') && !normalizedSrc.startsWith('https://')) return false;
+    if (typeof normalizedSrc !== "string") return false;
+    if (
+      !normalizedSrc.startsWith("http://") &&
+      !normalizedSrc.startsWith("https://")
+    )
+      return false;
     try {
       const u = new URL(normalizedSrc);
-      return u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+      return u.hostname === "localhost" || u.hostname === "127.0.0.1";
     } catch {
       return false;
     }
@@ -64,7 +67,7 @@ export function ContentImage({
     return (
       <div
         className={cn(
-          'w-full h-full bg-mp-surface-elevated flex items-center justify-center',
+          "w-full h-full bg-mp-surface-elevated flex items-center justify-center",
           fallbackClassName,
         )}
       >
@@ -79,7 +82,7 @@ export function ContentImage({
     <Image
       src={normalizedSrc}
       alt={alt}
-      className={className}
+      className={cn("object-cover", className)}
       onError={() => setHasError(true)}
       unoptimized={finalUnoptimized}
       {...props}

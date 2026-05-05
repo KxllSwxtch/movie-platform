@@ -165,7 +165,7 @@ export function ShortWizard({ onSuccess }: ShortWizardProps) {
       updateContent.mutate(
         {
           id: createdContentId,
-          status: 'PUBLISHED',
+          status: 'PENDING',
         },
         {
           onSuccess: (data) => {
@@ -360,7 +360,7 @@ export function ShortWizard({ onSuccess }: ShortWizardProps) {
                   {updateContent.isPending ? (
                     <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}
-                  Опубликовать
+                  Отправить на модерацию
                 </Button>
               </>
             )}

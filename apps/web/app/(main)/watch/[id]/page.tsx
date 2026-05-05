@@ -1,37 +1,58 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import * as React from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   CaretLeft,
   ThumbsUp,
   ThumbsDown,
   ShareNetwork,
   Flag,
+  Play,
+  X,
   CaretDown,
   CaretUp,
   Lock,
   WarningCircle,
-} from '@phosphor-icons/react';
+} from "@phosphor-icons/react";
 
-import { Container } from '@/components/ui/container';
-import { Button } from '@/components/ui/button';
-import dynamic from 'next/dynamic';
-import { VideoPlayerSkeleton } from '@/components/player';
-import { ContentImage } from '@/components/content/content-image';
-import { cn, copyTextToClipboard } from '@/lib/utils';
-import { normalizeMediaUrl } from '@/lib/media-url';
-import { useStreamUrl } from '@/hooks/use-streaming';
-import { useContentDetail } from '@/hooks/use-content';
-import { api, endpoints, ApiError } from '@/lib/api-client';
-import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-client';
-import { toast } from 'sonner';
+import { Container } from "@/components/ui/container";
+import { Button } from "@/components/ui/button";
+import dynamic from "next/dynamic";
+import { VideoPlayerSkeleton } from "@/components/player";
+import { ContentComments, ContentImage } from "@/components/content";
+import { cn, copyTextToClipboard } from "@/lib/utils";
+import { normalizeMediaUrl } from "@/lib/media-url";
+import { useStreamUrl } from "@/hooks/use-streaming";
+import { useContentDetail } from "@/hooks/use-content";
+import {
+  useContentLikeStatus,
+  useLikeContent,
+  useUnlikeContent,
+} from "@/hooks/use-likes";
+import { api, endpoints, ApiError } from "@/lib/api-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-client";
+import { toast } from "sonner";
+import { useIsAuthenticated } from "@/stores/auth.store";
+
+type NextVideo = {
+  id: string;
+  slug?: string;
+  title: string;
+  contentType?: string;
+  thumbnailUrl?: string | null;
+  duration?: number;
+  seasonNumber?: number;
+  episodeNumber?: number;
+};
 
 const VideoPlayer = dynamic(
-  () => import('@/components/player/video-player').then((m) => m.VideoPlayer),
+  () => import("@/components/player/video-player").then((m) => m.VideoPlayer),
   { ssr: false, loading: () => <VideoPlayerSkeleton /> },
 );
+
+const NEXT_VIDEO_COUNTDOWN_SECONDS = 5;
 
 /**
  * Format view count
@@ -53,21 +74,48 @@ export default function WatchPage() {
 
   const queryClient = useQueryClient();
   const [showFullDescription, setShowFullDescription] = React.useState(false);
-  const [liked, setLiked] = React.useState<boolean | null>(null);
+  const [disliked, setDisliked] = React.useState(false);
+  const [nextEpisode, setNextEpisode] = React.useState<NextVideo | null>(null);
+  const [nextCountdown, setNextCountdown] = React.useState(0);
+  const [nextCancelled, setNextCancelled] = React.useState(false);
+  const isAuthenticated = useIsAuthenticated();
 
   // Fetch content metadata (works with both UUID and slug)
-  const { data: contentData, isLoading: isContentLoading, error: contentError } = useContentDetail(contentId);
+  const {
+    data: contentData,
+    isLoading: isContentLoading,
+    error: contentError,
+  } = useContentDetail(contentId);
   const contentDetail = (contentData as any)?.data || contentData;
 
   // Fetch stream URL for playback
-  const { data, isLoading: isStreamLoading, error: streamError } = useStreamUrl(contentId);
+  const {
+    data,
+    isLoading: isStreamLoading,
+    error: streamError,
+  } = useStreamUrl(contentId);
   const streamData = (data as any)?.data || data;
 
   const isLoading = isContentLoading && isStreamLoading;
   const error = streamError;
+  const likeStatus = useContentLikeStatus(contentId, isAuthenticated);
+  const likeContent = useLikeContent(contentId);
+  const unlikeContent = useUnlikeContent(contentId);
+  const liked = likeStatus.data?.liked ?? false;
+  const likeCount = likeStatus.data?.likeCount ?? contentDetail?.likeCount ?? 0;
+
+  React.useEffect(() => {
+    setNextEpisode(null);
+    setNextCountdown(0);
+    setNextCancelled(false);
+  }, [contentId]);
 
   // Record view once when the video becomes playable
   const hasRecordedViewRef = React.useRef(false);
+  React.useEffect(() => {
+    hasRecordedViewRef.current = false;
+  }, [contentId]);
+
   React.useEffect(() => {
     if (!contentId) return;
     if (hasRecordedViewRef.current) return;
@@ -98,12 +146,48 @@ export default function WatchPage() {
     [contentId],
   );
 
-  const handleEnded = React.useCallback(() => {
-    // Could navigate to next episode or show recommendations
-  }, []);
+  const goToNextEpisode = React.useCallback(
+    (episode = nextEpisode) => {
+      if (!episode?.id) return;
+      setNextCountdown(0);
+      router.push(`/watch/${episode.id}`);
+    },
+    [nextEpisode, router],
+  );
+
+  const handleEnded = React.useCallback(async () => {
+    if (!contentId || nextCancelled || nextEpisode) return;
+    try {
+      const response = await api.get<NextVideo | null>(
+        endpoints.content.nextEpisode(contentId),
+      );
+      const episode = (response as any)?.data?.data ?? response.data;
+      if (!episode?.id) return;
+      setNextEpisode(episode);
+      setNextCountdown(NEXT_VIDEO_COUNTDOWN_SECONDS);
+    } catch {
+      // No next episode or endpoint unavailable.
+    }
+  }, [contentId, nextCancelled, nextEpisode]);
+
+  React.useEffect(() => {
+    if (!nextEpisode || nextCountdown <= 0) return;
+
+    const timer = window.setTimeout(() => {
+      setNextCountdown((value) => value - 1);
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [nextEpisode, nextCountdown]);
+
+  React.useEffect(() => {
+    if (nextEpisode && nextCountdown === 0) {
+      goToNextEpisode(nextEpisode);
+    }
+  }, [goToNextEpisode, nextEpisode, nextCountdown]);
 
   const handleError = React.useCallback((err: string) => {
-    console.error('Video error:', err);
+    console.error("Video error:", err);
   }, []);
 
   // When CDN returns 403 for expired signed URL, refetch stream URL
@@ -114,13 +198,13 @@ export default function WatchPage() {
   }, [queryClient, contentId]);
 
   const handleShare = React.useCallback(async () => {
-    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const url = typeof window !== "undefined" ? window.location.href : "";
     if (!url) return;
 
-    const shareTitle = streamData?.title || contentDetail?.title || 'Видео';
+    const shareTitle = streamData?.title || contentDetail?.title || "Видео";
 
     try {
-      if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      if (typeof navigator !== "undefined" && "share" in navigator) {
         await (navigator as any).share({ title: shareTitle, url });
         return;
       }
@@ -129,13 +213,27 @@ export default function WatchPage() {
     }
 
     const ok = await copyTextToClipboard(url);
-    if (ok) toast.success('Ссылка скопирована');
-    else toast.error('Не удалось скопировать ссылку');
+    if (ok) toast.success("Ссылка скопирована");
+    else toast.error("Не удалось скопировать ссылку");
   }, [contentDetail?.title, streamData?.title]);
 
   const handleReport = React.useCallback(() => {
-    toast.message('Жалобы будут доступны позже');
+    toast.message("Жалобы будут доступны позже");
   }, []);
+
+  const handleToggleLike = React.useCallback(async () => {
+    if (!isAuthenticated) {
+      toast.message("Войдите, чтобы поставить лайк");
+      return;
+    }
+
+    if (liked) {
+      await unlikeContent.mutateAsync();
+    } else {
+      await likeContent.mutateAsync();
+      setDisliked(false);
+    }
+  }, [isAuthenticated, likeContent, liked, unlikeContent]);
 
   // Access denied (403) — show subscription CTA
   if (error) {
@@ -153,10 +251,11 @@ export default function WatchPage() {
               Требуется подписка
             </h1>
             <p className="text-mp-text-secondary mb-6">
-              Для просмотра этого контента необходима активная подписка или индивидуальная покупка.
+              Для просмотра этого контента необходима активная подписка или
+              индивидуальная покупка.
             </p>
             <div className="flex gap-3 justify-center">
-              <Button onClick={() => router.push('/subscriptions')}>
+              <Button onClick={() => router.push("/subscriptions")}>
                 Оформить подписку
               </Button>
               <Button variant="outline" onClick={() => router.back()}>
@@ -169,7 +268,8 @@ export default function WatchPage() {
     }
 
     // True 404: content doesn't exist (both content detail and stream failed)
-    const contentNotFound = contentError && (contentError as ApiError)?.status === 404;
+    const contentNotFound =
+      contentError && (contentError as ApiError)?.status === 404;
     if (status === 404 && contentNotFound) {
       return (
         <div className="min-h-screen bg-mp-bg-primary flex items-center justify-center">
@@ -218,11 +318,13 @@ export default function WatchPage() {
   const streamApiError = streamError as ApiError | undefined;
   const videoNotReady = streamApiError?.status === 404 && contentDetail;
   const streamMessage = videoNotReady ? streamApiError?.message : undefined;
-  const streamMessageLower = (streamMessage || '').toLowerCase();
+  const streamMessageLower = (streamMessage || "").toLowerCase();
   const videoNotUploaded =
     videoNotReady &&
-    (streamMessageLower.includes('нет загруженного видео') || streamMessageLower.includes('нет видео'));
-  const videoEncodingFailed = videoNotReady && streamMessageLower.includes('не удалось');
+    (streamMessageLower.includes("нет загруженного видео") ||
+      streamMessageLower.includes("нет видео"));
+  const videoEncodingFailed =
+    videoNotReady && streamMessageLower.includes("не удалось");
 
   // Loading state — show skeleton while both queries are in flight
   if (isLoading && !videoNotReady) {
@@ -248,11 +350,28 @@ export default function WatchPage() {
   }
 
   // Derive display data from the best available source
-  const title = streamData?.title || contentDetail?.title || 'Видео';
-  const description = streamData?.description || contentDetail?.description || '';
+  const title = streamData?.title || contentDetail?.title || "Видео";
+  const description =
+    streamData?.description || contentDetail?.description || "";
   const duration = streamData?.duration || contentDetail?.duration || 0;
-  const thumbnailUrl = streamData?.thumbnailUrls?.[0] || contentDetail?.thumbnailUrl;
-  const normalizedThumbnailUrl = thumbnailUrl ? normalizeMediaUrl(thumbnailUrl) : undefined;
+  const thumbnailUrl =
+    streamData?.thumbnailUrls?.[0] || contentDetail?.thumbnailUrl;
+  const normalizedThumbnailUrl = thumbnailUrl
+    ? normalizeMediaUrl(thumbnailUrl)
+    : undefined;
+  const nextContentType =
+    nextEpisode?.contentType || contentDetail?.contentType || "";
+  const nextVideoTitlePrefix =
+    nextContentType === "TUTORIAL" ? "Следующий урок" : "Следующая серия";
+  const nextVideoCountdownText =
+    nextContentType === "TUTORIAL"
+      ? `Следующий урок начнётся через ${nextCountdown} секунд`
+      : `Следующая серия начнётся через ${nextCountdown} секунд`;
+  const nextProgressPercent =
+    (Math.max(nextCountdown, 0) / NEXT_VIDEO_COUNTDOWN_SECONDS) * 100;
+  const normalizedNextThumbnailUrl = nextEpisode?.thumbnailUrl
+    ? normalizeMediaUrl(nextEpisode.thumbnailUrl)
+    : undefined;
 
   return (
     <div className="min-h-screen bg-mp-bg-primary">
@@ -271,7 +390,7 @@ export default function WatchPage() {
 
       {/* Video player */}
       <div className="bg-black -mx-4 md:-mx-6 w-[calc(100%+2rem)] md:w-[calc(100%+3rem)]">
-        <div className="max-w-[1920px] mx-auto">
+        <div className="relative max-w-[1920px] mx-auto">
           {videoNotReady ? (
             <div className="relative aspect-video bg-mp-surface flex items-center justify-center overflow-hidden">
               {normalizedThumbnailUrl && (
@@ -305,7 +424,7 @@ export default function WatchPage() {
                       Не удалось подготовить видео
                     </p>
                     <p className="text-mp-text-secondary text-sm mt-2">
-                      {streamMessage || 'Попробуйте позже'}
+                      {streamMessage || "Попробуйте позже"}
                     </p>
                   </>
                 ) : (
@@ -315,7 +434,8 @@ export default function WatchPage() {
                       Видео готовится к воспроизведению
                     </p>
                     <p className="text-mp-text-secondary text-sm mt-2">
-                      {streamMessage || 'Попробуйте обновить страницу через несколько минут'}
+                      {streamMessage ||
+                        "Попробуйте обновить страницу через несколько минут"}
                     </p>
                   </>
                 )}
@@ -336,6 +456,82 @@ export default function WatchPage() {
           ) : (
             <VideoPlayerSkeleton />
           )}
+
+          {nextEpisode && nextCountdown > 0 && (
+            <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="w-[min(720px,100%)] overflow-hidden rounded-2xl border border-white/10 bg-[#10131c]/95 text-mp-text-primary shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="grid gap-0 sm:grid-cols-[220px_1fr]">
+                  <div className="relative aspect-video sm:aspect-auto sm:min-h-[220px] bg-mp-bg-secondary">
+                    {normalizedNextThumbnailUrl ? (
+                      <ContentImage
+                        src={normalizedNextThumbnailUrl}
+                        alt={nextEpisode.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 220px"
+                      />
+                    ) : normalizedThumbnailUrl ? (
+                      <ContentImage
+                        src={normalizedThumbnailUrl}
+                        alt={nextEpisode.title}
+                        fill
+                        className="object-cover opacity-80"
+                        sizes="(max-width: 640px) 100vw, 220px"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Play className="h-12 w-12 text-mp-text-secondary" weight="fill" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                  </div>
+
+                  <div className="flex flex-col justify-center p-5 sm:p-6">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-mp-accent-primary">
+                      {nextVideoTitlePrefix}
+                    </p>
+                    <h2 className="mt-2 line-clamp-2 text-2xl font-bold text-mp-text-primary">
+                      {nextEpisode.title}
+                    </h2>
+                    <p className="mt-3 text-sm text-mp-text-secondary">
+                      {nextVideoCountdownText}
+                    </p>
+
+                    <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-mp-accent-primary transition-[width] duration-1000 ease-linear"
+                        style={{ width: `${nextProgressPercent}%` }}
+                      />
+                    </div>
+
+                    <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        type="button"
+                        onClick={() => goToNextEpisode()}
+                        className="gap-2"
+                      >
+                        <Play className="h-4 w-4" weight="fill" />
+                        Смотреть сейчас
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => {
+                          setNextCancelled(true);
+                          setNextEpisode(null);
+                          setNextCountdown(0);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -353,7 +549,10 @@ export default function WatchPage() {
                 <>
                   <span>·</span>
                   <span>
-                    До {streamData?.availableQualities[streamData.availableQualities.length - 1] || streamData?.maxQuality}
+                    До{" "}
+                    {streamData?.availableQualities[
+                      streamData.availableQualities.length - 1
+                    ] || streamData?.maxQuality}
                   </span>
                 </>
               )}
@@ -363,26 +562,32 @@ export default function WatchPage() {
           {/* Actions */}
           <div className="flex items-center gap-3 pb-6 border-b border-mp-border">
             <Button
-              variant={liked === true ? 'default' : 'outline'}
+              variant={liked ? "default" : "outline"}
               size="sm"
-              onClick={() => setLiked(liked === true ? null : true)}
+              onClick={handleToggleLike}
+              disabled={likeContent.isPending || unlikeContent.isPending}
               className="gap-2"
             >
               <ThumbsUp
-                className={cn('w-4 h-4', liked === true && 'fill-current')}
+                className={cn("w-4 h-4", liked && "fill-current")}
               />
-              Нравится
+              Нравится{likeCount > 0 ? ` ${likeCount}` : ""}
             </Button>
             <Button
-              variant={liked === false ? 'default' : 'outline'}
+              variant={disliked ? "default" : "outline"}
               size="sm"
-              onClick={() => setLiked(liked === false ? null : false)}
+              onClick={() => setDisliked((value) => !value)}
             >
               <ThumbsDown
-                className={cn('w-4 h-4', liked === false && 'fill-current')}
+                className={cn("w-4 h-4", disliked && "fill-current")}
               />
             </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleShare}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleShare}
+            >
               <ShareNetwork className="w-4 h-4" />
               Поделиться
             </Button>
@@ -396,8 +601,8 @@ export default function WatchPage() {
             <div className="py-6">
               <p
                 className={cn(
-                  'text-mp-text-secondary',
-                  !showFullDescription && 'line-clamp-3',
+                  "text-mp-text-secondary",
+                  !showFullDescription && "line-clamp-3",
                 )}
               >
                 {description}
@@ -422,6 +627,11 @@ export default function WatchPage() {
               )}
             </div>
           )}
+
+          <ContentComments
+            contentId={contentId}
+            className="border-t border-mp-border pt-6"
+          />
         </div>
       </Container>
     </div>

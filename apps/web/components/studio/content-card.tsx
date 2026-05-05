@@ -88,7 +88,7 @@ export function StudioContentCard({ content, onPublish, isPublishing }: StudioCo
               disabled={isPublishing}
             >
               <ArrowUp className="mr-1.5 h-3.5 w-3.5" />
-              Опубликовать
+              На модерацию
             </Button>
           )}
         </div>

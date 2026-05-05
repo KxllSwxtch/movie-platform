@@ -1,27 +1,34 @@
-'use client';
+"use client";
 
-import { Play, Heart, ChatCircle, ShareNetwork, ArrowLeft } from '@phosphor-icons/react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import {
+  Play,
+  Heart,
+  ChatCircle,
+  ShareNetwork,
+  ArrowLeft,
+} from "@phosphor-icons/react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
-import { AgeBadge, type AgeCategory } from '@/components/content/age-badge';
-import { ContentImage } from '@/components/content/content-image';
-import { Button } from '@/components/ui/button';
-import { Container } from '@/components/ui/container';
-import { Spinner } from '@/components/ui/spinner';
-import { useContentDetail, useContentList } from '@/hooks/use-content';
-import { formatNumber } from '@/lib/utils';
+import { AgeBadge, type AgeCategory } from "@/components/content/age-badge";
+import { ContentComments } from "@/components/content/content-comments";
+import { ContentImage } from "@/components/content/content-image";
+import { ContentRating } from "@/components/content/content-rating";
+import { Button } from "@/components/ui/button";
+import { Container } from "@/components/ui/container";
+import { Spinner } from "@/components/ui/spinner";
+import { useContentDetail, useContentList } from "@/hooks/use-content";
+import { formatNumber } from "@/lib/utils";
 
 export default function ShortDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
 
   const { data: short, isLoading } = useContentDetail(slug);
-  const { data: relatedData } = useContentList({ type: 'SHORT', limit: 8 });
+  const { data: relatedData } = useContentList({ type: "SHORT", limit: 8 });
 
-  const relatedShorts = relatedData?.data?.items?.filter(
-    (item) => item.slug !== slug
-  ) ?? [];
+  const relatedShorts =
+    relatedData?.data?.items?.filter((item) => item.slug !== slug) ?? [];
 
   if (isLoading) {
     return (
@@ -34,8 +41,12 @@ export default function ShortDetailPage() {
   if (!short) {
     return (
       <Container size="lg" className="py-12 text-center">
-        <h2 className="text-xl font-semibold text-mp-text-primary mb-2">Шортс не найден</h2>
-        <p className="text-mp-text-secondary mb-6">Запрашиваемое видео не существует или было удалено</p>
+        <h2 className="text-xl font-semibold text-mp-text-primary mb-2">
+          Шортс не найден
+        </h2>
+        <p className="text-mp-text-secondary mb-6">
+          Запрашиваемое видео не существует или было удалено
+        </p>
         <Button variant="outline" asChild>
           <Link href="/shorts">Все шортсы</Link>
         </Button>
@@ -77,7 +88,10 @@ export default function ShortDetailPage() {
 
             {/* Age badge */}
             <div className="absolute top-4 left-4 z-10">
-              <AgeBadge age={(short.ageCategory || '0+') as AgeCategory} size="sm" />
+              <AgeBadge
+                age={(short.ageCategory || "0+") as AgeCategory}
+                size="sm"
+              />
             </div>
           </Link>
         </div>
@@ -89,9 +103,7 @@ export default function ShortDetailPage() {
           </h1>
 
           {short.creator && (
-            <p className="text-mp-text-secondary mb-4">
-              @{short.creator}
-            </p>
+            <p className="text-mp-text-secondary mb-4">@{short.creator}</p>
           )}
 
           {short.description && (
@@ -140,6 +152,11 @@ export default function ShortDetailPage() {
         </div>
       </div>
 
+      <div className="mt-10 space-y-8">
+        <ContentRating contentId={short.id} />
+        <ContentComments contentId={short.id} />
+      </div>
+
       {/* Related shorts */}
       {relatedShorts.length > 0 && (
         <section className="mt-12">
@@ -171,7 +188,9 @@ export default function ShortDetailPage() {
                       {item.title}
                     </p>
                     {item.creator && (
-                      <p className="text-white/60 text-xs mt-1">@{item.creator}</p>
+                      <p className="text-white/60 text-xs mt-1">
+                        @{item.creator}
+                      </p>
                     )}
                   </div>
                 </div>

@@ -1,29 +1,30 @@
-'use client';
+"use client";
 
-import { Play, Eye, Clock, FilmStrip } from '@phosphor-icons/react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { Play, Eye, Clock, FilmStrip } from "@phosphor-icons/react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
-import { AgeBadge, type AgeCategory } from '@/components/content/age-badge';
-import { ClipCard } from '@/components/content/clip-card';
-import { ContentImage } from '@/components/content/content-image';
-import { Button } from '@/components/ui/button';
-import { Container } from '@/components/ui/container';
-import { ContentGrid } from '@/components/ui/grid';
-import { Spinner } from '@/components/ui/spinner';
-import { useContentDetail, useContentList } from '@/hooks/use-content';
-import { formatDuration, formatNumber } from '@/lib/utils';
+import { AgeBadge, type AgeCategory } from "@/components/content/age-badge";
+import { ClipCard } from "@/components/content/clip-card";
+import { ContentComments } from "@/components/content/content-comments";
+import { ContentImage } from "@/components/content/content-image";
+import { ContentRating } from "@/components/content/content-rating";
+import { Button } from "@/components/ui/button";
+import { Container } from "@/components/ui/container";
+import { ContentGrid } from "@/components/ui/grid";
+import { Spinner } from "@/components/ui/spinner";
+import { useContentDetail, useContentList } from "@/hooks/use-content";
+import { formatDuration, formatNumber } from "@/lib/utils";
 
 export default function ClipDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
 
   const { data: clip, isLoading } = useContentDetail(slug);
-  const { data: relatedData } = useContentList({ type: 'CLIP', limit: 8 });
+  const { data: relatedData } = useContentList({ type: "CLIP", limit: 8 });
 
-  const relatedClips = relatedData?.data?.items?.filter(
-    (item) => item.slug !== slug
-  ) ?? [];
+  const relatedClips =
+    relatedData?.data?.items?.filter((item) => item.slug !== slug) ?? [];
 
   if (isLoading) {
     return (
@@ -36,8 +37,12 @@ export default function ClipDetailPage() {
   if (!clip) {
     return (
       <Container size="lg" className="py-12 text-center">
-        <h2 className="text-xl font-semibold text-mp-text-primary mb-2">Клип не найден</h2>
-        <p className="text-mp-text-secondary mb-6">Запрашиваемый клип не существует или был удалён</p>
+        <h2 className="text-xl font-semibold text-mp-text-primary mb-2">
+          Клип не найден
+        </h2>
+        <p className="text-mp-text-secondary mb-6">
+          Запрашиваемый клип не существует или был удалён
+        </p>
         <Button variant="outline" asChild>
           <Link href="/clips">Все клипы</Link>
         </Button>
@@ -46,7 +51,7 @@ export default function ClipDetailPage() {
   }
 
   const categoryName = clip.category
-    ? typeof clip.category === 'object'
+    ? typeof clip.category === "object"
       ? (clip.category as { name?: string }).name
       : clip.category
     : null;
@@ -75,7 +80,10 @@ export default function ClipDetailPage() {
 
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-3">
-            <AgeBadge age={(clip.ageCategory || '0+') as AgeCategory} size="md" />
+            <AgeBadge
+              age={(clip.ageCategory || "0+") as AgeCategory}
+              size="md"
+            />
             {categoryName && (
               <span className="text-sm text-white/70 bg-white/10 px-2 py-1 rounded backdrop-blur-sm">
                 {categoryName}
@@ -124,6 +132,11 @@ export default function ClipDetailPage() {
         </Button>
       </div>
 
+      <div className="mb-12 space-y-8">
+        <ContentRating contentId={clip.id} />
+        <ContentComments contentId={clip.id} />
+      </div>
+
       {/* Related clips */}
       {relatedClips.length > 0 && (
         <section>
@@ -142,7 +155,10 @@ export default function ClipDetailPage() {
                   duration: item.duration,
                   viewCount: item.viewCount,
                   ageCategory: item.ageCategory as AgeCategory,
-                  category: typeof item.category === 'object' ? item.category?.name : item.category,
+                  category:
+                    typeof item.category === "object"
+                      ? item.category?.name
+                      : item.category,
                 }}
               />
             ))}

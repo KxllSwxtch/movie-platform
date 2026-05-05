@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../../config/prisma.service';
+import { CacheService } from '../../common/cache/cache.service';
 import { CursorPaginationDto } from '../../common/dto/cursor-pagination.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
@@ -15,7 +16,10 @@ function isPrivilegedRole(role: string | undefined): boolean {
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   private async ensureContentExists(contentId: string) {
     const content = await this.prisma.content.findFirst({
@@ -69,21 +73,24 @@ export class CommentsService {
         }
       : whereBase;
 
-    const rows = await this.prisma.comment.findMany({
-      where,
-      take: limit + 1,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
+    const [total, rows] = await Promise.all([
+      this.prisma.comment.count({ where: whereBase }),
+      this.prisma.comment.findMany({
+        where,
+        take: limit + 1,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
-    });
+      }),
+    ]);
 
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
@@ -101,6 +108,7 @@ export class CommentsService {
           avatarUrl: c.user.avatarUrl ?? undefined,
         },
       })),
+      total,
       nextCursor,
       hasMore,
     };
@@ -142,6 +150,8 @@ export class CommentsService {
       },
     });
 
+    await this.cache.invalidatePattern('content:*');
+
     return {
       id: created.id,
       text: created.text,
@@ -177,5 +187,6 @@ export class CommentsService {
     }
 
     await this.prisma.comment.delete({ where: { id: commentId } });
+    await this.cache.invalidatePattern('content:*');
   }
 }

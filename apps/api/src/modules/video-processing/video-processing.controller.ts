@@ -10,6 +10,8 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -28,6 +30,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { PrismaService } from '../../config/prisma.service';
 import { VideoProcessingService } from './video-processing.service';
 import { EncodingStatusDto } from '../edgecenter/dto';
 
@@ -41,11 +45,32 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 @ApiBearerAuth()
 @Controller('admin/content')
 @UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.BUYER, UserRole.PARTNER)
 export class VideoProcessingController {
   constructor(
     private readonly videoProcessingService: VideoProcessingService,
+    private readonly prisma: PrismaService,
   ) {}
+
+  private async assertCanManageContent(
+    contentId: string,
+    userId?: string,
+    role?: string,
+  ) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { id: true, creatorId: true },
+    });
+
+    if (!content) {
+      throw new NotFoundException('Content not found');
+    }
+
+    const canManageAll = role === UserRole.ADMIN || role === UserRole.MODERATOR;
+    if (!canManageAll && content.creatorId !== userId) {
+      throw new ForbiddenException('Недостаточно прав для управления видео');
+    }
+  }
 
   @Post(':id/video/upload')
   @HttpCode(HttpStatus.CREATED)
@@ -91,7 +116,11 @@ export class VideoProcessingController {
   async uploadVideo(
     @Param('id') contentId: string,
     @UploadedFile() file: Express.Multer.File,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ) {
+    await this.assertCanManageContent(contentId, userId, role);
+
     if (!file) {
       throw new BadRequestException('Видеофайл не предоставлен');
     }
@@ -121,7 +150,10 @@ export class VideoProcessingController {
   @ApiResponse({ status: 404, description: 'Content not found' })
   async getEncodingStatus(
     @Param('id') contentId: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ): Promise<EncodingStatusDto> {
+    await this.assertCanManageContent(contentId, userId, role);
     return this.videoProcessingService.getEncodingStatus(contentId);
   }
 
@@ -134,7 +166,12 @@ export class VideoProcessingController {
   @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Video deleted successfully' })
   @ApiResponse({ status: 404, description: 'Content not found' })
-  async deleteVideo(@Param('id') contentId: string) {
+  async deleteVideo(
+    @Param('id') contentId: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    await this.assertCanManageContent(contentId, userId, role);
     await this.videoProcessingService.deleteVideoForContent(contentId);
     return {
       success: true,

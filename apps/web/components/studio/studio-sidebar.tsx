@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { SquaresFour, Plus } from '@phosphor-icons/react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { SquaresFour, Plus } from "@phosphor-icons/react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 const STUDIO_NAV = [
-  { href: '/studio', icon: SquaresFour, label: 'Мой контент', exact: true },
-  { href: '/studio/create', icon: Plus, label: 'Создать' },
+  { href: "/studio", icon: SquaresFour, label: "Мой контент", exact: true },
+  { href: "/studio/create", icon: Plus, label: "Создать" },
 ];
 
 /**
@@ -16,6 +16,7 @@ const STUDIO_NAV = [
  */
 export function StudioSidebar() {
   const pathname = usePathname();
+  const navItems = STUDIO_NAV;
 
   return (
     <aside className="hidden lg:block w-56 shrink-0">
@@ -26,7 +27,7 @@ export function StudioSidebar() {
           </span>
         </div>
         <nav className="space-y-1">
-          {STUDIO_NAV.map((item) => {
+          {navItems.map((item) => {
             const isActive = item.exact
               ? pathname === item.href
               : pathname.startsWith(item.href);
@@ -36,10 +37,10 @@ export function StudioSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive
-                    ? 'bg-mp-accent-primary/10 text-mp-accent-primary'
-                    : 'text-mp-text-secondary hover:bg-mp-surface/80 hover:text-mp-text-primary'
+                    ? "bg-mp-accent-primary/10 text-mp-accent-primary"
+                    : "text-mp-text-secondary hover:bg-mp-surface/80 hover:text-mp-text-primary",
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -58,11 +59,12 @@ export function StudioSidebar() {
  */
 export function StudioMobileTabs() {
   const pathname = usePathname();
+  const navItems = STUDIO_NAV;
 
   return (
     <div className="lg:hidden -mx-4 sm:-mx-6 mb-6 overflow-x-auto border-b border-mp-border">
       <div className="flex min-w-max gap-1 px-4 sm:px-6 pb-2">
-        {STUDIO_NAV.map((item) => {
+        {navItems.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
             : pathname.startsWith(item.href);
@@ -72,10 +74,10 @@ export function StudioMobileTabs() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-colors',
+                "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-colors",
                 isActive
-                  ? 'bg-mp-accent-primary/10 text-mp-accent-primary'
-                  : 'text-mp-text-secondary hover:bg-mp-surface/80 hover:text-mp-text-primary'
+                  ? "bg-mp-accent-primary/10 text-mp-accent-primary"
+                  : "text-mp-text-secondary hover:bg-mp-surface/80 hover:text-mp-text-primary",
               )}
             >
               <item.icon className="h-3.5 w-3.5 shrink-0" />

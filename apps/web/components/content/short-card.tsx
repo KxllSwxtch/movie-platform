@@ -9,6 +9,11 @@ import { cn, copyTextToClipboard, formatNumber, formatRelativeTime } from '@/lib
 import { normalizeMediaUrl } from '@/lib/media-url';
 import { useStreamUrl } from '@/hooks/use-streaming';
 import { useContentComments, useCreateContentComment } from '@/hooks/use-comments';
+import {
+  useContentLikeStatus,
+  useLikeContent,
+  useUnlikeContent,
+} from '@/hooks/use-likes';
 import { useIsAuthenticated, useUser } from '@/stores/auth.store';
 import {
   Sheet,
@@ -47,30 +52,27 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
     const { data, isLoading, error } = useStreamUrl(isActive ? content.id : undefined);
     const streamData = (data as any)?.data ?? data;
 
-    const [liked, setLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(content.likeCount);
     const [isMuted, setIsMuted] = useState(true);
     const [commentsOpen, setCommentsOpen] = useState(false);
     const [commentText, setCommentText] = useState('');
-    const likeStorageKey = `mp-short-like:${content.id}`;
 
     const user = useUser();
     const isAuthenticated = useIsAuthenticated();
     const commentsQuery = useContentComments(content.id, commentsOpen);
     const createComment = useCreateContentComment(content.id);
+    const likeStatus = useContentLikeStatus(content.id, isAuthenticated);
+    const likeContent = useLikeContent(content.id);
+    const unlikeContent = useUnlikeContent(content.id);
+    const liked = likeStatus.data?.liked ?? false;
+    const likeCount = likeStatus.data?.likeCount ?? content.likeCount;
+    const commentCount = commentsQuery.data?.total ?? content.commentCount;
 
     useEffect(() => {
       // Reset local state when card changes
-      let savedLiked = false;
-      if (typeof window !== 'undefined') {
-        savedLiked = window.localStorage.getItem(likeStorageKey) === '1';
-      }
-      setLiked(savedLiked);
-      setLikeCount(content.likeCount + (savedLiked ? 1 : 0));
       setIsMuted(true);
       setCommentsOpen(false);
       setCommentText('');
-    }, [content.id, content.likeCount, likeStorageKey]);
+    }, [content.id]);
 
     useEffect(() => {
       // When card becomes inactive, ensure it's muted (prevents bleed when scrolling)
@@ -89,7 +91,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
 
     useEffect(() => {
       const el = videoRef.current;
-      if (!el) return;
+      if (!el) return undefined;
 
       // Always clean up previous HLS instance before switching cards/URLs
       if (hlsRef.current) {
@@ -106,7 +108,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         } catch {
           // ignore
         }
-        return;
+        return undefined;
       }
 
       const isHls = /\.m3u8(\?|$)/i.test(videoSrc);
@@ -166,17 +168,20 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
       } catch {
         // ignore
       }
+      return undefined;
     }, [isActive, videoSrc]);
 
-    const handleToggleLike = () => {
-      setLiked((prev) => {
-        const next = !prev;
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(likeStorageKey, next ? '1' : '0');
-        }
-        setLikeCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
-        return next;
-      });
+    const handleToggleLike = async () => {
+      if (!isAuthenticated) {
+        toast.message('Войдите, чтобы поставить лайк');
+        return;
+      }
+
+      if (liked) {
+        await unlikeContent.mutateAsync();
+      } else {
+        await likeContent.mutateAsync();
+      }
     };
 
     const handleComments = () => {
@@ -284,6 +289,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
             className="flex flex-col items-center gap-1 group"
             aria-label="Нравится"
             onClick={handleToggleLike}
+            disabled={likeContent.isPending || unlikeContent.isPending}
           >
             <div className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
               <Heart className={cn('w-5 h-5 text-white', liked && 'fill-current')} />
@@ -300,7 +306,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
             <div className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
               <ChatCircle className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xs text-white/80">{formatNumber(content.commentCount)}</span>
+            <span className="text-xs text-white/80">{formatNumber(commentCount)}</span>
           </button>
 
           <button

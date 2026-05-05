@@ -83,7 +83,16 @@ export function middleware(request: NextRequest) {
 
   // Auth routes: redirect to home if already authenticated
   if (matchesRoute(pathname, AUTH_ROUTES) && isAuthenticated) {
-    return NextResponse.redirect(new URL('/', request.url));
+    const redirectTo =
+      request.nextUrl.searchParams.get('redirect') ||
+      request.nextUrl.searchParams.get('returnUrl') ||
+      '/dashboard';
+    const isRelativePath = redirectTo.startsWith('/') && !redirectTo.startsWith('//');
+    const redirectUrl = isRelativePath
+      ? new URL(redirectTo, request.url)
+      : new URL('/dashboard', request.url);
+
+    return NextResponse.redirect(redirectUrl);
   }
 
   return NextResponse.next();
