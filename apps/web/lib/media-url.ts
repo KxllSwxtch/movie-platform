@@ -80,18 +80,14 @@ export function normalizeMediaUrl(raw: string): string {
       return `${toMinioProxyPath(u.pathname)}${u.search}${u.hash}`;
     }
 
-    // If legacy rows contain localhost:9000 MinIO URLs, rewrite to /minio/* in non-localhost environments
-    // (production behind nginx usually proxies /minio/* to MinIO).
+    // If rows contain localhost:9000 MinIO URLs, always rewrite to /minio/*.
+    // In local Docker dev, Next.js proxies /minio/* to the MinIO container;
+    // in production, nginx owns the same route.
     if (
       (u.hostname === 'localhost' || u.hostname === '127.0.0.1') &&
-      u.port === '9000' &&
-      typeof window !== 'undefined'
+      u.port === '9000'
     ) {
-      const currentHost = window.location.hostname;
-      const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
-      if (!isLocal) {
-        return `${toMinioProxyPath(u.pathname)}${u.search}${u.hash}`;
-      }
+      return `${toMinioProxyPath(u.pathname)}${u.search}${u.hash}`;
     }
 
     // If legacy content stored localhost URLs, rewrite to current origin.

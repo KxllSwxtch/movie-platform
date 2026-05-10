@@ -27,7 +27,13 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useUpdateContent } from '@/hooks/use-admin-content';
 import { useContentTags } from '@/hooks/use-studio-data';
+import {
+  canManageContentPublication,
+  getAllowedContentStatuses,
+  normalizeCreatorContentStatus,
+} from '@/lib/content-permissions';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/stores/auth.store';
 import { shortFormSchema, type ShortFormValues } from '@/components/studio/schemas';
 import { ArrowLeft } from '@phosphor-icons/react';
 
@@ -87,6 +93,12 @@ function buildDefaultValues(content: Record<string, unknown>): ShortFormValues {
 // ============ Component ============
 
 export function ShortEditor({ content, contentId }: ShortEditorProps) {
+  const user = useUser();
+  const canManagePublication = canManageContentPublication(user?.role);
+  const allowedStatuses = React.useMemo(
+    () => getAllowedContentStatuses(canManagePublication),
+    [canManagePublication]
+  );
   const updateContent = useUpdateContent();
   const { data: tagsData } = useContentTags();
   const availableTags = tagsData ?? [];
@@ -102,11 +114,23 @@ export function ShortEditor({ content, contentId }: ShortEditorProps) {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = form;
 
   const title = watch('title');
   const description = watch('description');
+  const status = watch('status');
+
+  React.useEffect(() => {
+    if (canManagePublication || !status) return;
+    if (allowedStatuses.includes(status)) return;
+
+    setValue('status', normalizeCreatorContentStatus(status), {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }, [allowedStatuses, canManagePublication, setValue, status]);
 
   const handleSave = React.useCallback(
     () => {
@@ -120,7 +144,9 @@ export function ShortEditor({ content, contentId }: ShortEditorProps) {
           thumbnailUrl: values.thumbnailUrl || undefined,
           previewUrl: values.previewUrl || undefined,
           isFree: values.isFree,
-          status: values.status,
+          status: canManagePublication
+            ? values.status
+            : normalizeCreatorContentStatus(values.status),
           tagIds: values.tagIds?.length ? values.tagIds : undefined,
         });
       })();
@@ -315,7 +341,9 @@ export function ShortEditor({ content, contentId }: ShortEditorProps) {
                     <SelectValue placeholder="Выберите статус" />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
+                    {STATUS_OPTIONS.filter((opt) =>
+                      allowedStatuses.includes(opt.value)
+                    ).map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>

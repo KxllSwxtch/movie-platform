@@ -1,28 +1,29 @@
-'use client';
+"use client";
 
-import { useCallback, useRef, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, endpoints, ApiError } from '@/lib/api-client';
-import { queryKeys } from '@/lib/query-client';
+import { useCallback, useRef, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, endpoints, ApiError } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-client";
 
 function shouldPollStreamOnError(error: unknown): boolean {
   if (!(error instanceof ApiError)) return false;
   if (error.status !== 404) return false;
 
-  const msg = (error.message || '').toLowerCase();
-  const notUploaded = msg.includes('нет загруженного видео') || msg.includes('нет видео');
-  const failed = msg.includes('не удалось');
+  const msg = (error.message || "").toLowerCase();
+  const notUploaded =
+    msg.includes("нет загруженного видео") || msg.includes("нет видео");
+  const failed = msg.includes("не удалось");
 
   if (notUploaded || failed) return false;
 
   // Transient states returned by backend while transcoding is running or queued.
   return (
-    msg.includes('кодир') ||
-    msg.includes('очеред') ||
-    msg.includes('ещё не готово') ||
-    msg.includes('не готово') ||
-    msg.includes('подождите') ||
-    msg.includes('начнётся')
+    msg.includes("кодир") ||
+    msg.includes("очеред") ||
+    msg.includes("ещё не готово") ||
+    msg.includes("не готово") ||
+    msg.includes("подождите") ||
+    msg.includes("начнётся")
   );
 }
 
@@ -41,7 +42,7 @@ export interface StreamUrlResponse {
 export interface EncodingStatusResponse {
   contentId: string;
   edgecenterVideoId?: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
   hasVideo?: boolean;
   availableQualities: string[];
   progress?: number;
@@ -56,18 +57,19 @@ export interface EncodingStatusResponse {
  */
 export function useStreamUrl(contentId: string | undefined) {
   return useQuery({
-    queryKey: queryKeys.streaming.url(contentId || ''),
+    queryKey: queryKeys.streaming.url(contentId || ""),
     queryFn: () =>
       api.get<StreamUrlResponse>(endpoints.streaming.url(contentId!)),
     enabled: !!contentId,
     staleTime: 3.5 * 60 * 60 * 1000, // 3.5h (URL expires in 4h)
     refetchInterval: (query) => {
       // Poll even on 404 when backend says "queued/processing".
-      if (query.state.status === 'error') {
+      if (query.state.status === "error") {
         return shouldPollStreamOnError(query.state.error) ? 5_000 : false;
       }
       const data = query.state.data;
-      const expiresAt = (data as any)?.data?.expiresAt || (data as any)?.expiresAt;
+      const expiresAt =
+        (data as any)?.data?.expiresAt || (data as any)?.expiresAt;
       if (!expiresAt) return false; // No data yet — wait for initial fetch
       const msUntilExpiry = new Date(expiresAt).getTime() - Date.now();
       // Refetch rapidly when near expiry (within 5 minutes)
@@ -75,7 +77,7 @@ export function useStreamUrl(contentId: string | undefined) {
       return 60_000;
     },
     retry: (failureCount, error) => {
-      if (error instanceof Error && 'status' in error) {
+      if (error instanceof Error && "status" in error) {
         const status = (error as Error & { status: number }).status;
         if (status === 403 || status === 404) return false;
       }
@@ -89,11 +91,9 @@ export function useStreamUrl(contentId: string | undefined) {
  */
 export function useEncodingStatus(contentId: string | undefined) {
   return useQuery({
-    queryKey: queryKeys.adminVideo.status(contentId || ''),
+    queryKey: queryKeys.adminVideo.status(contentId || ""),
     queryFn: () =>
-      api.get<EncodingStatusResponse>(
-        endpoints.adminVideo.status(contentId!),
-      ),
+      api.get<EncodingStatusResponse>(endpoints.adminVideo.status(contentId!)),
     enabled: !!contentId,
     refetchInterval: (query) => {
       const data = query.state.data;
@@ -103,7 +103,7 @@ export function useEncodingStatus(contentId: string | undefined) {
 
       // If no video has been uploaded yet, don't poll endlessly.
       if (hasVideo === false) return false;
-      if (status === 'PENDING' || status === 'PROCESSING') {
+      if (status === "PENDING" || status === "PROCESSING") {
         return 5000; // Poll every 5s while active
       }
       return false; // Stop polling when done
@@ -128,16 +128,16 @@ export function useUploadContentVideo() {
       onProgress?: (pct: number) => void;
     }) => {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
       const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
       const token = getAuthToken();
 
       return new Promise<{ jobId: string; message: string }>(
         (resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener('progress', (event) => {
+          xhr.upload.addEventListener("progress", (event) => {
             if (event.lengthComputable) {
               onProgress?.(Math.round((event.loaded / event.total) * 100));
             }
@@ -150,28 +150,42 @@ export function useUploadContentVideo() {
               reject(new Error(`Upload failed: ${xhr.status}`));
             }
           };
-          xhr.onerror = () => reject(new Error('Upload network error'));
+          xhr.onerror = () => reject(new Error("Upload network error"));
           xhr.open(
-            'POST',
+            "POST",
             `${baseUrl}${endpoints.adminVideo.upload(contentId)}`,
           );
-          if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+          if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
           xhr.send(formData);
         },
       );
     },
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.streaming.url(vars.contentId),
+      });
+      queryClient.removeQueries({
+        queryKey: queryKeys.streaming.url(vars.contentId),
+      });
+    },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.adminVideo.status(vars.contentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.streaming.url(vars.contentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.adminContent.detail(vars.contentId),
       });
     },
   });
 }
 
 function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
-    const storage = localStorage.getItem('mp-auth-storage');
+    const storage = localStorage.getItem("mp-auth-storage");
     if (storage) {
       const parsed = JSON.parse(storage);
       return parsed.state?.accessToken || null;
@@ -195,8 +209,11 @@ export function useDeleteContentVideo() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.adminVideo.status(contentId),
       });
-      queryClient.invalidateQueries({
+      queryClient.removeQueries({
         queryKey: queryKeys.streaming.url(contentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.adminContent.detail(contentId),
       });
     },
   });
@@ -207,12 +224,12 @@ export function useDeleteContentVideo() {
 // ================================================================
 
 type EdgeCenterUploadState =
-  | 'idle'
-  | 'preparing'
-  | 'uploading'
-  | 'paused'
-  | 'completed'
-  | 'error';
+  | "idle"
+  | "preparing"
+  | "uploading"
+  | "paused"
+  | "completed"
+  | "error";
 
 export interface EdgeCenterUploadProgress {
   bytesUploaded: number;
@@ -234,18 +251,22 @@ interface UploadUrlResponse {
  */
 export function useEdgeCenterUpload() {
   const queryClient = useQueryClient();
-  const [state, setState] = useState<EdgeCenterUploadState>('idle');
-  const [progress, setProgress] = useState<EdgeCenterUploadProgress | null>(null);
+  const [state, setState] = useState<EdgeCenterUploadState>("idle");
+  const [progress, setProgress] = useState<EdgeCenterUploadProgress | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   // Refs for tracking upload instance and speed calculation
-  const uploadRef = useRef<{ abort: () => void; start: () => void } | null>(null);
+  const uploadRef = useRef<{ abort: () => void; start: () => void } | null>(
+    null,
+  );
   const speedTrackerRef = useRef({
     lastBytes: 0,
     lastTime: 0,
     emaSpeed: 0, // exponential moving average
   });
-  const contentIdRef = useRef<string>('');
+  const contentIdRef = useRef<string>("");
 
   const updateSpeed = useCallback((bytesUploaded: number) => {
     const now = Date.now();
@@ -272,20 +293,32 @@ export function useEdgeCenterUpload() {
   const start = useCallback(
     async (contentId: string, file: File) => {
       try {
-        setState('preparing');
+        setState("preparing");
         setError(null);
         setProgress(null);
         contentIdRef.current = contentId;
         speedTrackerRef.current = { lastBytes: 0, lastTime: 0, emaSpeed: 0 };
+        await queryClient.cancelQueries({
+          queryKey: queryKeys.streaming.url(contentId),
+        });
+        queryClient.removeQueries({
+          queryKey: queryKeys.streaming.url(contentId),
+        });
 
         // Get TUS upload credentials from backend
         const response = await api.post<UploadUrlResponse>(
           endpoints.adminVideo.uploadUrl(contentId),
         );
         const credentials = (response as any)?.data || response;
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.adminVideo.status(contentId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.adminContent.detail(contentId),
+        });
 
         // Dynamic import of tus-js-client to avoid bundle bloat
-        const { Upload } = await import('tus-js-client');
+        const { Upload } = await import("tus-js-client");
 
         const upload = new Upload(file, {
           endpoint: credentials.uploadUrl,
@@ -312,14 +345,20 @@ export function useEdgeCenterUpload() {
             });
           },
           onSuccess: () => {
-            setState('completed');
+            setState("completed");
             queryClient.invalidateQueries({
               queryKey: queryKeys.adminVideo.status(contentIdRef.current),
             });
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.streaming.url(contentIdRef.current),
+            });
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.adminContent.detail(contentIdRef.current),
+            });
           },
           onError: (err: Error) => {
-            setState('error');
-            setError(err.message || 'Ошибка загрузки');
+            setState("error");
+            setError(err.message || "Ошибка загрузки");
           },
         });
 
@@ -335,12 +374,12 @@ export function useEdgeCenterUpload() {
           upload.resumeFromPreviousUpload(previousUploads[0]);
         }
 
-        setState('uploading');
+        setState("uploading");
         upload.start();
       } catch (err) {
-        setState('error');
+        setState("error");
         setError(
-          err instanceof Error ? err.message : 'Не удалось начать загрузку',
+          err instanceof Error ? err.message : "Не удалось начать загрузку",
         );
       }
     },
@@ -349,19 +388,19 @@ export function useEdgeCenterUpload() {
 
   const pause = useCallback(() => {
     uploadRef.current?.abort();
-    setState('paused');
+    setState("paused");
   }, []);
 
   const resume = useCallback(() => {
     uploadRef.current?.start();
-    setState('uploading');
+    setState("uploading");
     speedTrackerRef.current = { lastBytes: 0, lastTime: 0, emaSpeed: 0 };
   }, []);
 
   const cancel = useCallback(() => {
     uploadRef.current?.abort();
     uploadRef.current = null;
-    setState('idle');
+    setState("idle");
     setProgress(null);
     setError(null);
   }, []);
@@ -374,9 +413,9 @@ export function useEdgeCenterUpload() {
     state,
     progress,
     error,
-    isUploading: state === 'uploading',
-    isPaused: state === 'paused',
-    isCompleted: state === 'completed',
-    isError: state === 'error',
+    isUploading: state === "uploading",
+    isPaused: state === "paused",
+    isCompleted: state === "completed",
+    isError: state === "error",
   };
 }

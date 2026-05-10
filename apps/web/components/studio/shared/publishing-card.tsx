@@ -1,6 +1,7 @@
 'use client';
 
 import { Check } from '@phosphor-icons/react';
+import * as React from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 
 import { AgeRatingSelector } from '@/components/studio/age-rating-selector';
@@ -8,9 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  canManageContentPublication,
+  getAllowedContentStatuses,
+  normalizeCreatorContentStatus,
+  type ContentPublicationStatus,
+} from '@/lib/content-permissions';
 import { cn } from '@/lib/utils';
-
-// ============ Types ============
+import { useUser } from '@/stores/auth.store';
 
 export interface PublishingCardProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +25,31 @@ export interface PublishingCardProps {
   disabled?: boolean;
 }
 
-// ============ Status Card ============
+const STATUS_COPY: Record<
+  ContentPublicationStatus,
+  { label: string; description: string }
+> = {
+  DRAFT: {
+    label: 'Черновик',
+    description: 'Сохранить как черновик',
+  },
+  PENDING: {
+    label: 'На модерацию',
+    description: 'Отправить на проверку',
+  },
+  PUBLISHED: {
+    label: 'Опубликован',
+    description: 'Доступен всем',
+  },
+  REJECTED: {
+    label: 'Отклонен',
+    description: 'Нужны исправления',
+  },
+  ARCHIVED: {
+    label: 'Архив',
+    description: 'Скрыть контент',
+  },
+};
 
 function StatusCard({
   label,
@@ -56,25 +86,43 @@ function StatusCard({
   );
 }
 
-// ============ Component ============
-
 export function PublishingCard({
   form,
   isEditMode = false,
   disabled = false,
 }: PublishingCardProps) {
+  const user = useUser();
+  const canManagePublication = canManageContentPublication(user?.role);
+  const allowedStatuses = React.useMemo(
+    () => getAllowedContentStatuses(canManagePublication),
+    [canManagePublication]
+  );
+
   const {
     register,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = form;
 
   const isFree = watch('isFree') as boolean;
+  const currentStatus = watch('status') as string | undefined;
+
+  React.useEffect(() => {
+    if (canManagePublication || !currentStatus) return;
+    if (allowedStatuses.includes(currentStatus as ContentPublicationStatus)) {
+      return;
+    }
+
+    setValue('status', normalizeCreatorContentStatus(currentStatus), {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }, [allowedStatuses, canManagePublication, currentStatus, setValue]);
 
   return (
     <div className="space-y-6">
-      {/* Age Rating */}
       <Card className="border-[#272b38] bg-[#10131c]/50">
         <CardHeader>
           <CardTitle className="text-lg text-[#f5f7ff]">
@@ -101,12 +149,9 @@ export function PublishingCard({
         </CardContent>
       </Card>
 
-      {/* Monetization */}
       <Card className="border-[#272b38] bg-[#10131c]/50">
         <CardHeader>
-          <CardTitle className="text-lg text-[#f5f7ff]">
-            Монетизация
-          </CardTitle>
+          <CardTitle className="text-lg text-[#f5f7ff]">Монетизация</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Controller
@@ -147,7 +192,6 @@ export function PublishingCard({
         </CardContent>
       </Card>
 
-      {/* Status */}
       <Card className="border-[#272b38] bg-[#10131c]/50">
         <CardHeader>
           <CardTitle className="text-lg text-[#f5f7ff]">
@@ -161,48 +205,32 @@ export function PublishingCard({
               control={control}
               render={({ field }) => (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <StatusCard
-                    label="Черновик"
-                    description="Сохранить как черновик"
-                    selected={field.value === 'DRAFT'}
-                    onClick={() => field.onChange('DRAFT')}
-                  />
-                  <StatusCard
-                    label="На модерацию"
-                    description="Отправить на проверку"
-                    selected={field.value === 'PENDING'}
-                    onClick={() => field.onChange('PENDING')}
-                  />
-                  <StatusCard
-                    label="Опубликован"
-                    description="Доступен всем"
-                    selected={field.value === 'PUBLISHED'}
-                    onClick={() => field.onChange('PUBLISHED')}
-                  />
-                  <StatusCard
-                    label="Архив"
-                    description="Скрыть контент"
-                    selected={field.value === 'ARCHIVED'}
-                    onClick={() => field.onChange('ARCHIVED')}
-                  />
+                  {allowedStatuses.map((status) => {
+                    const copy = STATUS_COPY[status];
+
+                    return (
+                      <StatusCard
+                        key={status}
+                        label={copy.label}
+                        description={copy.description}
+                        selected={field.value === status}
+                        onClick={() => field.onChange(status)}
+                      />
+                    );
+                  })}
                 </div>
               )}
             />
           ) : (
             <div className="flex items-center gap-3 rounded-lg border border-[#272b38] bg-[#10131c]/50 p-4">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5a6072]/10">
-                <Check
-                  weight="bold"
-                  className="h-4 w-4 text-[#9ca2bc]"
-                />
+                <Check weight="bold" className="h-4 w-4 text-[#9ca2bc]" />
               </div>
               <div>
-                <p className="text-sm font-medium text-[#f5f7ff]">
-                  Черновик
-                </p>
+                <p className="text-sm font-medium text-[#f5f7ff]">Черновик</p>
                 <p className="text-xs text-[#9ca2bc]">
-                  Новый контент сохраняется как черновик. Вы сможете изменить
-                  статус после создания.
+                  Новый контент сохраняется как черновик. Отправка на модерацию
+                  доступна после создания.
                 </p>
               </div>
             </div>

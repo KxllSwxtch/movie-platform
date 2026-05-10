@@ -20,6 +20,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUpdateContent } from '@/hooks/use-admin-content';
 import { useCreateSeriesContent, type CreateSeriesInput } from '@/hooks/use-series-structure';
 import { useContentCategories, useContentGenres, useContentTags } from '@/hooks/use-studio-data';
+import {
+  canManageContentPublication,
+  normalizeCreatorContentStatus,
+} from '@/lib/content-permissions';
+import { useUser } from '@/stores/auth.store';
 
 const DRAFT_KEY = 'studio-draft-tutorial';
 
@@ -106,6 +111,8 @@ export interface TutorialWizardProps {
 }
 
 export function TutorialWizard({ onSuccess }: TutorialWizardProps) {
+  const user = useUser();
+  const canManagePublication = canManageContentPublication(user?.role);
   const [currentStep, setCurrentStep] = React.useState(1);
   const [createdContentId, setCreatedContentId] = React.useState<string | null>(null);
 
@@ -187,7 +194,9 @@ export function TutorialWizard({ onSuccess }: TutorialWizardProps) {
         individualPrice: values.individualPrice || undefined,
         tagIds: values.tagIds?.length ? values.tagIds : undefined,
         genreIds: values.genreIds?.length ? values.genreIds : undefined,
-        status: values.status || 'DRAFT',
+        status: canManagePublication
+          ? values.status || 'DRAFT'
+          : normalizeCreatorContentStatus(values.status),
       },
       {
         onSuccess: () => {
@@ -196,7 +205,7 @@ export function TutorialWizard({ onSuccess }: TutorialWizardProps) {
         },
       }
     );
-  }, [createdContentId, form, updateContent, onSuccess]);
+  }, [canManagePublication, createdContentId, form, updateContent, onSuccess]);
 
   return (
     <WizardShell

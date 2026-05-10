@@ -4,26 +4,26 @@ import {
   NotFoundException,
   InternalServerErrorException,
   BadRequestException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import { PrismaService } from '../../config/prisma.service';
-import { EncodingStatus, VideoQuality } from '@movie-platform/shared';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { HttpService } from "@nestjs/axios";
+import { firstValueFrom } from "rxjs";
+import { PrismaService } from "../../config/prisma.service";
+import { EncodingStatus, VideoQuality } from "@movie-platform/shared";
 import {
   EdgeCenterVideoResponse,
   EdgeCenterVideoStatus,
   EdgeCenterCreateVideoResponse,
   EdgeCenterTusParamsResponse,
   EDGECENTER_STREAM_URLS,
-} from './interfaces';
+} from "./interfaces";
 import {
   UploadUrlResponseDto,
   EncodingStatusDto,
   VideoThumbnailsDto,
   AdminVideoListDto,
   AdminVideoListItemDto,
-} from './dto';
+} from "./dto";
 
 @Injectable()
 export class EdgeCenterService {
@@ -36,10 +36,21 @@ export class EdgeCenterService {
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService,
   ) {
-    this.apiKey = this.configService.get<string>('EDGECENTER_API_KEY', '');
+    this.apiKey = this.configService.get<string>("EDGECENTER_API_KEY", "");
     this.apiBaseUrl = this.configService.get<string>(
-      'EDGECENTER_API_BASE_URL',
+      "EDGECENTER_API_BASE_URL",
       EDGECENTER_STREAM_URLS.apiBaseUrl,
+    );
+  }
+
+  private isRootStructuredContent(content: {
+    contentType: string;
+    series?: { parentSeriesId: string | null } | null;
+  }): boolean {
+    return (
+      (content.contentType === "SERIES" ||
+        content.contentType === "TUTORIAL") &&
+      (!content.series || !content.series.parentSeriesId)
     );
   }
 
@@ -49,7 +60,7 @@ export class EdgeCenterService {
   private getAuthHeaders() {
     return {
       Authorization: `Bearer ${this.apiKey}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
   }
 
@@ -60,7 +71,7 @@ export class EdgeCenterService {
    */
   async getUploadUrl(contentId: string): Promise<UploadUrlResponseDto> {
     if (!this.apiKey) {
-      throw new BadRequestException('EdgeCenter CDN не настроен');
+      throw new BadRequestException("EdgeCenter CDN не настроен");
     }
 
     // Get content to verify it exists and get title
@@ -73,22 +84,13 @@ export class EdgeCenterService {
       throw new NotFoundException(`Контент с ID ${contentId} не найден`);
     }
 
-    if (
-      (content.contentType === 'SERIES' || content.contentType === 'TUTORIAL') &&
-      content.series &&
-      !content.series.parentSeriesId
-    ) {
-      throw new BadRequestException('Видео для сериалов и обучения загружается только на уровне серии или урока');
+    if (this.isRootStructuredContent(content)) {
+      throw new BadRequestException(
+        "Видео для сериалов и обучения загружается только на уровне серии или урока",
+      );
     }
 
-    // If content already has a video, delete it first
-    if (content.edgecenterVideoId) {
-      try {
-        await this.deleteVideo(content.edgecenterVideoId);
-      } catch (error) {
-        this.logger.warn(`Failed to delete existing video ${content.edgecenterVideoId}: ${error}`);
-      }
-    }
+    const previousVideoId = content.edgecenterVideoId;
 
     // Create new video in EdgeCenter
     const ecVideo = await this.createVideoInEdgeCenter(content.title);
@@ -101,7 +103,9 @@ export class EdgeCenterService {
       where: { id: contentId },
       data: {
         edgecenterVideoId: ecVideo.id.toString(),
-        edgecenterClientId: 'edgecenter', // Mark as EdgeCenter provider
+        edgecenterClientId: previousVideoId
+          ? `edgecenter-replacing:${previousVideoId}`
+          : "edgecenter",
       },
     });
 
@@ -114,15 +118,16 @@ export class EdgeCenterService {
     await this.prisma.videoFile.create({
       data: {
         contentId,
-        quality: 'Q_1080P', // Default quality
-        fileUrl: '',
+        quality: "Q_1080P", // Default quality
+        fileUrl: "",
         fileSize: BigInt(0),
-        encodingStatus: 'PENDING',
+        encodingStatus: "PENDING",
       },
     });
 
     // Get TUS upload URL from servers
-    const uploadUrl = tusParams.servers.tus[0] || `${this.apiBaseUrl}/videos/upload`;
+    const uploadUrl =
+      tusParams.servers.tus[0] || `${this.apiBaseUrl}/videos/upload`;
     const expirationTime = Math.floor(Date.now() / 1000) + 86400; // 24 hours from now
 
     return {
@@ -130,11 +135,11 @@ export class EdgeCenterService {
       authorizationSignature: tusParams.token,
       authorizationExpire: expirationTime,
       videoId: ecVideo.id.toString(),
-      libraryId: 'edgecenter',
+      libraryId: "edgecenter",
       expiresAt: new Date(expirationTime * 1000).toISOString(),
       headers: {
         Authorization: `Bearer ${tusParams.token}`,
-        'Tus-Resumable': '1.0.0',
+        "Tus-Resumable": "1.0.0",
         VideoId: ecVideo.id.toString(),
       },
     };
@@ -143,7 +148,9 @@ export class EdgeCenterService {
   /**
    * Create a video entry in EdgeCenter
    */
-  private async createVideoInEdgeCenter(title: string): Promise<EdgeCenterCreateVideoResponse> {
+  private async createVideoInEdgeCenter(
+    title: string,
+  ): Promise<EdgeCenterCreateVideoResponse> {
     const url = `${this.apiBaseUrl}/videos`;
 
     try {
@@ -159,14 +166,16 @@ export class EdgeCenterService {
       return response.data;
     } catch (error: any) {
       this.logger.error(`Failed to create EdgeCenter video: ${error.message}`);
-      throw new InternalServerErrorException('Не удалось создать видео в CDN');
+      throw new InternalServerErrorException("Не удалось создать видео в CDN");
     }
   }
 
   /**
    * Get TUS upload parameters from EdgeCenter
    */
-  private async getTusUploadParams(videoId: number): Promise<EdgeCenterTusParamsResponse> {
+  private async getTusUploadParams(
+    videoId: number,
+  ): Promise<EdgeCenterTusParamsResponse> {
     const url = `${this.apiBaseUrl}/videos/${videoId}/upload`;
 
     try {
@@ -179,7 +188,9 @@ export class EdgeCenterService {
       return response.data;
     } catch (error: any) {
       this.logger.error(`Failed to get TUS params: ${error.message}`);
-      throw new InternalServerErrorException('Не удалось получить параметры загрузки');
+      throw new InternalServerErrorException(
+        "Не удалось получить параметры загрузки",
+      );
     }
   }
 
@@ -198,12 +209,19 @@ export class EdgeCenterService {
 
       return response.data;
     } catch (error) {
-      const axiosError = error as { response?: { status?: number }; message?: string };
+      const axiosError = error as {
+        response?: { status?: number };
+        message?: string;
+      };
       if (axiosError.response?.status === 404) {
         throw new NotFoundException(`Видео ${videoId} не найдено в CDN`);
       }
-      this.logger.error(`Failed to get EdgeCenter video: ${axiosError.message || 'Unknown error'}`);
-      throw new InternalServerErrorException('Не удалось получить видео из CDN');
+      this.logger.error(
+        `Failed to get EdgeCenter video: ${axiosError.message || "Unknown error"}`,
+      );
+      throw new InternalServerErrorException(
+        "Не удалось получить видео из CDN",
+      );
     }
   }
 
@@ -222,13 +240,20 @@ export class EdgeCenterService {
 
       this.logger.log(`Deleted EdgeCenter video: ${videoId}`);
     } catch (error) {
-      const axiosError = error as { response?: { status?: number }; message?: string };
+      const axiosError = error as {
+        response?: { status?: number };
+        message?: string;
+      };
       if (axiosError.response?.status === 404) {
-        this.logger.warn(`Video ${videoId} not found in CDN, may already be deleted`);
+        this.logger.warn(
+          `Video ${videoId} not found in CDN, may already be deleted`,
+        );
         return;
       }
-      this.logger.error(`Failed to delete EdgeCenter video: ${axiosError.message || 'Unknown error'}`);
-      throw new InternalServerErrorException('Не удалось удалить видео из CDN');
+      this.logger.error(
+        `Failed to delete EdgeCenter video: ${axiosError.message || "Unknown error"}`,
+      );
+      throw new InternalServerErrorException("Не удалось удалить видео из CDN");
     }
   }
 
@@ -301,11 +326,17 @@ export class EdgeCenterService {
     const status = this.mapEdgeCenterStatusToEncodingStatus(ecVideo.status);
 
     // Get available qualities from converted videos
-    const availableQualities = this.getAvailableQualities(ecVideo.converted_videos || []);
+    const availableQualities = this.getAvailableQualities(
+      ecVideo.converted_videos || [],
+    );
 
     // Update video files if encoding is complete
     if (status === EncodingStatus.COMPLETED && availableQualities.length > 0) {
-      await this.updateVideoFilesFromEdgeCenter(contentId, ecVideo, availableQualities);
+      await this.updateVideoFilesFromEdgeCenter(
+        contentId,
+        ecVideo,
+        availableQualities,
+      );
     }
 
     // Update encoding status for all video files
@@ -322,7 +353,9 @@ export class EdgeCenterService {
       await this.prisma.content.update({
         where: { id: contentId },
         data: {
-          ...(ecVideo.duration > 0 && { duration: Math.round(ecVideo.duration) }),
+          ...(ecVideo.duration > 0 && {
+            duration: Math.round(ecVideo.duration),
+          }),
           ...(thumbnailUrl && !content.thumbnailUrl && { thumbnailUrl }),
         },
       });
@@ -343,7 +376,9 @@ export class EdgeCenterService {
   /**
    * Map EdgeCenter video status to our EncodingStatus enum
    */
-  private mapEdgeCenterStatusToEncodingStatus(ecStatus: EdgeCenterVideoStatus): EncodingStatus {
+  private mapEdgeCenterStatusToEncodingStatus(
+    ecStatus: EdgeCenterVideoStatus,
+  ): EncodingStatus {
     switch (ecStatus) {
       case EdgeCenterVideoStatus.PENDING:
       case EdgeCenterVideoStatus.EMPTY:
@@ -363,7 +398,9 @@ export class EdgeCenterService {
   /**
    * Get available video qualities from converted videos
    */
-  private getAvailableQualities(convertedVideos: { height: number; status: EdgeCenterVideoStatus }[]): VideoQuality[] {
+  private getAvailableQualities(
+    convertedVideos: { height: number; status: EdgeCenterVideoStatus }[],
+  ): VideoQuality[] {
     const qualityMap: Record<number, VideoQuality> = {
       240: VideoQuality.Q_240P,
       360: VideoQuality.Q_480P, // Map 360p to 480p slot
@@ -374,7 +411,11 @@ export class EdgeCenterService {
     };
 
     const readyQualities = convertedVideos
-      .filter((v) => v.status === EdgeCenterVideoStatus.READY || v.status === EdgeCenterVideoStatus.VIEWABLE)
+      .filter(
+        (v) =>
+          v.status === EdgeCenterVideoStatus.READY ||
+          v.status === EdgeCenterVideoStatus.VIEWABLE,
+      )
       .map((v) => qualityMap[v.height])
       .filter((q): q is VideoQuality => q !== undefined);
 
@@ -385,7 +426,9 @@ export class EdgeCenterService {
   /**
    * Calculate overall encoding progress
    */
-  private calculateEncodingProgress(convertedVideos: { progress: number }[]): number {
+  private calculateEncodingProgress(
+    convertedVideos: { progress: number }[],
+  ): number {
     if (convertedVideos.length === 0) return 0;
     const total = convertedVideos.reduce((sum, v) => sum + v.progress, 0);
     return Math.round(total / convertedVideos.length);
@@ -406,25 +449,27 @@ export class EdgeCenterService {
 
     // Create video file for each quality
     const qualityToDbEnum: Record<VideoQuality, string> = {
-      [VideoQuality.Q_240P]: 'Q_240P',
-      [VideoQuality.Q_480P]: 'Q_480P',
-      [VideoQuality.Q_720P]: 'Q_720P',
-      [VideoQuality.Q_1080P]: 'Q_1080P',
-      [VideoQuality.Q_4K]: 'Q_4K',
+      [VideoQuality.Q_240P]: "Q_240P",
+      [VideoQuality.Q_480P]: "Q_480P",
+      [VideoQuality.Q_720P]: "Q_720P",
+      [VideoQuality.Q_1080P]: "Q_1080P",
+      [VideoQuality.Q_4K]: "Q_4K",
     };
 
     await this.prisma.videoFile.createMany({
       data: availableQualities.map((quality) => ({
         contentId,
         quality: qualityToDbEnum[quality] as any,
-        fileUrl: ecVideo.hls_url || '',
-        fileSize: BigInt(Math.round(ecVideo.origin_size / availableQualities.length)),
-        encodingStatus: 'COMPLETED',
+        fileUrl: ecVideo.hls_url || "",
+        fileSize: BigInt(
+          Math.round(ecVideo.origin_size / availableQualities.length),
+        ),
+        encodingStatus: "COMPLETED",
       })),
     });
 
     this.logger.log(
-      `Updated video files for content ${contentId}: ${availableQualities.join(', ')}`,
+      `Updated video files for content ${contentId}: ${availableQualities.join(", ")}`,
     );
   }
 
@@ -455,7 +500,9 @@ export class EdgeCenterService {
   /**
    * Get available thumbnails for a content item
    */
-  async getThumbnailsForContent(contentId: string): Promise<VideoThumbnailsDto> {
+  async getThumbnailsForContent(
+    contentId: string,
+  ): Promise<VideoThumbnailsDto> {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
       select: {
@@ -482,7 +529,10 @@ export class EdgeCenterService {
     }
 
     // Include current thumbnail if not already in list
-    if (content.thumbnailUrl && !availableThumbnails.includes(content.thumbnailUrl)) {
+    if (
+      content.thumbnailUrl &&
+      !availableThumbnails.includes(content.thumbnailUrl)
+    ) {
       availableThumbnails.unshift(content.thumbnailUrl);
     }
 
@@ -497,7 +547,10 @@ export class EdgeCenterService {
   /**
    * Set primary thumbnail for content
    */
-  async setThumbnailForContent(contentId: string, thumbnailUrl: string): Promise<void> {
+  async setThumbnailForContent(
+    contentId: string,
+    thumbnailUrl: string,
+  ): Promise<void> {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
       select: { id: true, edgecenterVideoId: true },
@@ -515,14 +568,16 @@ export class EdgeCenterService {
 
         if (!validThumbnails.includes(thumbnailUrl)) {
           throw new BadRequestException(
-            'Недопустимый URL миниатюры — должен быть из результатов кодирования видео',
+            "Недопустимый URL миниатюры — должен быть из результатов кодирования видео",
           );
         }
       } catch (error) {
         if (error instanceof BadRequestException) {
           throw error;
         }
-        this.logger.warn(`Could not validate thumbnail against EdgeCenter: ${error}`);
+        this.logger.warn(
+          `Could not validate thumbnail against EdgeCenter: ${error}`,
+        );
       }
     }
 
@@ -579,7 +634,7 @@ export class EdgeCenterService {
 
     // Search by title
     if (search) {
-      where.title = { contains: search, mode: 'insensitive' };
+      where.title = { contains: search, mode: "insensitive" };
     }
 
     const [total, contents] = (await Promise.all([
@@ -588,7 +643,7 @@ export class EdgeCenterService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         select: {
           id: true,
           title: true,
@@ -609,15 +664,15 @@ export class EdgeCenterService {
     const items: AdminVideoListItemDto[] = contents.map((content) => {
       // Get the most relevant encoding status
       const statuses = content.videoFiles.map((vf) => vf.encodingStatus);
-      let encodingStatus = 'NONE';
+      let encodingStatus = "NONE";
       if (statuses.includes(EncodingStatus.PROCESSING)) {
-        encodingStatus = 'PROCESSING';
+        encodingStatus = "PROCESSING";
       } else if (statuses.includes(EncodingStatus.COMPLETED)) {
-        encodingStatus = 'COMPLETED';
+        encodingStatus = "COMPLETED";
       } else if (statuses.includes(EncodingStatus.FAILED)) {
-        encodingStatus = 'FAILED';
+        encodingStatus = "FAILED";
       } else if (statuses.includes(EncodingStatus.PENDING)) {
-        encodingStatus = 'PENDING';
+        encodingStatus = "PENDING";
       }
 
       return {
@@ -627,7 +682,9 @@ export class EdgeCenterService {
         encodingStatus,
         thumbnailUrl: content.thumbnailUrl,
         duration: content.duration,
-        qualityCount: content.videoFiles.filter((vf) => vf.encodingStatus === 'COMPLETED').length,
+        qualityCount: content.videoFiles.filter(
+          (vf) => vf.encodingStatus === "COMPLETED",
+        ).length,
         createdAt: content.createdAt,
         hasVideo: !!content.edgecenterVideoId,
       };

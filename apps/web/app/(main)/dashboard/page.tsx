@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { DashboardHero, DashboardRows } from '@/components/home';
-import { useDashboardHome } from '@/hooks/use-home';
-import type { HeroContent } from '@/components/content';
+import { DashboardHero, DashboardRows } from "@/components/home";
+import { useDashboardHome } from "@/hooks/use-home";
+import type { HeroContent } from "@/components/content";
 
 /**
  * Authenticated dashboard — real API data with content rows
@@ -17,9 +17,12 @@ export default function DashboardPage() {
         id: heroItem.slug || heroItem.id,
         title: heroItem.title,
         year: heroItem.year || new Date().getFullYear(),
-        genre: (typeof heroItem.category === 'object' && heroItem.category !== null) ? heroItem.category.name || '' : heroItem.category || '',
-        description: '',
-        thumbnailUrl: heroItem.thumbnailUrl || '/images/movie-placeholder.jpg',
+        genre:
+          typeof heroItem.category === "object" && heroItem.category !== null
+            ? heroItem.category.name || ""
+            : heroItem.category || "",
+        description: "",
+        thumbnailUrl: heroItem.thumbnailUrl || "/images/movie-placeholder.jpg",
         rank: 1,
       }
     : null;
@@ -30,6 +33,7 @@ export default function DashboardPage() {
         content={heroContent}
         isLoading={data.heroContent.isLoading}
       />
+
       <DashboardRows data={data} />
     </div>
   );

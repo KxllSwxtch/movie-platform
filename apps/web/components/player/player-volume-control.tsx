@@ -130,6 +130,7 @@ export function PlayerVolumeControl({ className }: PlayerVolumeControlProps) {
       {/* Mobile: mute-only toggle (phones have hardware volume) */}
       <div className={cn('flex items-center md:hidden', className)}>
         <button
+          type="button"
           onClick={toggleMute}
           className="p-2.5 hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-mp-accent-primary"
           aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
@@ -146,6 +147,7 @@ export function PlayerVolumeControl({ className }: PlayerVolumeControlProps) {
       >
         {/* Mute button */}
         <button
+          type="button"
           onClick={toggleMute}
           onKeyDown={handleKeyDown}
           className="p-1.5 hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-mp-accent-primary"
@@ -281,6 +283,7 @@ export function PlayerVolumeControlVertical({ className }: PlayerVolumeControlPr
 
       {/* Mute button */}
       <button
+        type="button"
         onClick={toggleMute}
         className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
         aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}

@@ -53,6 +53,7 @@ export function PlayerOverlay({ onPlayPause, onReplay, className }: PlayerOverla
       {/* Play button */}
       {showPlayButton && !showBuffering && (
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onPlayPause();
@@ -75,6 +76,7 @@ export function PlayerOverlay({ onPlayPause, onReplay, className }: PlayerOverla
       {showEnded && !showBuffering && (
         <div className="pointer-events-auto flex flex-col items-center gap-4">
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onReplay?.();
@@ -99,6 +101,7 @@ export function PlayerOverlay({ onPlayPause, onReplay, className }: PlayerOverla
             <p className="text-sm text-mp-text-secondary">{error}</p>
           </div>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               window.location.reload();
@@ -155,6 +158,7 @@ export function PlayerSkipButton({
 
   return (
     <button
+      type="button"
       onClick={onClick}
       className="absolute bottom-24 right-6 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-lg text-white text-sm font-medium transition-all hover:scale-105"
     >
@@ -199,12 +203,14 @@ export function PlayerNextEpisode({
         <p className="text-sm font-medium text-white truncate mb-3">{title}</p>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={onPlay}
             className="flex-1 px-3 py-2 bg-mp-accent-primary hover:bg-mp-accent-primary/90 rounded-lg text-white text-sm font-medium transition-colors"
           >
             Смотреть
           </button>
           <button
+            type="button"
             onClick={onCancel}
             className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-colors"
           >

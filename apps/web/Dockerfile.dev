@@ -20,8 +20,10 @@ RUN cd packages/shared && npx tsup src/index.ts --format cjs,esm --dts
 # Override at build time via --build-arg or in docker-compose.
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG MINIO_INTERNAL_ENDPOINT=http://minio:9000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV MINIO_INTERNAL_ENDPOINT=$MINIO_INTERNAL_ENDPOINT
 
 # Build the Next.js app for production
 RUN cd apps/web && npx next build

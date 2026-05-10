@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { X } from '@phosphor-icons/react';
-import * as React from 'react';
+import { X } from "@phosphor-icons/react";
+import * as React from "react";
 
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import {
+  PopoverAnchor,
   Popover,
   PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 // ============ Types ============
 
@@ -34,21 +34,52 @@ export function TagInput({
   value,
   onChange,
   availableTags,
-  placeholder = 'Добавить тег...',
+  placeholder = "Добавить тег...",
   disabled = false,
   maxTags,
 }: TagInputProps) {
   const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState('');
+  const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const fieldRef = React.useRef<HTMLDivElement>(null);
+  const [cachedTagsById, setCachedTagsById] = React.useState<
+    Map<string, Tag>
+  >(() => new Map());
 
   const SUGGESTIONS_LIMIT = 12;
 
   const maxReached = maxTags !== undefined && value.length >= maxTags;
 
+  React.useEffect(() => {
+    if (availableTags.length === 0) return;
+
+    setCachedTagsById((previous) => {
+      const next = new Map(previous);
+
+      for (const tag of availableTags) {
+        next.set(tag.id, tag);
+      }
+
+      return next;
+    });
+  }, [availableTags]);
+
+  const tagsById = React.useMemo(() => {
+    const byId = new Map(cachedTagsById);
+
+    for (const tag of availableTags) {
+      byId.set(tag.id, tag);
+    }
+
+    return byId;
+  }, [availableTags, cachedTagsById]);
+
   const selectedTags = React.useMemo(
-    () => availableTags.filter((tag) => value.includes(tag.id)),
-    [availableTags, value]
+    () =>
+      value
+        .map((id) => tagsById.get(id))
+        .filter((tag): tag is Tag => !!tag),
+    [tagsById, value],
   );
 
   const filteredSuggestions = React.useMemo(() => {
@@ -66,26 +97,25 @@ export function TagInput({
 
   const suggestionsTitle = React.useMemo(() => {
     const q = query.trim();
-    return q.length === 0 ? 'Популярные теги' : 'Результаты';
+    return q.length === 0 ? "Популярные теги" : "Результаты";
   }, [query]);
 
   const handleAdd = React.useCallback(
     (tagId: string) => {
-      if (maxReached) return;
+      if (maxReached || value.includes(tagId)) return;
+
       onChange([...value, tagId]);
-      setQuery('');
-      setOpen(false);
-      // Refocus input after selection
-      setTimeout(() => inputRef.current?.focus(), 0);
+      setQuery("");
+      setOpen(maxTags === undefined || value.length + 1 < maxTags);
     },
-    [value, onChange, maxReached]
+    [value, onChange, maxReached, maxTags],
   );
 
   const handleRemove = React.useCallback(
     (tagId: string) => {
       onChange(value.filter((id) => id !== tagId));
     },
-    [value, onChange]
+    [value, onChange],
   );
 
   const handleInputChange = React.useCallback(
@@ -94,7 +124,7 @@ export function TagInput({
       setQuery(val);
       if (!maxReached) setOpen(true);
     },
-    [maxReached]
+    [maxReached],
   );
 
   const handleInputFocus = React.useCallback(() => {
@@ -103,20 +133,33 @@ export function TagInput({
 
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && open) {
+        e.preventDefault();
+
+        const firstSuggestion = filteredSuggestions[0];
+        if (firstSuggestion) {
+          handleAdd(firstSuggestion.id);
+        }
+
+        return;
+      }
+
       // Remove last tag on Backspace when input is empty
-      if (e.key === 'Backspace' && query === '' && value.length > 0) {
+      if (e.key === "Backspace" && query === "" && value.length > 0) {
         onChange(value.slice(0, -1));
       }
+
       // Close dropdown on Escape
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
+        e.preventDefault();
         setOpen(false);
       }
     },
-    [query, value, onChange]
+    [filteredSuggestions, handleAdd, open, query, value, onChange],
   );
 
   return (
-    <div className="space-y-2">
+    <div ref={fieldRef} className="space-y-2">
       {/* Selected tags */}
       {selectedTags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -142,7 +185,7 @@ export function TagInput({
 
       {/* Input with dropdown */}
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+        <PopoverAnchor asChild>
           <div className="relative">
             <input
               ref={inputRef}
@@ -150,28 +193,33 @@ export function TagInput({
               value={query}
               onChange={handleInputChange}
               onFocus={handleInputFocus}
+              onClick={handleInputFocus}
               onKeyDown={handleKeyDown}
               disabled={disabled || maxReached}
               placeholder={
-                maxReached
-                  ? `Максимум ${maxTags} тегов`
-                  : placeholder
+                maxReached ? `Максимум ${maxTags} тегов` : placeholder
               }
               className={cn(
-                'flex h-9 w-full rounded-md border border-mp-border bg-mp-surface/50 px-3 py-1 text-sm text-mp-text-primary shadow-sm transition-colors',
-                'placeholder:text-muted-foreground',
-                'hover:bg-mp-surface focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                'disabled:cursor-not-allowed disabled:opacity-50'
+                "flex h-9 w-full rounded-md border border-mp-border bg-mp-surface/50 px-3 py-1 text-sm text-mp-text-primary shadow-sm transition-colors",
+                "placeholder:text-muted-foreground",
+                "hover:bg-mp-surface focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             />
           </div>
-        </PopoverTrigger>
+        </PopoverAnchor>
 
         {open && (
           <PopoverContent
-            className="w-[--radix-popover-trigger-width] p-0"
+            className="p-0"
+            style={{ width: fieldRef.current?.getBoundingClientRect().width }}
             align="start"
             onOpenAutoFocus={(e) => e.preventDefault()}
+            onInteractOutside={(e) => {
+              if (fieldRef.current?.contains(e.target as Node)) {
+                e.preventDefault();
+              }
+            }}
           >
             <div className="max-h-[200px] overflow-y-auto p-1">
               <div className="px-2 pt-2 pb-1">
@@ -189,10 +237,11 @@ export function TagInput({
                   <button
                     key={tag.id}
                     type="button"
+                    onMouseDown={(event) => event.preventDefault()}
                     onClick={() => handleAdd(tag.id)}
                     className={cn(
-                      'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-mp-text-primary outline-none transition-colors',
-                      'hover:bg-accent hover:text-accent-foreground'
+                      "relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-mp-text-primary outline-none transition-colors",
+                      "hover:bg-accent hover:text-accent-foreground",
                     )}
                   >
                     {tag.name}

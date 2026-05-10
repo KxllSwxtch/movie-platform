@@ -25,6 +25,11 @@ import {
   useContentTags,
   useContentGenres,
 } from '@/hooks/use-studio-data';
+import {
+  canManageContentPublication,
+  normalizeCreatorContentStatus,
+} from '@/lib/content-permissions';
+import { useUser } from '@/stores/auth.store';
 import { clipFormSchema, type ClipFormValues } from '@/components/studio/schemas';
 
 // ============ Types ============
@@ -198,6 +203,8 @@ function StepPublishing({
 // ============ Component ============
 
 export function ClipEditor({ content, contentId }: ClipEditorProps) {
+  const user = useUser();
+  const canManagePublication = canManageContentPublication(user?.role);
   const [currentStep, setCurrentStep] = React.useState(1);
   const updateContent = useUpdateContent();
 
@@ -236,12 +243,14 @@ export function ClipEditor({ content, contentId }: ClipEditorProps) {
         previewUrl: values.previewUrl || undefined,
         isFree: values.isFree,
         individualPrice: values.individualPrice || undefined,
-        status: values.status || 'DRAFT',
+        status: canManagePublication
+          ? values.status || 'DRAFT'
+          : normalizeCreatorContentStatus(values.status),
         tagIds: values.tagIds?.length ? values.tagIds : undefined,
         genreIds: values.genreIds?.length ? values.genreIds : undefined,
       });
     })();
-  }, [form, updateContent, contentId]);
+  }, [canManagePublication, form, updateContent, contentId]);
 
   return (
     <WizardShell

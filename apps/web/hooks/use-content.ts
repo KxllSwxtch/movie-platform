@@ -38,6 +38,7 @@ interface ContentListItem {
   rating?: number;
   averageRating?: number;
   ratingCount?: number;
+  reviewsCount?: number;
   year?: number;
   seasonCount?: number;
   episodeCount?: number;
@@ -347,6 +348,7 @@ export interface SeriesDetail {
   rating?: number;
   averageRating?: number;
   ratingCount?: number;
+  reviewsCount?: number;
   year?: number;
   seasonCount?: number;
   episodeCount?: number;

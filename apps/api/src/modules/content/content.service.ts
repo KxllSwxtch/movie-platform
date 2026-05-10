@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -54,6 +55,21 @@ export class ContentService {
     return this.isPrivilegedRole(actor?.role);
   }
 
+  private assertAllowedStatusChange(
+    status: ContentStatus | undefined,
+    actor?: { id?: string; role?: string },
+  ) {
+    if (!status || this.canManageAll(actor)) return;
+
+    if (status === ContentStatus.DRAFT || status === ContentStatus.PENDING) {
+      return;
+    }
+
+    throw new ForbiddenException(
+      "Only admins and moderators can publish, reject, or archive content",
+    );
+  }
+
   private ownerFilter(actor?: { id?: string; role?: string }) {
     if (!actor?.id || this.canManageAll(actor)) return {};
     return { creatorId: actor.id };
@@ -77,7 +93,9 @@ export class ContentService {
       !this.canManageAll(actor) &&
       content.creatorId !== actor.id
     ) {
-      throw new ForbiddenException("Недостаточно прав для управления контентом");
+      throw new ForbiddenException(
+        "Недостаточно прав для управления контентом",
+      );
     }
   }
 
@@ -186,13 +204,14 @@ export class ContentService {
         };
 
         const orderBy = this.getOrderBy(sortBy, sortOrder);
+        const isRatingSort = sortBy === "rating";
 
         const [total, items] = await Promise.all([
           this.prisma.content.count({ where }),
           this.prisma.content.findMany({
             where,
-            skip: (page - 1) * limit,
-            take: limit,
+            skip: isRatingSort ? undefined : (page - 1) * limit,
+            take: isRatingSort ? undefined : limit,
             orderBy,
             include: {
               category: { select: { id: true, name: true, slug: true } },
@@ -213,15 +232,27 @@ export class ContentService {
                   genre: { select: { id: true, name: true, slug: true } },
                 },
               },
-              _count: { select: { comments: true, likes: true, ratings: true } },
+              _count: {
+                select: { comments: true, likes: true, ratings: true },
+              },
             },
           }),
         ]);
 
         const totalPages = Math.ceil(total / limit);
+        const itemsWithRating = await this.attachRatingSummaries(items);
+        const pagedItems = isRatingSort
+          ? itemsWithRating
+              .sort((a, b) => {
+                const ratingDelta =
+                  (b.averageRating ?? 0) - (a.averageRating ?? 0);
+                return sortOrder === "asc" ? -ratingDelta : ratingDelta;
+              })
+              .slice((page - 1) * limit, page * limit)
+          : itemsWithRating;
 
         return {
-          items: items.map((item) => this.mapContentToDto(item)),
+          items: pagedItems.map((item) => this.mapContentToDto(item)),
           meta: {
             page,
             limit,
@@ -242,10 +273,10 @@ export class ContentService {
   async findBySlug(
     slug: string,
     userAgeCategory?: PrismaAgeCategory,
-    userRole?: string,
+    actor?: { id?: string; role?: string },
   ) {
     const cacheKey = CACHE_KEYS.content.detail(
-      `${slug}:${userAgeCategory || "ZERO_PLUS"}:${userRole || "anon"}`,
+      `${slug}:${userAgeCategory || "ZERO_PLUS"}:${actor?.role || "anon"}:${actor?.id || "guest"}`,
     );
 
     return this.cache.getOrSet(
@@ -253,7 +284,7 @@ export class ContentService {
       async () => {
         const allowedCategories = this.getAllowedAgeCategoriesForRole(
           userAgeCategory,
-          userRole,
+          actor?.role,
         );
         const isUuid =
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -263,7 +294,11 @@ export class ContentService {
         const content = await this.prisma.content.findFirst({
           where: {
             ...(isUuid ? { id: slug } : { slug }),
-            status: ContentStatus.PUBLISHED,
+            OR: [
+              { status: ContentStatus.PUBLISHED },
+              ...(this.canManageAll(actor) ? [{}] : []),
+              ...(actor?.id ? [{ creatorId: actor.id }] : []),
+            ],
             ageCategory: { in: allowedCategories },
           },
           include: {
@@ -402,8 +437,10 @@ export class ContentService {
 
     const totalPages = Math.ceil(total / limit);
 
+    const itemsWithRating = await this.attachRatingSummaries(items);
+
     return {
-      items: items.map((item) => this.mapContentToDto(item)),
+      items: itemsWithRating.map((item) => this.mapContentToDto(item)),
       meta: {
         page,
         limit,
@@ -585,6 +622,7 @@ export class ContentService {
           ? Number(aggregate._avg.rating.toFixed(1))
           : 0,
         ratingCount: aggregate._count.rating,
+        reviewsCount: aggregate._count.rating,
         userRating: userRating
           ? {
               id: userRating.id,
@@ -704,7 +742,7 @@ export class ContentService {
       throw error;
     }
 
-    await this.cache.invalidatePattern(`content:*${contentId}*`);
+    await this.cache.invalidatePattern("content:*");
     return this.getRatingSummary(contentId, userId);
   }
 
@@ -723,20 +761,27 @@ export class ContentService {
 
   // ===================== Admin endpoints =====================
 
-  async findAllAdmin(query: {
-    status?: string;
-    contentType?: string;
-    search?: string;
-    isFree?: boolean;
-    page: number;
-    limit: number;
-    includeEpisodes?: boolean;
-  }, actor?: { id?: string; role?: string }) {
+  async findAllAdmin(
+    query: {
+      status?: string;
+      contentType?: string;
+      search?: string;
+      isFree?: boolean;
+      date?: string;
+      sort?: string;
+      page: number;
+      limit: number;
+      includeEpisodes?: boolean;
+    },
+    actor?: { id?: string; role?: string },
+  ) {
     const {
       status,
       contentType,
       search,
       isFree,
+      date,
+      sort = "newest",
       page,
       limit,
       includeEpisodes,
@@ -745,17 +790,44 @@ export class ContentService {
     const where: Prisma.ContentWhereInput = {
       ...this.ownerFilter(actor),
     };
+    const andFilters: Prisma.ContentWhereInput[] = [];
 
     if (status) where.status = status as any;
     if (contentType) where.contentType = contentType as any;
     if (search) where.title = { contains: search, mode: "insensitive" };
     if (isFree !== undefined) where.isFree = isFree;
+    if (date) {
+      const start = new Date(`${date}T00:00:00.000Z`);
+      if (Number.isNaN(start.getTime())) {
+        throw new BadRequestException("Invalid moderation date");
+      }
+      const end = new Date(start);
+      end.setUTCDate(end.getUTCDate() + 1);
+      andFilters.push({
+        OR: [
+          {
+            status: ContentStatus.PENDING,
+            updatedAt: { gte: start, lt: end },
+          },
+          {
+            NOT: { status: ContentStatus.PENDING },
+            createdAt: { gte: start, lt: end },
+          },
+        ],
+      });
+    }
 
     if (!includeEpisodes) {
-      where.OR = [
-        { series: { is: null } },
-        { series: { is: { parentSeriesId: null } } },
-      ];
+      andFilters.push({
+        OR: [
+          { series: { is: null } },
+          { series: { is: { parentSeriesId: null } } },
+        ],
+      });
+    }
+
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
     }
 
     const [total, items] = await Promise.all([
@@ -764,9 +836,31 @@ export class ContentService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy:
+          sort === "views"
+            ? [{ viewCount: "desc" }, { createdAt: "desc" }]
+            : sort === "likes"
+              ? [{ likes: { _count: "desc" } }, { createdAt: "desc" }]
+              : sort === "engagement"
+                ? [
+                    { likes: { _count: "desc" } },
+                    { comments: { _count: "desc" } },
+                    { ratings: { _count: "desc" } },
+                    { viewCount: "desc" },
+                    { createdAt: "desc" },
+                  ]
+                : [{ createdAt: "desc" }],
         include: {
           category: { select: { id: true, name: true, slug: true } },
+          creator: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
+          },
           tags: {
             include: { tag: { select: { id: true, name: true, slug: true } } },
           },
@@ -782,13 +876,27 @@ export class ContentService {
 
     const totalPages = Math.ceil(total / limit);
 
+    const itemsWithRating = await this.attachRatingSummaries(items);
+
+    let mappedItems = itemsWithRating.map((item) => ({
+      ...this.mapContentToDto(item),
+      status: item.status,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    }));
+
+    if (sort === "engagement") {
+      mappedItems = mappedItems.sort(
+        (a, b) =>
+          (b.likeCount ?? 0) +
+          (b.commentCount ?? 0) +
+          (b.ratingCount ?? 0) -
+          ((a.likeCount ?? 0) + (a.commentCount ?? 0) + (a.ratingCount ?? 0)),
+      );
+    }
+
     return {
-      items: items.map((item) => ({
-        ...this.mapContentToDto(item),
-        status: item.status,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-      })),
+      items: mappedItems,
       page,
       limit,
       total,
@@ -803,6 +911,15 @@ export class ContentService {
       where: { id },
       include: {
         category: { select: { id: true, name: true, slug: true } },
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        },
         tags: {
           include: { tag: { select: { id: true, name: true, slug: true } } },
         },
@@ -846,16 +963,14 @@ export class ContentService {
 
     const slug = this.generateSlug(dto.title);
 
-    const requestedStatus =
+    this.assertAllowedStatusChange(dto.status, actor);
+
+    const finalStatus =
       dto.status === ContentStatus.DRAFT ||
       dto.status === ContentStatus.PENDING ||
-      dto.status === ContentStatus.PUBLISHED
+      (dto.status === ContentStatus.PUBLISHED && this.canManageAll(actor))
         ? dto.status
         : ContentStatus.DRAFT;
-    const finalStatus =
-      requestedStatus === ContentStatus.PUBLISHED && !this.canManageAll(actor)
-        ? ContentStatus.PENDING
-        : requestedStatus;
 
     const content = await this.prisma.$transaction(async (tx) => {
       const created = await tx.content.create({
@@ -944,19 +1059,41 @@ export class ContentService {
         );
     }
 
-    const requestedStatus =
-      dto.status === ContentStatus.PUBLISHED && !this.canManageAll(actor)
-        ? ContentStatus.PENDING
-        : dto.status;
+    const normalizedSlug =
+      dto.slug !== undefined ? dto.slug.trim().toLowerCase() : undefined;
+    if (normalizedSlug && normalizedSlug !== existing.slug) {
+      const slugOwner = await this.prisma.content.findUnique({
+        where: { slug: normalizedSlug },
+        select: { id: true },
+      });
+      if (slugOwner && slugOwner.id !== id) {
+        throw new ConflictException(
+          "Slug is already used by another content item",
+        );
+      }
+    }
+
+    this.assertAllowedStatusChange(dto.status, actor);
+
+    const requestedStatus = dto.status;
+    const nextThumbnailUrl =
+      typeof dto.thumbnailUrl === "string" && dto.thumbnailUrl.trim()
+        ? dto.thumbnailUrl.trim()
+        : undefined;
+    const nextPreviewUrl =
+      typeof dto.previewUrl === "string" && dto.previewUrl.trim()
+        ? dto.previewUrl.trim()
+        : undefined;
 
     const updateData: Prisma.ContentUpdateInput = {
       ...(dto.title && { title: dto.title }),
+      ...(normalizedSlug && { slug: normalizedSlug }),
       ...(dto.description && { description: dto.description }),
       ...(dto.contentType && { contentType: dto.contentType as any }),
       ...(dto.categoryId && { category: { connect: { id: dto.categoryId } } }),
       ...(dto.ageCategory && { ageCategory: dto.ageCategory }),
-      ...(dto.thumbnailUrl !== undefined && { thumbnailUrl: dto.thumbnailUrl }),
-      ...(dto.previewUrl !== undefined && { previewUrl: dto.previewUrl }),
+      ...(nextThumbnailUrl && { thumbnailUrl: nextThumbnailUrl }),
+      ...(nextPreviewUrl && { previewUrl: nextPreviewUrl }),
       ...(dto.duration !== undefined && { duration: dto.duration }),
       ...(dto.isFree !== undefined && { isFree: dto.isFree }),
       ...(dto.individualPrice !== undefined && {
@@ -991,6 +1128,15 @@ export class ContentService {
         data: updateData,
         include: {
           category: { select: { id: true, name: true, slug: true } },
+          creator: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
+          },
           tags: {
             include: { tag: { select: { id: true, name: true, slug: true } } },
           },
@@ -1049,6 +1195,7 @@ export class ContentService {
         content.ageCategory,
       thumbnailUrl: content.thumbnailUrl,
       previewUrl: content.previewUrl,
+      creatorId: content.creatorId,
       duration: content.duration,
       isFree: content.isFree,
       individualPrice: content.individualPrice
@@ -1056,7 +1203,23 @@ export class ContentService {
         : undefined,
       viewCount: content.viewCount,
       publishedAt: content.publishedAt,
+      uploadedAt: content.createdAt,
+      submittedForReviewAt:
+        content.status === ContentStatus.PENDING ? content.updatedAt : null,
       category: content.category,
+      creator: content.creator
+        ? {
+            id: content.creator.id,
+            email: content.creator.email,
+            firstName: content.creator.firstName,
+            lastName: content.creator.lastName,
+            role: content.creator.role,
+            username:
+              [content.creator.firstName, content.creator.lastName]
+                .filter(Boolean)
+                .join(" ") || content.creator.email,
+          }
+        : null,
       tags: Array.isArray(content.tags)
         ? content.tags.map((ct: any) => ct.tag)
         : [],
@@ -1073,10 +1236,12 @@ export class ContentService {
         typeof content?._count?.ratings === "number"
           ? content._count.ratings
           : 0,
-      likeCount:
-        typeof content?._count?.likes === "number"
-          ? content._count.likes
+      reviewsCount:
+        typeof content?._count?.ratings === "number"
+          ? content._count.ratings
           : 0,
+      likeCount:
+        typeof content?._count?.likes === "number" ? content._count.likes : 0,
       shareCount: 0,
       seasonCount: counts.seasonCount,
       episodeCount: counts.episodeCount,
@@ -1106,10 +1271,41 @@ export class ContentService {
     }
   }
 
+  private async attachRatingSummaries<T extends { id: string }>(
+    contents: T[],
+  ): Promise<Array<T & { averageRating: number }>> {
+    if (contents.length === 0) return [];
+
+    try {
+      const aggregates = await this.prisma.contentRating.groupBy({
+        by: ["contentId"],
+        where: { contentId: { in: contents.map((content) => content.id) } },
+        _avg: { rating: true },
+      });
+      const averageByContentId = new Map(
+        aggregates.map((aggregate) => [
+          aggregate.contentId,
+          aggregate._avg.rating ? Number(aggregate._avg.rating.toFixed(1)) : 0,
+        ]),
+      );
+
+      return contents.map((content) => ({
+        ...content,
+        averageRating: averageByContentId.get(content.id) ?? 0,
+      }));
+    } catch (error) {
+      if (this.isMissingRatingTableError(error)) {
+        return contents.map((content) => ({ ...content, averageRating: 0 }));
+      }
+      throw error;
+    }
+  }
+
   private emptyRatingSummary() {
     return {
       averageRating: 0,
       ratingCount: 0,
+      reviewsCount: 0,
       userRating: null,
       reviews: [],
     };
@@ -1208,7 +1404,7 @@ export class ContentService {
   }
 
   private getOrderBy(
-    sortBy: "publishedAt" | "viewCount" | "title" | "createdAt",
+    sortBy: "publishedAt" | "viewCount" | "title" | "createdAt" | "rating",
     sortOrder: "asc" | "desc",
   ): Prisma.ContentOrderByWithRelationInput {
     switch (sortBy) {

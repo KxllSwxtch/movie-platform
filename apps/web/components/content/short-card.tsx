@@ -86,7 +86,9 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
 
     const videoSrc = useMemo(() => {
       if (!isActive) return undefined;
-      return streamData?.streamUrl as string | undefined;
+      return streamData?.streamUrl
+        ? normalizeMediaUrl(streamData.streamUrl as string)
+        : undefined;
     }, [isActive, streamData?.streamUrl]);
 
     useEffect(() => {

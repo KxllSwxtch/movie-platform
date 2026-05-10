@@ -37,6 +37,11 @@ import {
   useContentTags,
   useContentGenres,
 } from '@/hooks/use-studio-data';
+import {
+  canManageContentPublication,
+  normalizeCreatorContentStatus,
+} from '@/lib/content-permissions';
+import { useUser } from '@/stores/auth.store';
 
 // ============ Types ============
 
@@ -165,6 +170,8 @@ function buildDefaultValues(content: Record<string, unknown>): TutorialFormValue
 // ============ Component ============
 
 export function TutorialEditor({ content, contentId }: TutorialEditorProps) {
+  const user = useUser();
+  const canManagePublication = canManageContentPublication(user?.role);
   const [currentStep, setCurrentStep] = React.useState(1);
   const updateContent = useUpdateContent();
 
@@ -242,12 +249,14 @@ export function TutorialEditor({ content, contentId }: TutorialEditorProps) {
         previewUrl: values.previewUrl || undefined,
         isFree: values.isFree,
         individualPrice: values.individualPrice || undefined,
-        status: values.status || 'DRAFT',
+        status: canManagePublication
+          ? values.status || 'DRAFT'
+          : normalizeCreatorContentStatus(values.status),
         tagIds: values.tagIds?.length ? values.tagIds : undefined,
         genreIds: values.genreIds?.length ? values.genreIds : undefined,
       });
     },
-    [updateContent, contentId]
+    [canManagePublication, updateContent, contentId]
   );
 
   const handleFormSubmit = React.useCallback(() => {

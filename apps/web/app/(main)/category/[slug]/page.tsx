@@ -1,34 +1,41 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useParams } from 'next/navigation';
-import { Funnel } from '@phosphor-icons/react';
+import * as React from "react";
+import { useParams } from "next/navigation";
+import { Funnel } from "@phosphor-icons/react";
 
-import { Container } from '@/components/ui/container';
-import { ContentGrid } from '@/components/ui/grid';
-import { Pagination } from '@/components/ui/pagination';
+import { Container } from "@/components/ui/container";
+import { ContentGrid } from "@/components/ui/grid";
+import { Pagination } from "@/components/ui/pagination";
 import {
   SeriesCard,
   ClipCard,
   TutorialCard,
   VideoCardSkeletonGrid,
   type AgeCategory,
-} from '@/components/content';
-import { useContentList, useCategoryDetail } from '@/hooks/use-content';
-import { cn } from '@/lib/utils';
+} from "@/components/content";
+import { useContentList, useCategoryDetail } from "@/hooks/use-content";
+import { cn } from "@/lib/utils";
 
-type ContentTab = 'all' | 'series' | 'clips' | 'tutorials';
+type ContentTab = "all" | "series" | "clips" | "tutorials";
 
 export default function CategoryPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const [activeTab, setActiveTab] = React.useState<ContentTab>('all');
+  const [activeTab, setActiveTab] = React.useState<ContentTab>("all");
   const [currentPage, setCurrentPage] = React.useState(1);
 
   const { data: categoryData } = useCategoryDetail(slug);
   const categoryName = categoryData?.name || slug;
 
-  const contentType = activeTab === 'all' ? undefined : activeTab === 'series' ? 'SERIES' : activeTab === 'clips' ? 'CLIP' : 'TUTORIAL';
+  const contentType =
+    activeTab === "all"
+      ? undefined
+      : activeTab === "series"
+        ? "SERIES"
+        : activeTab === "clips"
+          ? "CLIP"
+          : "TUTORIAL";
 
   const { data, isLoading } = useContentList({
     categoryId: categoryData?.id,
@@ -41,57 +48,76 @@ export default function CategoryPage() {
   const total = data?.data?.total ?? 0;
   const totalPages = Math.ceil(total / 20);
 
-  const seriesItems = items.filter((i) => i.contentType === 'SERIES').map((item) => ({
-    id: item.id,
-    slug: item.slug,
-    title: item.title,
-    thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
-    seasonCount: item.seasonCount || 1,
-    episodeCount: item.episodeCount || 1,
-    ageCategory: (item.ageCategory || '0+') as AgeCategory,
-    rating: item.rating,
-    year: item.year,
-  }));
+  const seriesItems = items
+    .filter((i) => i.contentType === "SERIES")
+    .map((item) => ({
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      thumbnailUrl: item.thumbnailUrl || "/images/movie-placeholder.jpg",
+      seasonCount: item.seasonCount || 1,
+      episodeCount: item.episodeCount || 1,
+      ageCategory: (item.ageCategory || "0+") as AgeCategory,
+      rating: item.averageRating ?? item.rating,
+      year: item.year,
+    }));
 
-  const clipItems = items.filter((i) => i.contentType === 'CLIP').map((item) => ({
-    id: item.id,
-    slug: item.slug,
-    title: item.title,
-    thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
-    duration: item.duration,
-    viewCount: item.viewCount,
-    ageCategory: (item.ageCategory || '0+') as AgeCategory,
-    category: typeof item.category === 'object' && item.category !== null ? item.category.name : item.category,
-  }));
+  const clipItems = items
+    .filter((i) => i.contentType === "CLIP")
+    .map((item) => ({
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      thumbnailUrl: item.thumbnailUrl || "/images/movie-placeholder.jpg",
+      duration: item.duration,
+      viewCount: item.viewCount,
+      rating: item.averageRating ?? item.rating,
+      ageCategory: (item.ageCategory || "0+") as AgeCategory,
+      category:
+        typeof item.category === "object" && item.category !== null
+          ? item.category.name
+          : item.category,
+    }));
 
-  const tutorialItems = items.filter((i) => i.contentType === 'TUTORIAL').map((item) => ({
-    id: item.id,
-    slug: item.slug,
-    title: item.title,
-    thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
-    lessonCount: item.lessonCount || 0,
-    completedLessons: item.completedLessons || 0,
-    ageCategory: (item.ageCategory || '0+') as AgeCategory,
-    category: typeof item.category === 'object' && item.category !== null ? item.category.name : item.category,
-    instructor: item.instructor,
-  }));
+  const tutorialItems = items
+    .filter((i) => i.contentType === "TUTORIAL")
+    .map((item) => ({
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      thumbnailUrl: item.thumbnailUrl || "/images/movie-placeholder.jpg",
+      lessonCount: item.lessonCount || 0,
+      completedLessons: item.completedLessons || 0,
+      ageCategory: (item.ageCategory || "0+") as AgeCategory,
+      category:
+        typeof item.category === "object" && item.category !== null
+          ? item.category.name
+          : item.category,
+      instructor: item.instructor,
+      rating: item.averageRating ?? item.rating,
+    }));
 
   const tabs: { value: ContentTab; label: string }[] = [
-    { value: 'all', label: 'Все' },
-    { value: 'series', label: 'Сериалы' },
-    { value: 'clips', label: 'Клипы' },
-    { value: 'tutorials', label: 'Обучение' },
+    { value: "all", label: "Все" },
+    { value: "series", label: "Сериалы" },
+    { value: "clips", label: "Клипы" },
+    { value: "tutorials", label: "Обучение" },
   ];
 
-  const showSeries = activeTab === 'all' ? seriesItems.length > 0 : activeTab === 'series';
-  const showClips = activeTab === 'all' ? clipItems.length > 0 : activeTab === 'clips';
-  const showTutorials = activeTab === 'all' ? tutorialItems.length > 0 : activeTab === 'tutorials';
+  const showSeries =
+    activeTab === "all" ? seriesItems.length > 0 : activeTab === "series";
+  const showClips =
+    activeTab === "all" ? clipItems.length > 0 : activeTab === "clips";
+  const showTutorials =
+    activeTab === "all" ? tutorialItems.length > 0 : activeTab === "tutorials";
 
   return (
     <Container size="full" className="py-6">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-mp-text-primary">{categoryName}</h1>
+        <h1 className="text-2xl font-bold text-mp-text-primary">
+          {categoryName}
+        </h1>
         <p className="text-sm text-mp-text-secondary mt-1">
           {total} результатов в категории
         </p>
@@ -108,10 +134,10 @@ export default function CategoryPage() {
                 setCurrentPage(1);
               }}
               className={cn(
-                'pb-3 text-sm font-medium border-b-2 transition-colors',
+                "pb-3 text-sm font-medium border-b-2 transition-colors",
                 activeTab === tab.value
-                  ? 'border-mp-accent-primary text-mp-accent-primary'
-                  : 'border-transparent text-mp-text-secondary hover:text-mp-text-primary'
+                  ? "border-mp-accent-primary text-mp-accent-primary"
+                  : "border-transparent text-mp-text-secondary hover:text-mp-text-primary",
               )}
             >
               {tab.label}
@@ -138,8 +164,10 @@ export default function CategoryPage() {
           {/* Series */}
           {showSeries && seriesItems.length > 0 && (
             <section className="mb-8">
-              {activeTab === 'all' && (
-                <h2 className="text-lg font-semibold text-mp-text-primary mb-4">Сериалы</h2>
+              {activeTab === "all" && (
+                <h2 className="text-lg font-semibold text-mp-text-primary mb-4">
+                  Сериалы
+                </h2>
               )}
               <ContentGrid>
                 {seriesItems.map((series) => (
@@ -152,8 +180,10 @@ export default function CategoryPage() {
           {/* Clips */}
           {showClips && clipItems.length > 0 && (
             <section className="mb-8">
-              {activeTab === 'all' && (
-                <h2 className="text-lg font-semibold text-mp-text-primary mb-4">Клипы</h2>
+              {activeTab === "all" && (
+                <h2 className="text-lg font-semibold text-mp-text-primary mb-4">
+                  Клипы
+                </h2>
               )}
               <ContentGrid>
                 {clipItems.map((clip) => (
@@ -166,8 +196,10 @@ export default function CategoryPage() {
           {/* Tutorials */}
           {showTutorials && tutorialItems.length > 0 && (
             <section className="mb-8">
-              {activeTab === 'all' && (
-                <h2 className="text-lg font-semibold text-mp-text-primary mb-4">Обучение</h2>
+              {activeTab === "all" && (
+                <h2 className="text-lg font-semibold text-mp-text-primary mb-4">
+                  Обучение
+                </h2>
               )}
               <ContentGrid>
                 {tutorialItems.map((tutorial) => (

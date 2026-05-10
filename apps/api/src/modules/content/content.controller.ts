@@ -155,9 +155,13 @@ export class ContentController {
   async findBySlug(
     @Param("slug") slug: string,
     @CurrentUser("ageCategory") userAgeCategory?: AgeCategory,
+    @CurrentUser("id") userId?: string,
     @CurrentUser("role") userRole?: string,
   ): Promise<ContentDetailDto> {
-    return this.contentService.findBySlug(slug, userAgeCategory, userRole);
+    return this.contentService.findBySlug(slug, userAgeCategory, {
+      id: userId,
+      role: userRole,
+    });
   }
 
   /**

@@ -1,54 +1,63 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Funnel, SlidersHorizontal, GridNine, ListBullets } from '@phosphor-icons/react';
+import * as React from "react";
+import {
+  Funnel,
+  SlidersHorizontal,
+  GridNine,
+  ListBullets,
+} from "@phosphor-icons/react";
 
-import { Container } from '@/components/ui/container';
-import { ContentGrid } from '@/components/ui/grid';
-import { Button } from '@/components/ui/button';
-import { Pagination } from '@/components/ui/pagination';
+import { Container } from "@/components/ui/container";
+import { ContentGrid } from "@/components/ui/grid";
+import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { ClipCard, VideoCardSkeletonGrid, type AgeCategory } from '@/components/content';
-import { useContentList } from '@/hooks/use-content';
-import { normalizeAgeCategory } from '@/lib/age-category';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/sheet";
+import {
+  ClipCard,
+  VideoCardSkeletonGrid,
+  type AgeCategory,
+} from "@/components/content";
+import { useContentList } from "@/hooks/use-content";
+import { normalizeAgeCategory } from "@/lib/age-category";
+import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS = [
-  { value: 'createdAt', label: 'Сначала новые' },
-  { value: 'viewCount', label: 'По популярности' },
-  { value: 'rating', label: 'По рейтингу' },
+  { value: "createdAt", label: "Сначала новые" },
+  { value: "viewCount", label: "По популярности" },
+  { value: "rating", label: "По рейтингу" },
 ];
 
 const AGE_FILTERS: { value: AgeCategory; label: string }[] = [
-  { value: '0+', label: '0+' },
-  { value: '6+', label: '6+' },
-  { value: '12+', label: '12+' },
-  { value: '16+', label: '16+' },
-  { value: '18+', label: '18+' },
+  { value: "0+", label: "0+" },
+  { value: "6+", label: "6+" },
+  { value: "12+", label: "12+" },
+  { value: "16+", label: "16+" },
+  { value: "18+", label: "18+" },
 ];
 
 export default function ClipsPage() {
   const [showFilters, setShowFilters] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [sortBy, setSortBy] = React.useState('createdAt');
+  const [sortBy, setSortBy] = React.useState("createdAt");
   const [selectedAges, setSelectedAges] = React.useState<AgeCategory[]>([]);
 
   const { data, isLoading } = useContentList({
-    type: 'CLIP',
+    type: "CLIP",
     sortBy,
     age: selectedAges.length === 1 ? selectedAges[0] : undefined,
     page: currentPage,
@@ -61,11 +70,15 @@ export default function ClipsPage() {
       id: item.id,
       slug: item.slug,
       title: item.title,
-      thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
+      thumbnailUrl: item.thumbnailUrl || "/images/movie-placeholder.jpg",
       duration: item.duration,
       viewCount: item.viewCount,
-      ageCategory: normalizeAgeCategory(item.ageCategory || '0+'),
-      category: typeof item.category === 'object' && item.category !== null ? item.category.name : item.category,
+      rating: item.averageRating ?? item.rating,
+      ageCategory: normalizeAgeCategory(item.ageCategory || "0+"),
+      category:
+        typeof item.category === "object" && item.category !== null
+          ? item.category.name
+          : item.category,
     }));
   }, [data]);
 
@@ -74,7 +87,7 @@ export default function ClipsPage() {
 
   const handleAgeToggle = (age: AgeCategory) => {
     setSelectedAges((prev) =>
-      prev.includes(age) ? prev.filter((a) => a !== age) : [...prev, age]
+      prev.includes(age) ? prev.filter((a) => a !== age) : [...prev, age],
     );
     setCurrentPage(1);
   };
@@ -89,7 +102,9 @@ export default function ClipsPage() {
   const filterContent = (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium text-mp-text-primary mb-3">Возрастной рейтинг</h3>
+        <h3 className="text-sm font-medium text-mp-text-primary mb-3">
+          Возрастной рейтинг
+        </h3>
         <div className="space-y-2">
           {AGE_FILTERS.map((age) => (
             <label
@@ -100,7 +115,9 @@ export default function ClipsPage() {
                 checked={selectedAges.includes(age.value)}
                 onCheckedChange={() => handleAgeToggle(age.value)}
               />
-              <span className="text-sm text-mp-text-secondary">{age.label}</span>
+              <span className="text-sm text-mp-text-secondary">
+                {age.label}
+              </span>
             </label>
           ))}
         </div>
@@ -131,7 +148,13 @@ export default function ClipsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Select value={sortBy} onValueChange={(v) => { setSortBy(v); setCurrentPage(1); }}>
+          <Select
+            value={sortBy}
+            onValueChange={(v) => {
+              setSortBy(v);
+              setCurrentPage(1);
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Сортировка" />
             </SelectTrigger>
@@ -146,24 +169,24 @@ export default function ClipsPage() {
 
           <div className="flex items-center border border-mp-border rounded-lg p-1">
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={() => setViewMode("grid")}
               className={cn(
-                'p-1.5 rounded transition-colors',
-                viewMode === 'grid'
-                  ? 'bg-mp-accent-primary/20 text-mp-accent-primary'
-                  : 'text-mp-text-secondary hover:text-mp-text-primary'
+                "p-1.5 rounded transition-colors",
+                viewMode === "grid"
+                  ? "bg-mp-accent-primary/20 text-mp-accent-primary"
+                  : "text-mp-text-secondary hover:text-mp-text-primary",
               )}
               aria-label="Grid view"
             >
               <GridNine className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => setViewMode("list")}
               className={cn(
-                'p-1.5 rounded transition-colors',
-                viewMode === 'list'
-                  ? 'bg-mp-accent-primary/20 text-mp-accent-primary'
-                  : 'text-mp-text-secondary hover:text-mp-text-primary'
+                "p-1.5 rounded transition-colors",
+                viewMode === "list"
+                  ? "bg-mp-accent-primary/20 text-mp-accent-primary"
+                  : "text-mp-text-secondary hover:text-mp-text-primary",
               )}
               aria-label="List view"
             >
@@ -172,7 +195,7 @@ export default function ClipsPage() {
           </div>
 
           <Button
-            variant={showFilters ? 'default' : 'outline'}
+            variant={showFilters ? "default" : "outline"}
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
             className="gap-2"
@@ -195,9 +218,7 @@ export default function ClipsPage() {
             <SheetHeader>
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>
-            <div className="mt-4">
-              {filterContent}
-            </div>
+            <div className="mt-4">{filterContent}</div>
           </SheetContent>
         </Sheet>
       </div>
@@ -213,7 +234,11 @@ export default function ClipsPage() {
         {/* Content grid */}
         <div className="flex-1 min-w-0">
           {isLoading ? (
-            <VideoCardSkeletonGrid count={12} variant="series" columns={showFilters ? 4 : 5} />
+            <VideoCardSkeletonGrid
+              count={12}
+              variant="series"
+              columns={showFilters ? 4 : 5}
+            />
           ) : clips.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Funnel className="w-12 h-12 text-mp-text-disabled mb-4" />
@@ -229,7 +254,7 @@ export default function ClipsPage() {
             </div>
           ) : (
             <>
-              <ContentGrid variant={showFilters ? 'compact' : 'default'}>
+              <ContentGrid variant={showFilters ? "compact" : "default"}>
                 {clips.map((clip) => (
                   <ClipCard key={clip.id} content={clip} />
                 ))}

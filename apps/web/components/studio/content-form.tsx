@@ -32,7 +32,12 @@ import {
   useContentTags,
   useContentGenres,
 } from '@/hooks/use-studio-data';
+import {
+  canManageContentPublication,
+  normalizeCreatorContentStatus,
+} from '@/lib/content-permissions';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/stores/auth.store';
 
 // ============ Schema ============
 
@@ -264,6 +269,8 @@ export function ContentForm({
   contentId,
   isEditMode = false,
 }: ContentFormProps) {
+  const user = useUser();
+  const canManagePublication = canManageContentPublication(user?.role);
   const [currentStep, setCurrentStep] = React.useState(1);
   const [showSlug, setShowSlug] = React.useState(false);
   const [draftRestored, setDraftRestored] = React.useState(false);
@@ -311,7 +318,18 @@ export function ContentForm({
   const isFree = watch('isFree');
   const slug = watch('slug');
   const selectedContentType = watch('contentType');
+  const currentStatus = watch('status');
   const allValues = watch();
+
+  React.useEffect(() => {
+    if (canManagePublication || !currentStatus) return;
+    if (currentStatus === 'DRAFT' || currentStatus === 'PENDING') return;
+
+    setValue('status', normalizeCreatorContentStatus(currentStatus), {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }, [canManagePublication, currentStatus, setValue]);
 
   // Auto-generate slug from title
   const prevAutoSlug = React.useRef('');
@@ -412,7 +430,12 @@ export function ContentForm({
     if (!isEditMode) {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
-    onSubmit(values);
+    onSubmit({
+      ...values,
+      status: canManagePublication
+        ? values.status
+        : normalizeCreatorContentStatus(values.status),
+    });
   };
 
   return (

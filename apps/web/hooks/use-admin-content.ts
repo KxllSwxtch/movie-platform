@@ -41,6 +41,8 @@ export interface AdminContentQueryParams {
   search?: string;
   isFree?: boolean;
   ageCategory?: string;
+  date?: string;
+  sort?: 'newest' | 'views' | 'likes' | 'engagement';
 }
 
 export interface AdminContentList {
@@ -164,7 +166,7 @@ export function useUpdateContent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, slug: _slug, ...data }: UpdateContentInput) => {
+    mutationFn: async ({ id, ...data }: UpdateContentInput) => {
       const payload = {
         ...data,
         ...(data.ageCategory ? { ageCategory: mapAgeCategoryToBackend(data.ageCategory) } : {}),

@@ -104,6 +104,7 @@ export function PlayerSettingsMenu({ onQualityChange, className }: PlayerSetting
     <div ref={menuRef} className={cn('relative', className)}>
       {/* Settings button */}
       <button
+        type="button"
         onClick={() => setSettingsOpen(!isSettingsOpen)}
         className={cn(
           'p-2 md:p-2.5 hover:bg-white/10 rounded-lg transition-colors',
@@ -186,6 +187,7 @@ function MenuItem({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className="w-full flex items-center justify-between px-3 py-3 md:py-2 hover:bg-white/10 transition-colors"
     >
@@ -202,6 +204,7 @@ function MenuItem({
 function SubMenuHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <button
+      type="button"
       onClick={onBack}
       className="w-full flex items-center gap-2 px-3 py-3 md:py-2 border-b border-mp-border hover:bg-white/10 transition-colors"
     >
@@ -223,6 +226,7 @@ function SelectableItem({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         'w-full flex items-center justify-between px-3 py-3 md:py-2 hover:bg-white/10 transition-colors',
@@ -253,6 +257,7 @@ export function PlayerSettingsCompact({
 
   return (
     <button
+      type="button"
       onClick={cycleQuality}
       className={cn(
         'px-2 py-1 text-xs font-medium bg-black/40 hover:bg-black/60 rounded transition-colors',

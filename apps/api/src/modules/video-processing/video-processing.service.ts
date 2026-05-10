@@ -1,17 +1,23 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bull";
+import { Queue } from "bull";
 
-import { PrismaService } from '../../config/prisma.service';
-import { StorageService } from '../storage/storage.service';
-import { EdgeCenterService } from '../edgecenter/edgecenter.service';
-import { EncodingStatus, VideoQuality } from '@movie-platform/shared';
-import { EncodingStatusDto } from '../edgecenter/dto';
+import { PrismaService } from "../../config/prisma.service";
+import { StorageService } from "../storage/storage.service";
+import { EdgeCenterService } from "../edgecenter/edgecenter.service";
+import { EncodingStatus, VideoQuality } from "@movie-platform/shared";
+import { EncodingStatusDto } from "../edgecenter/dto";
 import {
   VIDEO_PROCESSING_QUEUE,
   VideoJobType,
   TranscodeJobData,
-} from './video-processing.constants';
+} from "./video-processing.constants";
 
 @Injectable()
 export class VideoProcessingService {
@@ -25,6 +31,17 @@ export class VideoProcessingService {
     @Optional() private readonly edgecenterService?: EdgeCenterService,
   ) {}
 
+  private isRootStructuredContent(content: {
+    contentType: string;
+    series?: { parentSeriesId: string | null } | null;
+  }): boolean {
+    return (
+      (content.contentType === "SERIES" ||
+        content.contentType === "TUTORIAL") &&
+      (!content.series || !content.series.parentSeriesId)
+    );
+  }
+
   /**
    * Enqueue a video for transcoding
    */
@@ -33,8 +50,10 @@ export class VideoProcessingService {
     sourceFilePath: string,
     fileName: string,
   ): Promise<{ jobId: string }> {
-    this.logger.debug(`[enqueueTranscoding START] contentId=${contentId}, filepath=${sourceFilePath}`);
-    
+    this.logger.debug(
+      `[enqueueTranscoding START] contentId=${contentId}, filepath=${sourceFilePath}`,
+    );
+
     // Verify content exists
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
@@ -44,32 +63,16 @@ export class VideoProcessingService {
       this.logger.error(`[enqueueTranscoding] Content not found: ${contentId}`);
       throw new NotFoundException(`Контент ${contentId} не найден`);
     }
-    if (
-      (content.contentType === 'SERIES' || content.contentType === 'TUTORIAL') &&
-      content.series &&
-      !content.series.parentSeriesId
-    ) {
-      throw new BadRequestException('Видео для сериалов и обучения загружается только на уровне серии или урока');
+    if (this.isRootStructuredContent(content)) {
+      throw new BadRequestException(
+        "Видео для сериалов и обучения загружается только на уровне серии или урока",
+      );
     }
     this.logger.debug(`[enqueueTranscoding] Content found: ${contentId}`);
 
-    // Delete any existing video files for this content
-    this.logger.debug(`[enqueueTranscoding] Deleting existing video files for ${contentId}`);
-    const deletedCount = await this.prisma.videoFile.deleteMany({ where: { contentId } });
-    this.logger.debug(`[enqueueTranscoding] Deleted ${deletedCount.count} video files`);
-
-    // Create a pending VideoFile record
-    this.logger.debug(`[enqueueTranscoding] Creating PENDING VideoFile record`);
-    const videoFile = await this.prisma.videoFile.create({
-      data: {
-        contentId,
-        quality: 'Q_720P',
-        fileUrl: 'pending',
-        fileSize: BigInt(0),
-        encodingStatus: 'PENDING',
-      },
-    });
-    this.logger.debug(`[enqueueTranscoding] VideoFile created: ${videoFile.id}`);
+    // Keep the current playable stream intact while the replacement is queued
+    // and transcoded. The processor publishes the new stream only after all
+    // output files are ready, so a failed replacement cannot break playback.
 
     // Add to BullMQ queue
     this.logger.debug(`[enqueueTranscoding] Adding to BullMQ queue`);
@@ -98,8 +101,9 @@ export class VideoProcessingService {
       where: { id: contentId },
       include: {
         videoFiles: {
-          orderBy: { quality: 'desc' },
+          orderBy: { quality: "desc" },
         },
+        series: true,
       },
     });
 
@@ -107,13 +111,7 @@ export class VideoProcessingService {
       throw new NotFoundException(`Контент ${contentId} не найден`);
     }
 
-    // Delegate to EdgeCenter for CDN content
-    if (content.edgecenterClientId === 'edgecenter' && this.edgecenterService) {
-      return this.edgecenterService.syncEncodingStatus(contentId);
-    }
-
-    // No video files → no video
-    if (content.videoFiles.length === 0) {
+    if (this.isRootStructuredContent(content)) {
       return {
         contentId,
         hasVideo: false,
@@ -122,19 +120,64 @@ export class VideoProcessingService {
       };
     }
 
+    // Delegate to EdgeCenter for CDN content
+    if (
+      content.edgecenterClientId?.startsWith("edgecenter") &&
+      this.edgecenterService
+    ) {
+      return this.edgecenterService.syncEncodingStatus(contentId);
+    }
+
+    // No video files → no video
+    const replacementProgress = await this.getJobProgress(contentId);
+
+    if (content.videoFiles.length === 0 && replacementProgress === undefined) {
+      return {
+        contentId,
+        hasVideo: false,
+        status: EncodingStatus.PENDING,
+        availableQualities: [],
+      };
+    }
+
+    // Keep existing completed files playable during replacement, but report
+    // active queue work so admin UI keeps polling until the new stream is ready.
+    if (replacementProgress !== undefined) {
+      const qualityMapping: Record<string, VideoQuality> = {
+        Q_240P: VideoQuality.Q_240P,
+        Q_480P: VideoQuality.Q_480P,
+        Q_720P: VideoQuality.Q_720P,
+        Q_1080P: VideoQuality.Q_1080P,
+        Q_4K: VideoQuality.Q_4K,
+      };
+      return {
+        contentId,
+        edgecenterVideoId: content.edgecenterVideoId || undefined,
+        hasVideo: true,
+        status: EncodingStatus.PROCESSING,
+        availableQualities: content.videoFiles
+          .filter((vf) => vf.encodingStatus === "COMPLETED")
+          .map((vf) => qualityMapping[vf.quality])
+          .filter(Boolean),
+        progress: replacementProgress,
+        thumbnailUrl: content.thumbnailUrl || undefined,
+        duration: content.duration || undefined,
+      };
+    }
+
     // Determine overall status from video files
     const statuses = content.videoFiles.map((vf) => vf.encodingStatus);
     let overallStatus: EncodingStatus;
     let progress: number | undefined;
 
-    if (statuses.some((s) => s === 'FAILED')) {
+    if (statuses.some((s) => s === "FAILED")) {
       overallStatus = EncodingStatus.FAILED;
-    } else if (statuses.every((s) => s === 'COMPLETED')) {
+    } else if (statuses.every((s) => s === "COMPLETED")) {
       overallStatus = EncodingStatus.COMPLETED;
-    } else if (statuses.some((s) => s === 'PROCESSING')) {
+    } else if (statuses.some((s) => s === "PROCESSING")) {
       overallStatus = EncodingStatus.PROCESSING;
       // Try to get progress from active Bull job
-      progress = await this.getJobProgress(contentId);
+      progress = replacementProgress;
     } else {
       overallStatus = EncodingStatus.PENDING;
     }
@@ -149,7 +192,7 @@ export class VideoProcessingService {
     };
 
     const availableQualities = content.videoFiles
-      .filter((vf) => vf.encodingStatus === 'COMPLETED')
+      .filter((vf) => vf.encodingStatus === "COMPLETED")
       .map((vf) => qualityMapping[vf.quality])
       .filter(Boolean);
 
@@ -178,16 +221,16 @@ export class VideoProcessingService {
     }
 
     // Delegate to EdgeCenter for CDN content
-    if (content.edgecenterClientId === 'edgecenter' && this.edgecenterService) {
+    if (content.edgecenterClientId === "edgecenter" && this.edgecenterService) {
       return this.edgecenterService.deleteVideoForContent(contentId);
     }
 
     // Delete from MinIO
-    await this.storage.deleteFolder('videos', `${contentId}/`);
+    await this.storage.deleteFolder("videos", `${contentId}/`);
 
     // Delete thumbnail
     try {
-      await this.storage.deleteFile('thumbnails', `${contentId}/thumb.jpg`);
+      await this.storage.deleteFile("thumbnails", `${contentId}/thumb.jpg`);
     } catch {
       // Thumbnail may not exist
     }
@@ -212,11 +255,15 @@ export class VideoProcessingService {
    * Get Bull job progress for a content
    */
   private async getJobProgress(contentId: string): Promise<number | undefined> {
-    const activeJobs = await this.videoQueue.getActive();
-    const job = activeJobs.find((j) => j.data.contentId === contentId);
+    const jobs = [
+      ...(await this.videoQueue.getActive()),
+      ...(await this.videoQueue.getWaiting()),
+      ...(await this.videoQueue.getDelayed()),
+    ];
+    const job = jobs.find((j) => j.data.contentId === contentId);
     if (job) {
       const progress = await job.progress();
-      return typeof progress === 'number' ? progress : undefined;
+      return typeof progress === "number" ? progress : 0;
     }
     return undefined;
   }

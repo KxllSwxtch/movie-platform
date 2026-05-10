@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { api, endpoints } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
@@ -79,6 +79,7 @@ export function useContentTags() {
       const response = await api.get<Tag[]>(endpoints.tags.list);
       return response.data;
     },
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
   });
 }

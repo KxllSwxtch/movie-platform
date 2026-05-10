@@ -60,12 +60,6 @@ export class VideoProcessingProcessor {
         qualities.push(QUALITY_PRESETS[0]);
       }
 
-      // 3. Mark VideoFiles as PROCESSING
-      await this.prisma.videoFile.updateMany({
-        where: { contentId },
-        data: { encodingStatus: 'PROCESSING' },
-      });
-
       const existingContent = await this.prisma.content.findUnique({
         where: { id: contentId },
         select: { thumbnailUrl: true },
@@ -96,15 +90,6 @@ export class VideoProcessingProcessor {
         this.logger.log(`Transcoding ${preset.name} for content ${contentId}`);
         await this.transcodeToHls(sourceFilePath, qualityDir, preset);
 
-        // Upload all segments + playlist to MinIO
-        const files = await readdir(qualityDir);
-        for (const file of files) {
-          const filePath = path.join(qualityDir, file);
-          const minioKey = `${contentId}/${preset.name}/${file}`;
-          const ct = file.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : 'video/mp2t';
-          await this.storage.uploadFromPath('videos', minioKey, filePath, ct);
-        }
-
         completedQualities.push({
           preset,
           bandwidth: parseInt(preset.videoBitrate) * 1000,
@@ -119,16 +104,31 @@ export class VideoProcessingProcessor {
       const masterPlaylist = this.generateMasterPlaylist(completedQualities);
       const masterPath = path.join(workDir, 'master.m3u8');
       fs.writeFileSync(masterPath, masterPlaylist);
+      const outputPrefix = `${contentId}/replacements/${job.id || Date.now()}`;
+      await job.progress(95);
+
+      for (const { preset } of completedQualities) {
+        const qualityDir = path.join(workDir, preset.name);
+        const files = await readdir(qualityDir);
+        const mediaFiles = files.filter((file) => !file.endsWith('.m3u8'));
+        const playlistFiles = files.filter((file) => file.endsWith('.m3u8'));
+
+        for (const file of [...mediaFiles, ...playlistFiles]) {
+          const filePath = path.join(qualityDir, file);
+          const minioKey = `${outputPrefix}/${preset.name}/${file}`;
+          const ct = file.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : 'video/mp2t';
+          await this.storage.uploadFromPath('videos', minioKey, filePath, ct);
+        }
+      }
+
+      // 7. Update database — delete old VideoFile records, create new ones
       await this.storage.uploadFromPath(
         'videos',
-        `${contentId}/master.m3u8`,
+        `${outputPrefix}/master.m3u8`,
         masterPath,
         'application/vnd.apple.mpegurl',
       );
 
-      await job.progress(95);
-
-      // 7. Update database — delete old VideoFile records, create new ones
       await this.prisma.videoFile.deleteMany({ where: { contentId } });
 
       for (const { preset } of completedQualities) {
@@ -136,7 +136,7 @@ export class VideoProcessingProcessor {
           data: {
             contentId,
             quality: preset.prismaQuality as any,
-            fileUrl: `${contentId}/master.m3u8`,
+            fileUrl: `${outputPrefix}/master.m3u8`,
             fileSize: BigInt(0), // HLS — size isn't meaningful for streaming
             encodingStatus: 'COMPLETED',
           },
@@ -156,11 +156,9 @@ export class VideoProcessingProcessor {
       await job.progress(100);
       this.logger.log(`Transcode completed for content ${contentId}`);
     } catch (error) {
-      // Mark video files as FAILED
-      await this.prisma.videoFile.updateMany({
-        where: { contentId },
-        data: { encodingStatus: 'FAILED' },
-      });
+      this.logger.error(
+        `Replacement transcode failed for content ${contentId}; keeping existing stream intact`,
+      );
       throw error;
     } finally {
       // 9. Cleanup temp files

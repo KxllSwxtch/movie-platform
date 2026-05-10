@@ -8,6 +8,7 @@ import { queryKeys } from "@/lib/query-client";
 export interface RatingSummary {
   averageRating: number;
   ratingCount: number;
+  reviewsCount?: number;
   userRating: {
     id: string;
     rating: number;
@@ -67,7 +68,7 @@ export function useUpsertContentRating(contentId: string) {
       queryClient.invalidateQueries({
         queryKey: [...queryKeys.content.detail(contentId), "rating"],
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.content.details() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.content.all });
     },
   });
 }

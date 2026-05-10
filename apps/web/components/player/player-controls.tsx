@@ -153,6 +153,7 @@ export function PlayerControls({
         <div className="flex items-center gap-2 md:gap-2.5">
           {/* Play/Pause */}
           <button
+            type="button"
             onClick={togglePlay}
             className="p-2 md:p-2.5 hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-mp-accent-primary"
             aria-label={isPlaying ? 'Пауза' : 'Воспроизвести'}
@@ -167,6 +168,7 @@ export function PlayerControls({
           {/* Skip back */}
           {onSkipBack && (
             <button
+              type="button"
               onClick={() => {
                 seekRelative(-10);
                 onSeek(usePlayerStore.getState().currentTime - 10);
@@ -181,6 +183,7 @@ export function PlayerControls({
           {/* Skip forward */}
           {onSkipForward && (
             <button
+              type="button"
               onClick={() => {
                 seekRelative(10);
                 onSeek(usePlayerStore.getState().currentTime + 10);
@@ -208,6 +211,7 @@ export function PlayerControls({
           {/* Subtitles */}
           {showSubtitles && onToggleSubtitles && (
             <button
+              type="button"
               onClick={onToggleSubtitles}
               className="p-2 md:p-2.5 hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-mp-accent-primary"
               aria-label="Субтитры"
@@ -222,6 +226,7 @@ export function PlayerControls({
           {/* Picture in Picture — hidden on mobile to save space */}
           {showPiP && onTogglePiP && document.pictureInPictureEnabled && (
             <button
+              type="button"
               onClick={onTogglePiP}
               className="hidden sm:block p-2 md:p-2.5 hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-mp-accent-primary"
               aria-label="Картинка в картинке"
@@ -232,6 +237,7 @@ export function PlayerControls({
 
           {/* Fullscreen */}
           <button
+            type="button"
             onClick={onToggleFullscreen}
             className="p-2 md:p-2.5 hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-mp-accent-primary"
             aria-label={isFullscreen ? 'Выйти из полноэкранного режима' : 'Полноэкранный режим'}
@@ -285,6 +291,7 @@ export function PlayerTopBar({
 
         {onClose && (
           <button
+            type="button"
             onClick={onClose}
             className="ml-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
             aria-label="Закрыть"

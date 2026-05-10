@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ContentType, AgeCategory } from '@movie-platform/shared';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ContentType, AgeCategory } from "@movie-platform/shared";
 
 export class CategorySummaryDto {
   @ApiProperty()
@@ -83,19 +83,37 @@ export class ContentListItemDto {
   @ApiPropertyOptional()
   previewUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Number of comments' })
+  @ApiPropertyOptional({ description: "Number of comments" })
   commentCount?: number;
 
-  @ApiPropertyOptional({ description: 'Number of likes' })
+  @ApiPropertyOptional({ description: "Number of likes" })
   likeCount?: number;
 
-  @ApiPropertyOptional({ description: 'Number of shares' })
+  @ApiPropertyOptional({ description: "Number of shares" })
   shareCount?: number;
 
-  @ApiPropertyOptional({ description: 'Number of seasons (SERIES/TUTORIAL only)' })
+  @ApiPropertyOptional({ description: "Average user rating from 1 to 5" })
+  rating?: number;
+
+  @ApiPropertyOptional({ description: "Average user rating from 1 to 5" })
+  averageRating?: number;
+
+  @ApiPropertyOptional({
+    description: "Number of users who rated this content",
+  })
+  ratingCount?: number;
+
+  @ApiPropertyOptional({ description: "Alias for ratingCount" })
+  reviewsCount?: number;
+
+  @ApiPropertyOptional({
+    description: "Number of seasons (SERIES/TUTORIAL only)",
+  })
   seasonCount?: number;
 
-  @ApiPropertyOptional({ description: 'Number of episodes/lessons (SERIES/TUTORIAL only)' })
+  @ApiPropertyOptional({
+    description: "Number of episodes/lessons (SERIES/TUTORIAL only)",
+  })
   episodeCount?: number;
 
   @ApiPropertyOptional()
@@ -106,10 +124,10 @@ export class ContentListItemDto {
 }
 
 export class ContentDetailDto extends ContentListItemDto {
-  @ApiPropertyOptional({ description: 'Content status (admin only)' })
+  @ApiPropertyOptional({ description: "Content status (admin only)" })
   status?: string;
 
-  @ApiPropertyOptional({ description: 'Attached video files (admin only)' })
+  @ApiPropertyOptional({ description: "Attached video files (admin only)" })
   videoFiles?: unknown[];
 }
 

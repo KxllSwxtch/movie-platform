@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { VideoPlayer } from '@/components/player/video-player';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { endpoints, getAuthToken } from '@/lib/api-client';
 import { normalizeMediaUrl } from '@/lib/media-url';
@@ -17,6 +18,7 @@ import {
   useEdgeCenterUpload,
   useEncodingStatus,
   useDeleteContentVideo,
+  useStreamUrl,
 } from '@/hooks/use-streaming';
 
 const isEdgeCenterMode = process.env.NEXT_PUBLIC_VIDEO_PROVIDER === 'edgecenter';
@@ -84,7 +86,9 @@ export function VideoUpload({
   const ecUpload = useEdgeCenterUpload();
   const deleteMutation = useDeleteContentVideo();
   const { data: statusRaw } = useEncodingStatus(effectiveContentId);
+  const { data: streamRaw } = useStreamUrl(effectiveContentId);
   const encodingStatus = (statusRaw as any)?.data || statusRaw;
+  const streamData = (streamRaw as any)?.data || streamRaw;
 
   const hasVideo = Boolean(encodingStatus?.hasVideo);
 
@@ -236,6 +240,11 @@ export function VideoUpload({
 
     // Show completed state with preview + delete
     if (st === 'COMPLETED') {
+      const streamUrl = streamData?.streamUrl as string | undefined;
+      const posterUrl = encodingStatus.thumbnailUrl
+        ? normalizeMediaUrl(encodingStatus.thumbnailUrl)
+        : undefined;
+
       return (
         <div className="space-y-2">
           <Label>{label}</Label>
@@ -244,9 +253,20 @@ export function VideoUpload({
               status="COMPLETED"
               availableQualities={encodingStatus.availableQualities}
             />
-            {encodingStatus.thumbnailUrl && (
+            {streamUrl ? (
+              <div className="overflow-hidden rounded-lg border border-mp-border bg-black">
+                <VideoPlayer
+                  src={normalizeMediaUrl(streamUrl)}
+                  poster={posterUrl}
+                  title={label}
+                  autoPlay={false}
+                  showSkipButtons={false}
+                  className="aspect-video"
+                />
+              </div>
+            ) : encodingStatus.thumbnailUrl && (
               <NextImage
-                src={normalizeMediaUrl(encodingStatus.thumbnailUrl)}
+                src={posterUrl || normalizeMediaUrl(encodingStatus.thumbnailUrl)}
                 alt="Thumbnail"
                 width={320}
                 height={180}
@@ -263,7 +283,7 @@ export function VideoUpload({
                 disabled={disabled}
               >
                 <UploadSimple className="w-4 h-4 mr-1" />
-                Заменить
+                Заменить видео
               </Button>
               <Button
                 type="button"

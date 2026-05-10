@@ -1,15 +1,18 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef } from 'react';
-import Hls from 'hls.js';
+import { useCallback, useEffect, useRef } from "react";
+import Hls from "hls.js";
 
-import { usePlayerStore, type VideoQuality } from '@/stores/player.store';
+import { usePlayerStore, type VideoQuality } from "@/stores/player.store";
 
 interface UsePlayerOptions {
   src: string;
   autoPlay?: boolean;
   initialTime?: number;
-  onProgress?: (time: number) => void;
+  onProgress?: (
+    time: number,
+    reason?: "interval" | "pause" | "ended" | "visibilitychange" | "pagehide",
+  ) => void;
   onEnded?: () => void;
   onError?: (error: string) => void;
   onUrlExpired?: () => void;
@@ -19,11 +22,11 @@ interface UsePlayerOptions {
  * Map HLS.js quality levels to our quality enum
  */
 function mapQualityLevel(height: number): VideoQuality {
-  if (height >= 2160) return '4k';
-  if (height >= 1080) return '1080p';
-  if (height >= 720) return '720p';
-  if (height >= 480) return '480p';
-  return '240p';
+  if (height >= 2160) return "4k";
+  if (height >= 1080) return "1080p";
+  if (height >= 720) return "720p";
+  if (height >= 480) return "480p";
+  return "240p";
 }
 
 /**
@@ -41,7 +44,9 @@ export function usePlayer({
 }: UsePlayerOptions) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endedCallbackFiredRef = useRef(false);
 
@@ -102,7 +107,7 @@ export function usePlayer({
       // Handle HLS events
       hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
         // Get available quality levels
-        const qualities: VideoQuality[] = ['auto'];
+        const qualities: VideoQuality[] = ["auto"];
         data.levels.forEach((level) => {
           const quality = mapQualityLevel(level.height);
           if (!qualities.includes(quality)) {
@@ -148,15 +153,15 @@ export function usePlayer({
               break;
             default:
               // Cannot recover
-              setError('Ошибка воспроизведения видео');
-              onError?.('Ошибка воспроизведения видео');
+              setError("Ошибка воспроизведения видео");
+              onError?.("Ошибка воспроизведения видео");
               break;
           }
         }
       });
 
       hlsRef.current = hls;
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       // Native HLS support (Safari)
       video.src = src;
       if (autoPlay) {
@@ -165,10 +170,10 @@ export function usePlayer({
       if (initialTime > 0) {
         video.currentTime = initialTime;
       }
-      setAvailableQualities(['auto']);
+      setAvailableQualities(["auto"]);
     } else {
-      setError('Ваш браузер не поддерживает HLS');
-      onError?.('Ваш браузер не поддерживает HLS');
+      setError("Ваш браузер не поддерживает HLS");
+      onError?.("Ваш браузер не поддерживает HLS");
     }
 
     return () => {
@@ -177,18 +182,36 @@ export function usePlayer({
         hlsRef.current = null;
       }
     };
-  }, [src, autoPlay, initialTime, setAvailableQualities, setQuality, setError, onError, onUrlExpired]);
+  }, [
+    src,
+    autoPlay,
+    initialTime,
+    setAvailableQualities,
+    setQuality,
+    setError,
+    onError,
+    onUrlExpired,
+  ]);
 
   // Video event handlers
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    const flushProgress = (reason: "pause" | "ended") => {
+      if (Number.isFinite(video.currentTime)) {
+        onProgress?.(video.currentTime, reason);
+      }
+    };
     const handlePlay = () => play();
-    const handlePause = () => pause();
+    const handlePause = () => {
+      pause();
+      flushProgress("pause");
+    };
     const handleEnded = () => {
       if (endedCallbackFiredRef.current) return;
       endedCallbackFiredRef.current = true;
+      flushProgress("ended");
       setEnded(true);
       onEnded?.();
     };
@@ -218,33 +241,33 @@ export function usePlayer({
     };
     const handleError = () => {
       const error = video.error;
-      const message = error?.message || 'Ошибка воспроизведения';
+      const message = error?.message || "Ошибка воспроизведения";
       setError(message);
       onError?.(message);
     };
 
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
-    video.addEventListener('ended', handleEnded);
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('durationchange', handleDurationChange);
-    video.addEventListener('progress', handleProgress);
-    video.addEventListener('waiting', handleWaiting);
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('volumechange', handleVolumeChange);
-    video.addEventListener('error', handleError);
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("pause", handlePause);
+    video.addEventListener("ended", handleEnded);
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("durationchange", handleDurationChange);
+    video.addEventListener("progress", handleProgress);
+    video.addEventListener("waiting", handleWaiting);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("volumechange", handleVolumeChange);
+    video.addEventListener("error", handleError);
 
     return () => {
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
-      video.removeEventListener('ended', handleEnded);
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('durationchange', handleDurationChange);
-      video.removeEventListener('progress', handleProgress);
-      video.removeEventListener('waiting', handleWaiting);
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('volumechange', handleVolumeChange);
-      video.removeEventListener('error', handleError);
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("pause", handlePause);
+      video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("durationchange", handleDurationChange);
+      video.removeEventListener("progress", handleProgress);
+      video.removeEventListener("waiting", handleWaiting);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("volumechange", handleVolumeChange);
+      video.removeEventListener("error", handleError);
     };
   }, [
     play,
@@ -259,6 +282,7 @@ export function usePlayer({
     setError,
     onEnded,
     onError,
+    onProgress,
   ]);
 
   // Progress tracking (debounced callback)
@@ -268,14 +292,39 @@ export function usePlayer({
     progressIntervalRef.current = setInterval(() => {
       const video = videoRef.current;
       if (video && !video.paused) {
-        onProgress(video.currentTime);
+        onProgress(video.currentTime, "interval");
       }
     }, 10000); // Every 10 seconds
+
+    const flushLifecycleProgress = (
+      reason: "visibilitychange" | "pagehide",
+    ) => {
+      const video = videoRef.current;
+      if (
+        video &&
+        Number.isFinite(video.currentTime) &&
+        video.currentTime > 0
+      ) {
+        onProgress(video.currentTime, reason);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushLifecycleProgress("visibilitychange");
+      }
+    };
+    const handlePageHide = () => flushLifecycleProgress("pagehide");
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
 
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
     };
   }, [onProgress]);
 
@@ -333,38 +382,43 @@ export function usePlayer({
       const hls = hlsRef.current;
       if (!hls) return;
 
-      if (newQuality === 'auto') {
+      if (newQuality === "auto") {
         hls.currentLevel = -1; // Auto
       } else {
         const targetHeight =
-          newQuality === '4k'
+          newQuality === "4k"
             ? 2160
-            : newQuality === '1080p'
+            : newQuality === "1080p"
               ? 1080
-              : newQuality === '720p'
+              : newQuality === "720p"
                 ? 720
-                : newQuality === '480p'
+                : newQuality === "480p"
                   ? 480
                   : 240;
 
-        const levelIndex = hls.levels.findIndex((level) => level.height === targetHeight);
+        const levelIndex = hls.levels.findIndex(
+          (level) => level.height === targetHeight,
+        );
         if (levelIndex !== -1) {
           hls.nextLevel = levelIndex; // Smooth switch on next fragment
         }
       }
       setQuality(newQuality);
     },
-    [setQuality]
+    [setQuality],
   );
 
   // Seek handler
-  const seek = useCallback((time: number) => {
-    const video = videoRef.current;
-    if (!video) return;
+  const seek = useCallback(
+    (time: number) => {
+      const video = videoRef.current;
+      if (!video) return;
 
-    video.currentTime = Math.max(0, Math.min(time, video.duration));
-    setCurrentTime(video.currentTime);
-  }, [setCurrentTime]);
+      video.currentTime = Math.max(0, Math.min(time, video.duration));
+      setCurrentTime(video.currentTime);
+    },
+    [setCurrentTime],
+  );
 
   // Toggle play/pause
   const togglePlayPause = useCallback(() => {
@@ -381,7 +435,9 @@ export function usePlayer({
   // Fullscreen handlers
   const enterFullscreen = useCallback(async () => {
     const video = videoRef.current;
-    const container = video?.closest('[data-player-container]') as HTMLElement | null;
+    const container = video?.closest(
+      "[data-player-container]",
+    ) as HTMLElement | null;
     if (!video) return;
 
     const tryEnterContainerFullscreen = async (): Promise<boolean> => {
@@ -391,8 +447,11 @@ export function usePlayer({
           await container.requestFullscreen();
           return true;
         }
-        const webkitRequestFullscreen = (container as unknown as { webkitRequestFullscreen?: () => Promise<void> })
-          .webkitRequestFullscreen;
+        const webkitRequestFullscreen = (
+          container as unknown as {
+            webkitRequestFullscreen?: () => Promise<void>;
+          }
+        ).webkitRequestFullscreen;
         if (webkitRequestFullscreen) {
           await webkitRequestFullscreen.call(container);
           return true;
@@ -404,7 +463,9 @@ export function usePlayer({
     };
 
     const tryEnterVideoFullscreen = (): boolean => {
-      const webkitEnterFullscreen = (video as unknown as { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen;
+      const webkitEnterFullscreen = (
+        video as unknown as { webkitEnterFullscreen?: () => void }
+      ).webkitEnterFullscreen;
       if (webkitEnterFullscreen) {
         try {
           webkitEnterFullscreen.call(video);
@@ -417,7 +478,8 @@ export function usePlayer({
     };
 
     try {
-      const didEnter = (await tryEnterContainerFullscreen()) || tryEnterVideoFullscreen();
+      const didEnter =
+        (await tryEnterContainerFullscreen()) || tryEnterVideoFullscreen();
       if (didEnter) {
         setFullscreen(true);
       }
@@ -430,11 +492,18 @@ export function usePlayer({
     try {
       if (document.exitFullscreen) {
         await document.exitFullscreen();
-      } else if ((document as unknown as { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen) {
-        await (document as unknown as { webkitExitFullscreen: () => Promise<void> }).webkitExitFullscreen();
+      } else if (
+        (document as unknown as { webkitExitFullscreen?: () => Promise<void> })
+          .webkitExitFullscreen
+      ) {
+        await (
+          document as unknown as { webkitExitFullscreen: () => Promise<void> }
+        ).webkitExitFullscreen();
       } else {
         const video = videoRef.current;
-        const webkitExitFullscreen = (video as unknown as { webkitExitFullscreen?: () => void })?.webkitExitFullscreen;
+        const webkitExitFullscreen = (
+          video as unknown as { webkitExitFullscreen?: () => void }
+        )?.webkitExitFullscreen;
         if (video && webkitExitFullscreen) {
           webkitExitFullscreen.call(video);
         }
@@ -479,25 +548,41 @@ export function usePlayer({
 
   // Fullscreen change listener
   useEffect(() => {
-    const handleFullscreenChange = () => setFullscreen(!!document.fullscreenElement);
+    const handleFullscreenChange = () =>
+      setFullscreen(!!document.fullscreenElement);
 
     const video = videoRef.current;
     const handleWebkitBeginFullscreen = () => setFullscreen(true);
     const handleWebkitEndFullscreen = () => setFullscreen(false);
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
 
     // iOS Safari uses video-specific events (document.fullscreenElement won't change)
-    video?.addEventListener('webkitbeginfullscreen', handleWebkitBeginFullscreen as EventListener);
-    video?.addEventListener('webkitendfullscreen', handleWebkitEndFullscreen as EventListener);
+    video?.addEventListener(
+      "webkitbeginfullscreen",
+      handleWebkitBeginFullscreen as EventListener,
+    );
+    video?.addEventListener(
+      "webkitendfullscreen",
+      handleWebkitEndFullscreen as EventListener,
+    );
 
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+      );
 
-      video?.removeEventListener('webkitbeginfullscreen', handleWebkitBeginFullscreen as EventListener);
-      video?.removeEventListener('webkitendfullscreen', handleWebkitEndFullscreen as EventListener);
+      video?.removeEventListener(
+        "webkitbeginfullscreen",
+        handleWebkitBeginFullscreen as EventListener,
+      );
+      video?.removeEventListener(
+        "webkitendfullscreen",
+        handleWebkitEndFullscreen as EventListener,
+      );
     };
   }, [setFullscreen]);
 
@@ -509,12 +594,12 @@ export function usePlayer({
     const handleEnterPiP = () => setPictureInPicture(true);
     const handleLeavePiP = () => setPictureInPicture(false);
 
-    video.addEventListener('enterpictureinpicture', handleEnterPiP);
-    video.addEventListener('leavepictureinpicture', handleLeavePiP);
+    video.addEventListener("enterpictureinpicture", handleEnterPiP);
+    video.addEventListener("leavepictureinpicture", handleLeavePiP);
 
     return () => {
-      video.removeEventListener('enterpictureinpicture', handleEnterPiP);
-      video.removeEventListener('leavepictureinpicture', handleLeavePiP);
+      video.removeEventListener("enterpictureinpicture", handleEnterPiP);
+      video.removeEventListener("leavepictureinpicture", handleLeavePiP);
     };
   }, [setPictureInPicture]);
 

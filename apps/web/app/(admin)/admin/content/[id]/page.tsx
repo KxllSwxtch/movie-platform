@@ -1,36 +1,36 @@
-'use client';
+"use client";
 
-import { ArrowLeft, FloppyDisk, SpinnerGap } from '@phosphor-icons/react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import * as React from 'react';
+import { ArrowLeft, FloppyDisk, SpinnerGap } from "@phosphor-icons/react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import * as React from "react";
 
-import { AdminPageHeader } from '@/components/admin/layout/admin-page-header';
-import { ImageUpload } from '@/components/admin/content/image-upload';
-import { VideoUpload } from '@/components/admin/content/video-upload';
-import { StructuredContentVideoManager } from '@/components/studio/structured-content-video-manager';
-import { TagInput } from '@/components/studio/tag-input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Container } from '@/components/ui/container';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { AdminPageHeader } from "@/components/admin/layout/admin-page-header";
+import { ImageUpload } from "@/components/admin/content/image-upload";
+import { VideoUpload } from "@/components/admin/content/video-upload";
+import { StructuredContentVideoManager } from "@/components/studio/structured-content-video-manager";
+import { TagInput } from "@/components/studio/tag-input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Container } from "@/components/ui/container";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useAdminContentDetail,
   useUpdateContent,
   AGE_CATEGORY_FROM_BACKEND,
-} from '@/hooks/use-admin-content';
-import { useContentCategories, useContentTags } from '@/hooks/use-studio-data';
+} from "@/hooks/use-admin-content";
+import { useContentCategories, useContentTags } from "@/hooks/use-studio-data";
 
 export default function AdminContentEditPage() {
   const params = useParams();
@@ -42,46 +42,63 @@ export default function AdminContentEditPage() {
   const { flat: categories } = useContentCategories();
   const { data: availableTags } = useContentTags();
 
-  const [title, setTitle] = React.useState('');
-  const [slug, setSlug] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [contentType, setContentType] = React.useState('');
-  const [categoryId, setCategoryId] = React.useState('');
-  const [ageCategory, setAgeCategory] = React.useState('');
-  const [thumbnailUrl, setThumbnailUrl] = React.useState('');
-  const [previewUrl, setPreviewUrl] = React.useState('');
+  const [title, setTitle] = React.useState("");
+  const [slug, setSlug] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [contentType, setContentType] = React.useState("");
+  const [categoryId, setCategoryId] = React.useState("");
+  const [ageCategory, setAgeCategory] = React.useState("");
+  const [thumbnailUrl, setThumbnailUrl] = React.useState("");
+  const [previewUrl, setPreviewUrl] = React.useState("");
   const [isFree, setIsFree] = React.useState(false);
-  const [individualPrice, setIndividualPrice] = React.useState('');
-  const [status, setStatus] = React.useState('');
+  const [individualPrice, setIndividualPrice] = React.useState("");
+  const [status, setStatus] = React.useState("");
   const [tagIds, setTagIds] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     if (!content) return;
 
     const c = (content as { data?: Record<string, unknown> }).data ?? content;
-    setTitle((c as { title?: string }).title || '');
-    setSlug((c as { slug?: string }).slug || '');
-    setDescription((c as { description?: string }).description || '');
-    setContentType((c as { contentType?: string }).contentType || '');
+    setTitle((c as { title?: string }).title || "");
+    setSlug((c as { slug?: string }).slug || "");
+    setDescription((c as { description?: string }).description || "");
+    setContentType((c as { contentType?: string }).contentType || "");
 
     const category = (c as { category?: { id?: string } }).category;
-    setCategoryId((c as { categoryId?: string }).categoryId || category?.id || '');
+    setCategoryId(
+      (c as { categoryId?: string }).categoryId || category?.id || "",
+    );
 
-    const rawAge = (c as { ageCategory?: string }).ageCategory || '';
+    const rawAge = (c as { ageCategory?: string }).ageCategory || "";
     setAgeCategory(AGE_CATEGORY_FROM_BACKEND[rawAge] || rawAge);
-    setThumbnailUrl((c as { thumbnailUrl?: string }).thumbnailUrl || '');
-    setPreviewUrl((c as { previewUrl?: string }).previewUrl || '');
+    setThumbnailUrl((c as { thumbnailUrl?: string }).thumbnailUrl || "");
+    setPreviewUrl((c as { previewUrl?: string }).previewUrl || "");
     setIsFree(Boolean((c as { isFree?: boolean }).isFree));
 
     const price = (c as { individualPrice?: number }).individualPrice;
-    setIndividualPrice(price != null ? String(price) : '');
-    setStatus((c as { status?: string }).status || '');
+    setIndividualPrice(price != null ? String(price) : "");
+    setStatus((c as { status?: string }).status || "");
 
     const tags = (c as { tags?: Array<{ id?: string }> }).tags;
-    setTagIds(Array.isArray(tags) ? tags.map((tag) => tag.id || '').filter(Boolean) : []);
+    setTagIds(
+      Array.isArray(tags)
+        ? tags.map((tag) => tag.id || "").filter(Boolean)
+        : [],
+    );
   }, [content]);
 
-  const isStructuredContent = contentType === 'SERIES' || contentType === 'TUTORIAL';
+  const contentRecord = React.useMemo(
+    () =>
+      (content as { data?: Record<string, unknown> } | undefined)?.data ??
+      content ??
+      null,
+    [content],
+  );
+  const effectiveContentType =
+    contentType ||
+    ((contentRecord as { contentType?: string } | null)?.contentType ?? "");
+  const isStructuredContent =
+    effectiveContentType === "SERIES" || effectiveContentType === "TUTORIAL";
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -103,7 +120,7 @@ export default function AdminContentEditPage() {
       },
       {
         onSuccess: () => {
-          router.push('/admin/content');
+          router.push("/admin/content");
         },
       },
     );
@@ -157,11 +174,11 @@ export default function AdminContentEditPage() {
       </div>
 
       <AdminPageHeader
-        title={title || 'Контент'}
+        title={title || "Контент"}
         description="Редактирование контента"
         breadcrumbItems={[
-          { label: 'Контент', href: '/admin/content' },
-          { label: title || 'Контент' },
+          { label: "Контент", href: "/admin/content" },
+          { label: title || "Контент" },
         ]}
       />
 
@@ -231,7 +248,7 @@ export default function AdminContentEditPage() {
             {isStructuredContent ? (
               <StructuredContentVideoManager
                 rootContentId={contentId}
-                contentType={contentType as 'SERIES' | 'TUTORIAL'}
+                contentType={effectiveContentType as "SERIES" | "TUTORIAL"}
               />
             ) : (
               <Card>
@@ -314,7 +331,9 @@ export default function AdminContentEditPage() {
                     <SelectContent>
                       {categories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
-                          {category.depth > 0 ? `${'— '.repeat(category.depth)}${category.name}` : category.name}
+                          {category.depth > 0
+                            ? `${"— ".repeat(category.depth)}${category.name}`
+                            : category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -356,7 +375,9 @@ export default function AdminContentEditPage() {
                       id="individualPrice"
                       type="number"
                       value={individualPrice}
-                      onChange={(event) => setIndividualPrice(event.target.value)}
+                      onChange={(event) =>
+                        setIndividualPrice(event.target.value)
+                      }
                       placeholder="0"
                       min="0"
                       step="1"
@@ -368,7 +389,11 @@ export default function AdminContentEditPage() {
 
             <Card>
               <CardContent className="space-y-2 p-4">
-                <Button type="submit" className="w-full" disabled={updateContent.isPending}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={updateContent.isPending}
+                >
                   {updateContent.isPending ? (
                     <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
                   ) : (

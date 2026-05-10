@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 
-import { cn } from '@/lib/utils';
-import { usePlayerStore, type VideoQuality } from '@/stores/player.store';
-import { usePlayer } from './use-player';
-import { PlayerControls, PlayerTopBar } from './player-controls';
-import { PlayerOverlay, PlayerGradientOverlay } from './player-overlay';
+import { cn } from "@/lib/utils";
+import { usePlayerStore, type VideoQuality } from "@/stores/player.store";
+import { usePlayer } from "./use-player";
+import { PlayerControls, PlayerTopBar } from "./player-controls";
+import { PlayerOverlay, PlayerGradientOverlay } from "./player-overlay";
 
 export interface VideoPlayerProps {
   /** HLS manifest URL */
@@ -21,8 +21,11 @@ export interface VideoPlayerProps {
   autoPlay?: boolean;
   /** Resume from position (seconds) */
   initialTime?: number;
-  /** Progress callback (debounced, every 10s) */
-  onProgress?: (time: number) => void;
+  /** Progress callback (every 10s and on pause/page lifecycle events) */
+  onProgress?: (
+    time: number,
+    reason?: "interval" | "pause" | "ended" | "visibilitychange" | "pagehide",
+  ) => void;
   /** Video ended callback */
   onEnded?: () => void;
   /** Error callback */
@@ -71,18 +74,20 @@ export function VideoPlayer({
   className,
 }: VideoPlayerProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const lastTapRef = React.useRef<{ time: number; x: number }>({ time: 0, x: 0 });
-  const [seekFeedback, setSeekFeedback] = React.useState<{ side: 'left' | 'right'; visible: boolean }>({
-    side: 'left',
+  const lastTapRef = React.useRef<{ time: number; x: number }>({
+    time: 0,
+    x: 0,
+  });
+  const [seekFeedback, setSeekFeedback] = React.useState<{
+    side: "left" | "right";
+    visible: boolean;
+  }>({
+    side: "left",
     visible: false,
   });
 
-  const {
-    isControlsVisible,
-    setSettingsOpen,
-    updateActivity,
-    reset,
-  } = usePlayerStore();
+  const { isControlsVisible, setSettingsOpen, updateActivity, reset } =
+    usePlayerStore();
 
   const {
     videoRef,
@@ -121,7 +126,7 @@ export function VideoPlayer({
   // Double-tap seek gesture for mobile
   const handleTouchEnd = React.useCallback(
     (e: React.TouchEvent) => {
-      if ((e.target as HTMLElement).closest('[data-controls]')) {
+      if ((e.target as HTMLElement).closest("[data-controls]")) {
         return;
       }
 
@@ -129,7 +134,10 @@ export function VideoPlayer({
       const touch = e.changedTouches[0];
       const lastTap = lastTapRef.current;
 
-      if (now - lastTap.time < 300 && Math.abs(touch.clientX - lastTap.x) < 50) {
+      if (
+        now - lastTap.time < 300 &&
+        Math.abs(touch.clientX - lastTap.x) < 50
+      ) {
         // Double tap detected
         const container = containerRef.current;
         if (!container) return;
@@ -141,47 +149,50 @@ export function VideoPlayer({
         if (tapX < third) {
           // Left third - seek back 10s
           seek(Math.max(0, usePlayerStore.getState().currentTime - 10));
-          setSeekFeedback({ side: 'left', visible: true });
+          setSeekFeedback({ side: "left", visible: true });
         } else if (tapX > third * 2) {
           // Right third - seek forward 10s
           seek(usePlayerStore.getState().currentTime + 10);
-          setSeekFeedback({ side: 'right', visible: true });
+          setSeekFeedback({ side: "right", visible: true });
         }
 
         // Hide feedback after brief display
-        setTimeout(() => setSeekFeedback((prev) => ({ ...prev, visible: false })), 600);
+        setTimeout(
+          () => setSeekFeedback((prev) => ({ ...prev, visible: false })),
+          600,
+        );
 
         lastTapRef.current = { time: 0, x: 0 };
       } else {
         lastTapRef.current = { time: now, x: touch.clientX };
       }
     },
-    [seek]
+    [seek],
   );
 
   // Handle click on video area
   const handleVideoClick = React.useCallback(
     (e: React.MouseEvent) => {
       // Don't toggle if clicking on controls
-      if ((e.target as HTMLElement).closest('[data-controls]')) {
+      if ((e.target as HTMLElement).closest("[data-controls]")) {
         return;
       }
       togglePlayPause();
       showControls();
     },
-    [togglePlayPause, showControls]
+    [togglePlayPause, showControls],
   );
 
   // Handle double-click for fullscreen
   const handleDoubleClick = React.useCallback(
     (e: React.MouseEvent) => {
       // Don't toggle if clicking on controls
-      if ((e.target as HTMLElement).closest('[data-controls]')) {
+      if ((e.target as HTMLElement).closest("[data-controls]")) {
         return;
       }
       toggleFullscreen();
     },
-    [toggleFullscreen]
+    [toggleFullscreen],
   );
 
   // Handle quality change
@@ -190,7 +201,7 @@ export function VideoPlayer({
       changeQuality(quality);
       setSettingsOpen(false);
     },
-    [changeQuality, setSettingsOpen]
+    [changeQuality, setSettingsOpen],
   );
 
   // Handle replay
@@ -209,9 +220,9 @@ export function VideoPlayer({
       ref={containerRef}
       data-player-container
       className={cn(
-        'relative w-full aspect-video bg-black overflow-hidden group',
-        'select-none touch-manipulation',
-        className
+        "relative w-full aspect-video bg-black overflow-hidden group",
+        "select-none touch-manipulation",
+        className,
       )}
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
@@ -237,24 +248,21 @@ export function VideoPlayer({
       {seekFeedback.visible && (
         <div
           className={cn(
-            'absolute top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-20',
-            'animate-fade-in',
-            seekFeedback.side === 'left' ? 'left-8' : 'right-8'
+            "absolute top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-20",
+            "animate-fade-in",
+            seekFeedback.side === "left" ? "left-8" : "right-8",
           )}
         >
           <div className="bg-black/60 backdrop-blur-sm rounded-full px-4 py-2">
             <span className="text-white text-sm font-medium">
-              {seekFeedback.side === 'left' ? '-10s' : '+10s'}
+              {seekFeedback.side === "left" ? "-10s" : "+10s"}
             </span>
           </div>
         </div>
       )}
 
       {/* Center overlay (play/pause/buffering/error) */}
-      <PlayerOverlay
-        onPlayPause={togglePlayPause}
-        onReplay={handleReplay}
-      />
+      <PlayerOverlay onPlayPause={togglePlayPause} onReplay={handleReplay} />
 
       {/* Top bar (title, close button) */}
       <div data-controls>
@@ -316,7 +324,12 @@ export function VideoPlayerMini({
   }, [src, autoPlay]);
 
   return (
-    <div className={cn('relative w-full aspect-video bg-black overflow-hidden', className)}>
+    <div
+      className={cn(
+        "relative w-full aspect-video bg-black overflow-hidden",
+        className,
+      )}
+    >
       <video
         ref={videoRef}
         poster={poster}
@@ -335,7 +348,12 @@ export function VideoPlayerMini({
  */
 export function VideoPlayerSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('relative w-full aspect-video bg-mp-surface-2 animate-pulse', className)}>
+    <div
+      className={cn(
+        "relative w-full aspect-video bg-mp-surface-2 animate-pulse",
+        className,
+      )}
+    >
       {/* Center play button skeleton */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-20 h-20 rounded-full bg-mp-surface-3" />

@@ -128,6 +128,8 @@ export class AdminContentController {
   })
   @ApiQuery({ name: 'contentType', required: false, description: 'Filter by content type (SERIES, CLIP, SHORT, TUTORIAL)' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by title' })
+  @ApiQuery({ name: 'date', required: false, description: 'Filter by upload/submission date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'sort', required: false, description: 'Sort mode: newest, views, likes, engagement' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' })
   @ApiResponse({ status: 200, description: 'Paginated content list with all statuses' })
@@ -138,6 +140,8 @@ export class AdminContentController {
     @Query('contentType') contentType?: string,
     @Query('search') search?: string,
     @Query('isFree') isFree?: string,
+    @Query('date') date?: string,
+    @Query('sort') sort?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @CurrentUser('id') userId?: string,
@@ -148,6 +152,8 @@ export class AdminContentController {
       contentType,
       search,
       isFree: isFree === undefined ? undefined : isFree === 'true',
+      date,
+      sort,
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
     }, { id: userId, role });

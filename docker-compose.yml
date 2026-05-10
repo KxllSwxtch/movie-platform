@@ -5,7 +5,7 @@ services:
     container_name: movieplatform-postgres
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-movieplatform}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-movieplatform_dev}
@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-movieplatform}']
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-movieplatform}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,12 +25,12 @@ services:
     container_name: movieplatform-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - "6379:6379"
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,8 +41,8 @@ services:
     container_name: movieplatform-minio
     restart: unless-stopped
     ports:
-      - '9000:9000' # API
-      - '9001:9001' # Console
+      - "9000:9000" # API
+      - "9001:9001" # Console
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
@@ -50,7 +50,7 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -82,8 +82,8 @@ services:
     container_name: movieplatform-mailhog
     restart: unless-stopped
     ports:
-      - '1025:1025' # SMTP
-      - '8025:8025' # Web UI
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
     logging:
       driver: none
 
@@ -95,13 +95,14 @@ services:
     container_name: movieplatform-api
     restart: unless-stopped
     ports:
-      - '4000:4000'
+      - "4000:4000"
     volumes:
       - ./apps/api/src:/app/apps/api/src
       - ./apps/api/prisma:/app/apps/api/prisma
       - ./packages/shared/src:/app/packages/shared/src
       - ./packages/shared/dist:/app/packages/shared/dist
       - api_video_uploads:/tmp/video-uploads
+      - api_uploads:/app/uploads
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://movieplatform:movieplatform_dev@postgres:5432/movieplatform
@@ -114,7 +115,8 @@ services:
       - MINIO_BUCKET_THUMBNAILS=thumbnails
       - MINIO_BUCKET_DOCUMENTS=documents
       - MINIO_BUCKET_AVATARS=avatars
-      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
+      - UPLOAD_DIR=/app/uploads
+      - MINIO_PUBLIC_ENDPOINT=http://localhost:3000/minio
       - VIDEO_PROCESSING_CONCURRENCY=1
       - JWT_SECRET=${JWT_SECRET:-dev-secret-key-change-in-production}
       - JWT_ACCESS_EXPIRATION=15m
@@ -138,12 +140,13 @@ services:
     container_name: movieplatform-web
     restart: unless-stopped
     ports:
-      - '3000:3000'
+      - "3000:3000"
     volumes:
       - ./apps/web/app:/app/apps/web/app
       - ./apps/web/components:/app/apps/web/components
       - ./apps/web/hooks:/app/apps/web/hooks
       - ./apps/web/lib:/app/apps/web/lib
+      - ./apps/web/next.config.ts:/app/apps/web/next.config.ts
       - ./apps/web/stores:/app/apps/web/stores
       - ./apps/web/types:/app/apps/web/types
       - ./apps/web/public:/app/apps/web/public
@@ -163,7 +166,7 @@ services:
     container_name: movieplatform-redis-commander
     restart: unless-stopped
     ports:
-      - '8081:8081'
+      - "8081:8081"
     environment:
       REDIS_HOSTS: local:redis:6379
     depends_on:
@@ -177,11 +180,11 @@ services:
     container_name: movieplatform-pgadmin
     restart: unless-stopped
     ports:
-      - '5050:80'
+      - "5050:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@movieplatform.local}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: "False"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
@@ -197,6 +200,8 @@ volumes:
   minio_data:
     driver: local
   api_video_uploads:
+    driver: local
+  api_uploads:
     driver: local
   pgadmin_data:
     driver: local
