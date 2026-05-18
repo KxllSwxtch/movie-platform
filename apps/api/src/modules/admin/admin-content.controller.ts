@@ -26,6 +26,7 @@ import { ContentService } from '../content/content.service';
 import { SeriesService } from '../content/series.service';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import {
   CreateContentDto,
@@ -42,7 +43,8 @@ import {
 @ApiBearerAuth()
 @Controller('admin/content')
 @UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.BUYER, UserRole.PARTNER)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.PARTNER)
+@VerificationRequired()
 export class AdminContentController {
   private readonly logger = new Logger(AdminContentController.name);
 
@@ -116,6 +118,60 @@ export class AdminContentController {
 
   // ============ Standard Content Endpoints ============
 
+  @Get('categories')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: 'List video categories for admin' })
+  async getCategoriesAdmin() {
+    return this.contentService.findAllCategoriesAdmin();
+  }
+
+  @Post('categories')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create video category' })
+  async createCategory(
+    @Body() dto: {
+      name: string;
+      slug?: string;
+      parentId?: string | null;
+      iconUrl?: string | null;
+      order?: number;
+      isActive?: boolean;
+    },
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.contentService.createCategoryAdmin(dto, userId);
+  }
+
+  @Patch('categories/:id')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: 'Update video category' })
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() dto: {
+      name?: string;
+      slug?: string;
+      parentId?: string | null;
+      iconUrl?: string | null;
+      order?: number;
+      isActive?: boolean;
+    },
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.contentService.updateCategoryAdmin(id, dto, userId);
+  }
+
+  @Delete('categories/:id')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: 'Delete video category' })
+  async deleteCategory(
+    @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    await this.contentService.deleteCategoryAdmin(id, userId);
+    return { success: true, message: 'Category deleted' };
+  }
+
   /**
    * Get all content for admin (includes all statuses).
    */
@@ -157,6 +213,53 @@ export class AdminContentController {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
     }, { id: userId, role });
+  }
+
+  @Post(':id/approve')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: 'Approve content and publish it' })
+  async approve(
+    @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    return this.contentService.moderateContent(id, 'approve', { id: userId, role });
+  }
+
+  @Post(':id/reject')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: 'Reject content with an optional reason' })
+  async reject(
+    @Param('id') id: string,
+    @Body('reason') reason: string | undefined,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    return this.contentService.moderateContent(id, 'reject', { id: userId, role }, reason);
+  }
+
+  @Post(':id/archive')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: 'Archive content' })
+  async archive(
+    @Param('id') id: string,
+    @Body('reason') reason: string | undefined,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    return this.contentService.moderateContent(id, 'archive', { id: userId, role }, reason);
+  }
+
+  @Post(':id/restore')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: 'Restore archived or rejected content to draft' })
+  async restore(
+    @Param('id') id: string,
+    @Body('reason') reason: string | undefined,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ) {
+    return this.contentService.moderateContent(id, 'restore', { id: userId, role }, reason);
   }
 
   /**

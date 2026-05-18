@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBonus, formatBonusAmount } from '@/hooks/use-bonus';
+import { useAuthStore } from '@/stores/auth.store';
 import { useBonusStore } from '@/stores/bonus.store';
 
 const MIN_WITHDRAWAL_AMOUNT = 1000;
@@ -20,13 +21,24 @@ const MIN_WITHDRAWAL_AMOUNT = 1000;
  */
 export default function BonusWithdrawPage() {
   const router = useRouter();
+  const { user, isHydrated } = useAuthStore();
   const { balance, rate, isLoading } = useBonus();
   const { resetWithdrawal } = useBonusStore();
+
+  React.useEffect(() => {
+    if (isHydrated && user?.role !== 'PARTNER') {
+      router.replace('/dashboard');
+    }
+  }, [isHydrated, router, user?.role]);
 
   // Reset withdrawal state on mount
   React.useEffect(() => {
     resetWithdrawal();
   }, [resetWithdrawal]);
+
+  if (!isHydrated || user?.role !== 'PARTNER') {
+    return null;
+  }
 
   const canWithdraw = balance >= MIN_WITHDRAWAL_AMOUNT;
 

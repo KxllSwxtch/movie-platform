@@ -46,7 +46,9 @@ export class CreateOrderDto {
   @ValidateNested()
   @Type(() => ShippingAddressDto)
   shippingAddress!: ShippingAddressDto;
+}
 
+export class PayOrderDto {
   @ApiProperty({ enum: PaymentMethodType, example: PaymentMethodType.CARD })
   @IsEnum(PaymentMethodType)
   paymentMethod!: PaymentMethodType;

@@ -1,8 +1,17 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CommissionStatus, Prisma, TaxStatus, TransactionStatus, WithdrawalStatus } from '@prisma/client';
+import {
+  CommissionStatus,
+  Prisma,
+  TaxStatus,
+  TransactionStatus,
+  VerificationMethod,
+  VerificationStatus,
+  WithdrawalStatus,
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { COMMISSION_RATES_BY_DEPTH, PARTNER_LEVELS, TAX_RATES } from '@movie-platform/shared';
 import {
   AvailableBalanceDto,
@@ -20,7 +29,10 @@ import {
 
 @Injectable()
 export class PartnersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Get partner dashboard statistics.
@@ -29,7 +41,7 @@ export class PartnersService {
     // Get current partner level
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true },
+      select: { id: true, referralCode: true },
     });
 
     if (!user) {
@@ -100,6 +112,8 @@ export class PartnersService {
     return {
       currentLevel,
       levelName: levelInfo.name,
+      referralCode: user.referralCode,
+      referralUrl: `/register?ref=${user.referralCode}`,
       totalReferrals: directReferrals,
       activeReferrals,
       teamSize,
@@ -320,6 +334,280 @@ export class PartnersService {
     };
   }
 
+  async confirmReferralVerification(partnerId: string, targetUserId: string) {
+    if (partnerId === targetUserId) {
+      throw new BadRequestException('Self-verification is not allowed');
+    }
+
+    const relationship = await this.prisma.partnerRelationship.findFirst({
+      where: {
+        partnerId,
+        referralId: targetUserId,
+        level: 1,
+      },
+    });
+
+    if (!relationship) {
+      throw new BadRequestException('Only direct referred users can be verified by this partner');
+    }
+
+    const circularRelationship = await this.prisma.partnerRelationship.findFirst({
+      where: {
+        partnerId: targetUserId,
+        referralId: partnerId,
+      },
+    });
+
+    if (circularRelationship) {
+      throw new BadRequestException('Circular partner verification is not allowed');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const target = await tx.user.findUnique({
+        where: { id: targetUserId },
+        select: {
+          id: true,
+          verificationStatus: true,
+        },
+      });
+
+      if (!target) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (target.verificationStatus === VerificationStatus.VERIFIED) {
+        throw new BadRequestException('User is already verified');
+      }
+
+      const now = new Date();
+      const existing = await tx.userVerification.findFirst({
+        where: {
+          userId: targetUserId,
+          method: VerificationMethod.THIRD_PARTY,
+          status: VerificationStatus.PENDING,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const verification = existing
+        ? await tx.userVerification.update({
+            where: { id: existing.id },
+            data: {
+              status: VerificationStatus.PENDING,
+              confirmedByPartnerId: partnerId,
+              confirmedAt: now,
+              partnerRelationshipId: relationship.id,
+            },
+          })
+        : await tx.userVerification.create({
+            data: {
+              userId: targetUserId,
+              method: VerificationMethod.THIRD_PARTY,
+              status: VerificationStatus.PENDING,
+              confirmedByPartnerId: partnerId,
+              confirmedAt: now,
+              partnerRelationshipId: relationship.id,
+            },
+          });
+
+      await tx.user.update({
+        where: { id: targetUserId },
+        data: {
+          verificationStatus: VerificationStatus.PENDING,
+          verificationMethod: VerificationMethod.THIRD_PARTY,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: partnerId,
+          action: 'VERIFICATION_PARTNER_CONFIRMED',
+          entityType: 'UserVerification',
+          entityId: verification.id,
+          oldValue: { status: target.verificationStatus },
+          newValue: {
+            targetUserId,
+            status: VerificationStatus.PENDING,
+            partnerConfirmed: true,
+            method: VerificationMethod.THIRD_PARTY,
+            partnerRelationshipId: relationship.id,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        verificationId: verification.id,
+        status: VerificationStatus.PENDING,
+        method: VerificationMethod.THIRD_PARTY,
+        confirmedAt: now,
+        nextStep: 'PENDING_ADMIN_REVIEW',
+      };
+    });
+  }
+
+  async getVerificationRequests(partnerId: string) {
+    const requests = await this.prisma.userVerification.findMany({
+      where: {
+        method: VerificationMethod.THIRD_PARTY,
+        status: VerificationStatus.PENDING,
+        OR: [
+          { confirmedByPartnerId: partnerId },
+          {
+            partnerRelationship: {
+              partnerId,
+              level: 1,
+            },
+          },
+          {
+            user: {
+              referredById: partnerId,
+            },
+          },
+        ],
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            role: true,
+            ageCategory: true,
+            verificationStatus: true,
+            createdAt: true,
+          },
+        },
+        partnerRelationship: true,
+      },
+      orderBy: [
+        { confirmedAt: 'asc' },
+        { createdAt: 'desc' },
+      ],
+    });
+
+    return {
+      items: requests.map((request) => ({
+        id: request.id,
+        userId: request.userId,
+        user: request.user,
+        status: request.status,
+        createdAt: request.createdAt,
+        confirmedAt: request.confirmedAt,
+        partnerRelationshipId: request.partnerRelationshipId,
+        canConfirm:
+          !request.confirmedAt &&
+          request.userId !== partnerId &&
+          request.partnerRelationship?.partnerId === partnerId,
+      })),
+      total: requests.length,
+    };
+  }
+
+  async confirmVerificationRequest(partnerId: string, verificationId: string) {
+    const request = await this.prisma.userVerification.findFirst({
+      where: {
+        id: verificationId,
+        method: VerificationMethod.THIRD_PARTY,
+        status: VerificationStatus.PENDING,
+      },
+      include: { partnerRelationship: true, user: true },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Verification request not found');
+    }
+
+    if (!request.partnerRelationship || request.partnerRelationship.partnerId !== partnerId) {
+      throw new BadRequestException('Only the direct partner can confirm this request');
+    }
+
+    const result = await this.confirmReferralVerification(partnerId, request.userId);
+
+    await this.notificationsService.sendNotification({
+      userId: request.userId,
+      title: 'Партнер подтвердил заявку',
+      body: 'Партнер подтвердил ваш аккаунт. Заявка ожидает финальной проверки модератором.',
+      data: {
+        type: 'VERIFICATION_PARTNER_CONFIRMED',
+        verificationId,
+        path: '/account/verification',
+      },
+    });
+
+    await this.notifyModeratorsAfterPartnerConfirmation(verificationId, request.userId);
+
+    return result;
+  }
+
+  async rejectVerificationRequest(partnerId: string, verificationId: string, reason?: string) {
+    const request = await this.prisma.userVerification.findFirst({
+      where: {
+        id: verificationId,
+        method: VerificationMethod.THIRD_PARTY,
+        status: VerificationStatus.PENDING,
+      },
+      include: { partnerRelationship: true },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Verification request not found');
+    }
+
+    if (!request.partnerRelationship || request.partnerRelationship.partnerId !== partnerId) {
+      throw new BadRequestException('Only the direct partner can reject this request');
+    }
+
+    const rejectionReason = reason?.trim() || 'Партнер не подтвердил связь с пользователем';
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const verification = await tx.userVerification.update({
+        where: { id: verificationId },
+        data: {
+          status: VerificationStatus.REJECTED,
+          rejectionReason,
+          reviewedAt: new Date(),
+        },
+      });
+
+      await tx.user.update({
+        where: { id: request.userId },
+        data: {
+          verificationStatus: VerificationStatus.REJECTED,
+          verificationMethod: VerificationMethod.THIRD_PARTY,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: partnerId,
+          action: 'VERIFICATION_PARTNER_REJECTED',
+          entityType: 'UserVerification',
+          entityId: verificationId,
+          oldValue: { status: request.status },
+          newValue: { status: VerificationStatus.REJECTED, reason: rejectionReason },
+        },
+      });
+
+      return verification;
+    });
+
+    await this.notificationsService.sendNotification({
+      userId: request.userId,
+      title: 'Партнерская верификация отклонена',
+      body: rejectionReason,
+      data: {
+        type: 'VERIFICATION_PARTNER_REJECTED',
+        verificationId,
+        path: '/account/verification',
+      },
+    });
+
+    return { success: true, verificationId: updated.id, status: updated.status };
+  }
+
   /**
    * Get withdrawal history.
    */
@@ -424,9 +712,11 @@ export class PartnersService {
     transactionId: string,
     purchaserUserId: string,
     amount: Decimal,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
+    const client = tx || this.prisma;
     // Get all partners (upline) for this user, up to 5 levels
-    const partnerRelationships = await this.prisma.partnerRelationship.findMany({
+    const partnerRelationships = await client.partnerRelationship.findMany({
       where: { referralId: purchaserUserId },
       orderBy: { level: 'asc' },
       take: 5,
@@ -455,14 +745,13 @@ export class PartnersService {
 
     if (commissionsToCreate.length === 0) return;
 
-    // Create all commissions in a transaction
-    await this.prisma.$transaction(async (tx) => {
-      await tx.partnerCommission.createMany({
+    const create = async (prismaClient: Prisma.TransactionClient) => {
+      await prismaClient.partnerCommission.createMany({
         data: commissionsToCreate,
+        skipDuplicates: true,
       });
 
-      // Log to audit trail
-      await tx.auditLog.create({
+      await prismaClient.auditLog.create({
         data: {
           action: 'COMMISSIONS_CREATED',
           entityType: 'Transaction',
@@ -475,7 +764,14 @@ export class PartnersService {
           },
         },
       });
-    });
+    };
+
+    if (tx) {
+      await create(tx);
+      return;
+    }
+
+    await this.prisma.$transaction(create);
   }
 
   // ============ Private Helper Methods ============
@@ -595,6 +891,32 @@ export class PartnersService {
       currentTeamVolume: teamVolume,
       progressPercent,
     };
+  }
+
+  private async notifyModeratorsAfterPartnerConfirmation(
+    verificationId: string,
+    targetUserId: string,
+  ) {
+    const moderators = await this.prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'MODERATOR'] } },
+      select: { id: true },
+    });
+
+    await Promise.all(
+      moderators.map((moderator) =>
+        this.notificationsService.sendNotification({
+          userId: moderator.id,
+          title: 'Партнер подтвердил заявку',
+          body: 'Заявка ожидает финального решения администратора или модератора.',
+          data: {
+            type: 'VERIFICATION_PARTNER_CONFIRMED_ADMIN_REVIEW',
+            verificationId,
+            targetUserId,
+            path: '/admin/verifications',
+          },
+        }),
+      ),
+    );
   }
 
   private async getChildReferrals(

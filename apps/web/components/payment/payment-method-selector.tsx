@@ -37,8 +37,26 @@ const PAYMENT_METHODS: PaymentMethodOption[] = [
   },
 ];
 
+const isTestPaymentsEnabled =
+  process.env.NEXT_PUBLIC_ENABLE_TEST_PAYMENTS === 'true' &&
+  (process.env.NEXT_PUBLIC_APP_ENV
+    ? process.env.NEXT_PUBLIC_APP_ENV !== 'production'
+    : process.env.NODE_ENV !== 'production');
+
+const AVAILABLE_PAYMENT_METHODS: PaymentMethodOption[] = isTestPaymentsEnabled
+  ? [
+      ...PAYMENT_METHODS,
+      {
+        type: 'TEST',
+        name: 'Тестовая оплата',
+        description: 'Мгновенно имитирует успешный платёж для проверки песочницы',
+        icon: CreditCard,
+      },
+    ]
+  : PAYMENT_METHODS;
+
 interface PaymentMethodSelectorProps {
-  selected: PaymentMethodType;
+  selected: PaymentMethodType | null;
   onSelect: (method: PaymentMethodType) => void;
   disabled?: boolean;
   className?: string;
@@ -57,7 +75,7 @@ export function PaymentMethodSelector({
       </Label>
 
       <div className="space-y-2">
-        {PAYMENT_METHODS.map((method) => {
+        {AVAILABLE_PAYMENT_METHODS.map((method) => {
           const Icon = method.icon;
           const isSelected = selected === method.type;
 
@@ -135,7 +153,7 @@ export function PaymentMethodSelector({
  * Compact version for smaller spaces
  */
 interface PaymentMethodSelectorCompactProps {
-  selected: PaymentMethodType;
+  selected: PaymentMethodType | null;
   onSelect: (method: PaymentMethodType) => void;
   disabled?: boolean;
   className?: string;
@@ -149,7 +167,7 @@ export function PaymentMethodSelectorCompact({
 }: PaymentMethodSelectorCompactProps) {
   return (
     <div className={cn('flex gap-2', className)}>
-      {PAYMENT_METHODS.map((method) => {
+      {AVAILABLE_PAYMENT_METHODS.map((method) => {
         const Icon = method.icon;
         const isSelected = selected === method.type;
 

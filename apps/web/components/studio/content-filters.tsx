@@ -50,7 +50,7 @@ export function ContentFilters({
         <SelectContent>
           <SelectItem value="all">Все типы</SelectItem>
           <SelectItem value="SERIES">Сериалы</SelectItem>
-          <SelectItem value="CLIP">Клипы</SelectItem>
+          <SelectItem value="CLIP">Видео</SelectItem>
           <SelectItem value="SHORT">Шортсы</SelectItem>
           <SelectItem value="TUTORIAL">Туториалы</SelectItem>
         </SelectContent>

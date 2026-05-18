@@ -283,7 +283,7 @@ export default function AdminContentEditPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="SERIES">Сериал</SelectItem>
-                      <SelectItem value="CLIP">Клип</SelectItem>
+                      <SelectItem value="CLIP">Видео</SelectItem>
                       <SelectItem value="SHORT">Шорт</SelectItem>
                       <SelectItem value="TUTORIAL">Туториал</SelectItem>
                     </SelectContent>

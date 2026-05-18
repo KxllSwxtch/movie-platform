@@ -34,7 +34,7 @@ function getContentTypeBadge(type: string) {
       className: "bg-blue-500/20 text-blue-400 border-transparent",
     },
     CLIP: {
-      label: "Клип",
+      label: "Видео",
       className: "bg-green-500/20 text-green-400 border-transparent",
     },
     SHORT: {

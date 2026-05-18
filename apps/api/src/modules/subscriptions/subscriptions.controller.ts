@@ -19,6 +19,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
 import { CacheControl, CACHE_PRESETS } from '../../common/interceptors/cache-control.interceptor';
 import { SubscriptionPlansService } from './subscription-plans.service';
 import { UserSubscriptionsService } from './user-subscriptions.service';
@@ -75,6 +76,7 @@ export class SubscriptionsController {
    */
   @Post('purchase')
   @UseGuards(JwtAuthGuard)
+  @VerificationRequired()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Purchase a subscription' })
   @ApiOkResponse({ type: PaymentResultDto })

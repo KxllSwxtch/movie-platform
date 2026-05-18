@@ -62,8 +62,8 @@ export default function AdminPartnersPage() {
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/admin/partners/withdrawals">
-              Выводы
+            <Link href="/admin/bonuses/withdrawals">
+              Вывод баллов
             </Link>
           </Button>
         </div>

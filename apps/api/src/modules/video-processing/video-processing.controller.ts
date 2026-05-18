@@ -45,7 +45,7 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 @ApiBearerAuth()
 @Controller('admin/content')
 @UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.BUYER, UserRole.PARTNER)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.PARTNER)
 export class VideoProcessingController {
   constructor(
     private readonly videoProcessingService: VideoProcessingService,

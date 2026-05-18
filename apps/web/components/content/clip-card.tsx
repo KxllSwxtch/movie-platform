@@ -31,7 +31,7 @@ interface ClipCardProps {
 export function ClipCard({ content, className }: ClipCardProps) {
   return (
     <Link
-      href={`/clips/${content.slug}`}
+      href={`/videos/${content.slug}`}
       className={cn("group block shrink-0 content-card w-full", className)}
     >
       {/* Thumbnail */}

@@ -24,6 +24,13 @@ import { cn, copyTextToClipboard } from "@/lib/utils";
 import { useSeriesDetail } from "@/hooks/use-content";
 import { useAddToWatchlist } from "@/hooks/use-account";
 
+interface SeriesSeason {
+  number: number;
+  title: string;
+  year?: number;
+  episodes: EpisodeContent[];
+}
+
 /**
  * Series detail page — fetches real data from API by slug
  */
@@ -78,7 +85,7 @@ export default function SeriesDetailPage() {
           year: s.year,
           episodes: (s.episodes ?? []) as EpisodeContent[],
         }),
-      ),
+      ) as SeriesSeason[],
     };
   }, [apiData]);
 

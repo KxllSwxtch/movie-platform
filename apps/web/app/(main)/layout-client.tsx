@@ -8,6 +8,8 @@ import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { PageTransition } from '@/components/layout/page-transition';
 import { MobileSearchOverlay } from '@/components/search/mobile-search-overlay';
 import { PendingDocumentsModal } from '@/components/documents/pending-documents-modal';
+import { cn } from '@/lib/utils';
+import { useUIStore } from '@/stores/ui.store';
 
 /**
  * Main layout with sidebar navigation - matches Figma design
@@ -17,6 +19,8 @@ export default function MainLayoutClient({
 }: {
   children: React.ReactNode;
 }) {
+  const isSidebarCollapsed = useUIStore((state) => state.isSidebarCollapsed);
+
   // Safety net: periodically clear stale pointer-events:none left by Radix modals.
   // Uses setInterval (not MutationObserver) to avoid race conditions with
   // Radix's synchronous pointer-events lifecycle during open/close transitions.
@@ -41,7 +45,12 @@ export default function MainLayoutClient({
       <AppSidebar />
 
       {/* Main content area */}
-      <div className="min-h-screen transition-all duration-300 ml-0 md:ml-[230px]">
+      <div
+        className={cn(
+          'min-h-screen transition-[margin-left] duration-300 ml-0',
+          isSidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[230px]'
+        )}
+      >
         {/* Header */}
         <AppHeader />
 

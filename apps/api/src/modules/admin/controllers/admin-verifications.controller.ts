@@ -5,17 +5,21 @@ import {
   Param,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiProduces,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { VerificationStatus, VerificationMethod } from '@prisma/client';
 import { UserRole } from '@movie-platform/shared';
+import { Response } from 'express';
+import { pipeline } from 'stream/promises';
 
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -67,6 +71,29 @@ export class AdminVerificationsController {
   @ApiResponse({ status: 200, type: AdminVerificationStatsDto })
   async getStats(): Promise<AdminVerificationStatsDto> {
     return this.verificationsService.getStats();
+  }
+
+  @Get(':id/document')
+  @ApiOperation({ summary: 'Stream private verification document' })
+  @ApiParam({ name: 'id', description: 'Verification ID' })
+  @ApiProduces('application/pdf', 'image/jpeg', 'image/png', 'image/webp')
+  @ApiResponse({ status: 200, description: 'Private verification document stream' })
+  async streamDocument(
+    @Param('id') id: string,
+    @CurrentUser('id') adminId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const document = await this.verificationsService.getDocumentStream(id, adminId);
+
+    res.setHeader('Content-Type', document.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${document.filename}"`);
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (document.contentLength !== undefined) {
+      res.setHeader('Content-Length', String(document.contentLength));
+    }
+
+    await pipeline(document.stream, res);
   }
 
   /**

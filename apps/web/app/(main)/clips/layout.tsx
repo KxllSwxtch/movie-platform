@@ -1,14 +1,14 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Клипы',
-  description: 'Смотрите лучшие клипы из фильмов и сериалов на MoviePlatform. Яркие моменты, закулисье и эксклюзивные фрагменты.',
-  openGraph: {
-    title: 'Клипы',
-    description: 'Смотрите лучшие клипы из фильмов и сериалов на MoviePlatform.',
+  title: "Видео | MoviePlatform",
+  description: "Раздел видео на MoviePlatform.",
+  robots: {
+    index: false,
+    follow: true,
   },
 };
 
-export default function ClipsLayout({ children }: { children: React.ReactNode }) {
+export default function LegacyClipsLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

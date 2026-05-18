@@ -25,15 +25,30 @@ interface UserProfile {
 
 /** Verification status response */
 interface VerificationStatus {
-  status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'NONE' | 'UNVERIFIED' | 'PENDING' | 'APPROVED' | 'VERIFIED' | 'REJECTED';
   method?: string;
+  createdAt?: string;
   submittedAt?: string;
   reviewedAt?: string;
   rejectionReason?: string;
+  payment?: {
+    transactionId: string;
+    status: string;
+    paymentUrl?: string;
+    qrCodeUrl?: string;
+    amount: number;
+  };
+}
+
+interface VerificationDocumentUpload {
+  documentKey: string;
+  filename: string;
+  contentType: string;
+  size: number;
 }
 
 /** Watchlist/Watch history paginated response */
-interface PaginatedItems<T> {
+export interface PaginatedItems<T> {
   items: T[];
   total: number;
   page: number;
@@ -48,6 +63,19 @@ interface SessionInfo {
   lastActive: string;
   isCurrent: boolean;
   createdAt: string;
+}
+
+function toAuthUserPatch(profile: UserProfile) {
+  return {
+    id: profile.id,
+    email: profile.email,
+    firstName: profile.firstName ?? '',
+    lastName: profile.lastName ?? '',
+    phone: profile.phone ?? undefined,
+    avatarUrl: profile.avatarUrl ?? undefined,
+    role: profile.role as never,
+    dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : undefined,
+  };
 }
 
 // ==============================
@@ -82,7 +110,7 @@ export function useUpdateProfile() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.profile() });
-      if (data) updateUser(data);
+      if (data) updateUser(toAuthUserPatch(data));
       toast.success('Профиль обновлён');
     },
     onError: (error: ApiError) => {
@@ -152,7 +180,7 @@ export function useConfirmEmailChange() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.profile() });
-      if (data) updateUser(data);
+      if (data) updateUser(toAuthUserPatch(data));
       toast.success('Email успешно изменён');
     },
     onError: (error: ApiError) => {
@@ -182,7 +210,12 @@ export function useSubmitVerification() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { method: string; documentUrl?: string }) => {
+    mutationFn: async (data: {
+      method: string;
+      documentKey?: string;
+      paymentMethod?: string;
+      returnUrl?: string;
+    }) => {
       const response = await api.post<VerificationStatus>(endpoints.users.verification, data);
       return response.data;
     },
@@ -192,6 +225,26 @@ export function useSubmitVerification() {
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Ошибка отправки запроса');
+    },
+  });
+}
+
+export function useUploadVerificationDocument() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.upload<VerificationDocumentUpload>(
+        endpoints.users.verificationDocument,
+        formData,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Документ загружен');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Не удалось загрузить документ');
     },
   });
 }

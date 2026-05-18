@@ -9,6 +9,7 @@ import {
   Popover,
   PopoverContent,
 } from "@/components/ui/popover";
+import { api, endpoints } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 // ============ Types ============
@@ -26,6 +27,7 @@ interface TagInputProps {
   placeholder?: string;
   disabled?: boolean;
   maxTags?: number;
+  allowCreate?: boolean;
 }
 
 // ============ Component ============
@@ -37,9 +39,11 @@ export function TagInput({
   placeholder = "Добавить тег...",
   disabled = false,
   maxTags,
+  allowCreate = true,
 }: TagInputProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
+  const [isCreating, setIsCreating] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const fieldRef = React.useRef<HTMLDivElement>(null);
   const [cachedTagsById, setCachedTagsById] = React.useState<
@@ -49,6 +53,15 @@ export function TagInput({
   const SUGGESTIONS_LIMIT = 12;
 
   const maxReached = maxTags !== undefined && value.length >= maxTags;
+
+  const normalizeTagName = React.useCallback((name: string) => {
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/[^\p{L}\p{N}\s-]/gu, "")
+      .trim();
+  }, []);
 
   React.useEffect(() => {
     if (availableTags.length === 0) return;
@@ -95,6 +108,15 @@ export function TagInput({
     return suggestions.slice(0, SUGGESTIONS_LIMIT);
   }, [availableTags, value, query]);
 
+  const normalizedQuery = normalizeTagName(query);
+  const exactQueryMatch = React.useMemo(
+    () =>
+      normalizedQuery
+        ? availableTags.find((tag) => normalizeTagName(tag.name) === normalizedQuery)
+        : undefined,
+    [availableTags, normalizeTagName, normalizedQuery],
+  );
+
   const suggestionsTitle = React.useMemo(() => {
     const q = query.trim();
     return q.length === 0 ? "Популярные теги" : "Результаты";
@@ -118,6 +140,45 @@ export function TagInput({
     [value, onChange],
   );
 
+  const handleCreate = React.useCallback(async () => {
+    if (!allowCreate || maxReached || isCreating) return;
+
+    const tagName = normalizeTagName(query);
+    if (tagName.length < 2 || tagName.length > 32) return;
+
+    if (exactQueryMatch) {
+      handleAdd(exactQueryMatch.id);
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const response = await api.post<Tag>(endpoints.tags.create, { name: tagName });
+      const tag = response.data;
+      setCachedTagsById((previous) => {
+        const next = new Map(previous);
+        next.set(tag.id, tag);
+        return next;
+      });
+      onChange([...value, tag.id]);
+      setQuery("");
+      setOpen(maxTags === undefined || value.length + 1 < maxTags);
+    } finally {
+      setIsCreating(false);
+    }
+  }, [
+    allowCreate,
+    exactQueryMatch,
+    handleAdd,
+    isCreating,
+    maxReached,
+    maxTags,
+    normalizeTagName,
+    onChange,
+    query,
+    value,
+  ]);
+
   const handleInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
@@ -139,6 +200,8 @@ export function TagInput({
         const firstSuggestion = filteredSuggestions[0];
         if (firstSuggestion) {
           handleAdd(firstSuggestion.id);
+        } else {
+          void handleCreate();
         }
 
         return;
@@ -155,7 +218,7 @@ export function TagInput({
         setOpen(false);
       }
     },
-    [filteredSuggestions, handleAdd, open, query, value, onChange],
+    [filteredSuggestions, handleAdd, handleCreate, open, query, value, onChange],
   );
 
   return (
@@ -229,9 +292,21 @@ export function TagInput({
               </div>
 
               {filteredSuggestions.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  Теги не найдены
-                </p>
+                <div className="py-3 text-center text-sm text-muted-foreground">
+                  {allowCreate && normalizedQuery.length >= 2 && normalizedQuery.length <= 32 ? (
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => void handleCreate()}
+                      disabled={isCreating}
+                      className="rounded px-2 py-1 text-mp-text-primary hover:bg-accent disabled:opacity-50"
+                    >
+                      {isCreating ? "Создание..." : `Добавить «${normalizedQuery}»`}
+                    </button>
+                  ) : (
+                    "Теги не найдены"
+                  )}
+                </div>
               ) : (
                 filteredSuggestions.map((tag) => (
                   <button

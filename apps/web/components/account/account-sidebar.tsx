@@ -2,26 +2,41 @@
 
 import {
   Bell,
+  CaretLeft,
+  CaretRight,
   Clock,
   CreditCard,
   Crown,
   SquaresFour,
   Gear,
+  GitBranch,
   Shield,
   User,
+  Wallet,
 } from '@phosphor-icons/react';
 import { BookMarked } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type * as React from 'react';
 
+import { CollapsedNavTooltip } from '@/components/layout/collapsed-nav-tooltip';
 import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/use-account';
 import { useUnreadCount } from '@/hooks/use-notifications';
 import { useAuthStore } from '@/stores/auth.store';
+import { useUIStore } from '@/stores/ui.store';
 
-const ACCOUNT_NAV = [
+interface AccountNavItem {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  exact?: boolean;
+  badge?: boolean;
+}
+
+const BASE_ACCOUNT_NAV: AccountNavItem[] = [
   { href: '/account', icon: SquaresFour, label: 'Обзор', exact: true },
   { href: '/account/profile', icon: User, label: 'Профиль' },
   { href: '/account/watchlist', icon: BookMarked, label: 'Избранное' },
@@ -33,9 +48,15 @@ const ACCOUNT_NAV = [
   { href: '/account/verification', icon: Shield, label: 'Верификация' },
 ];
 
+const PARTNER_ACCOUNT_NAV: AccountNavItem[] = [
+  { href: '/account/referrals', icon: GitBranch, label: 'Реферальная система' },
+  { href: '/account/withdrawals', icon: Wallet, label: 'Вывод средств' },
+];
+
 export function AccountSidebar() {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const { isSidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
   const { data: profile } = useProfile();
   const { data: unread } = useUnreadCount();
 
@@ -47,24 +68,29 @@ export function AccountSidebar() {
     .join(' ') || 'Пользователь';
 
   const planName = (profile as any)?.activeSubscription?.plan?.name;
+  const isPartner =
+    user?.role === 'PARTNER';
+  const accountNav = isPartner
+    ? [...BASE_ACCOUNT_NAV, ...PARTNER_ACCOUNT_NAV]
+    : BASE_ACCOUNT_NAV;
 
   return (
-    <aside className="hidden lg:block w-60 shrink-0">
+    <aside className={cn('hidden shrink-0 transition-[width] duration-300 lg:block', isSidebarCollapsed ? 'w-[76px]' : 'w-60')}>
       <div className="sticky top-24 space-y-6">
         {/* User info */}
-        <div className="flex flex-col items-center rounded-xl border border-mp-border bg-mp-surface/50 p-5">
+        <div className={cn('flex flex-col items-center rounded-xl border border-mp-border bg-mp-surface/50', isSidebarCollapsed ? 'p-3' : 'p-5')}>
           <UserAvatar
             src={profile?.avatarUrl || user?.avatarUrl}
             name={displayName}
             size="xl"
           />
-          <p className="mt-3 text-sm font-semibold text-mp-text-primary truncate max-w-full">
+          <p className={cn('mt-3 max-w-full truncate text-sm font-semibold text-mp-text-primary', isSidebarCollapsed && 'hidden')}>
             {displayName}
           </p>
-          <p className="mt-0.5 text-xs text-mp-text-secondary truncate max-w-full">
+          <p className={cn('mt-0.5 max-w-full truncate text-xs text-mp-text-secondary', isSidebarCollapsed && 'hidden')}>
             {user?.email || ''}
           </p>
-          {planName && (
+          {planName && !isSidebarCollapsed && (
             <Badge variant="default" className="mt-2 text-[10px]">
               <Crown className="mr-1 h-3 w-3" />
               {planName}
@@ -74,31 +100,49 @@ export function AccountSidebar() {
 
         {/* Navigation */}
         <nav className="space-y-1">
-          {ACCOUNT_NAV.map((item) => {
+          <button
+            type="button"
+            onClick={toggleSidebarCollapsed}
+            aria-label={isSidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
+            className={cn(
+              'mb-2 hidden w-full items-center rounded-lg text-sm font-medium text-mp-text-secondary transition-colors hover:bg-mp-surface/80 hover:text-mp-text-primary lg:flex',
+              isSidebarCollapsed ? 'h-11 justify-center px-0' : 'gap-3 px-3 py-2.5',
+            )}
+          >
+            {isSidebarCollapsed ? (
+              <CaretRight className="h-4 w-4 shrink-0" />
+            ) : (
+              <CaretLeft className="h-4 w-4 shrink-0" />
+            )}
+            <span className={cn(isSidebarCollapsed && 'hidden')}>Свернуть</span>
+          </button>
+          {accountNav.map((item) => {
             const isActive = item.exact
               ? pathname === item.href
               : pathname.startsWith(item.href);
             const badgeCount = ('badge' in item && item.badge && unread?.count) ? unread.count : 0;
 
             return (
+              <CollapsedNavTooltip key={item.href} label={item.label} collapsed={isSidebarCollapsed}>
               <Link
-                key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex items-center rounded-lg text-sm font-medium transition-colors',
+                  isSidebarCollapsed ? 'h-11 justify-center px-0 gap-0' : 'gap-3 px-3 py-2.5',
                   isActive
                     ? 'bg-mp-accent-primary/10 text-mp-accent-primary'
                     : 'text-mp-text-secondary hover:bg-mp-surface/80 hover:text-mp-text-primary'
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
-                {item.label}
-                {badgeCount > 0 && (
+                <span className={cn('truncate', isSidebarCollapsed && 'hidden')}>{item.label}</span>
+                {badgeCount > 0 && !isSidebarCollapsed && (
                   <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-mp-accent-primary px-1.5 text-[10px] font-bold text-white">
                     {badgeCount > 99 ? '99+' : badgeCount}
                   </span>
                 )}
               </Link>
+              </CollapsedNavTooltip>
             );
           })}
         </nav>
@@ -112,11 +156,17 @@ export function AccountSidebar() {
  */
 export function AccountMobileTabs() {
   const pathname = usePathname();
+  const { user } = useAuthStore();
+  const isPartner =
+    user?.role === 'PARTNER';
+  const accountNav = isPartner
+    ? [...BASE_ACCOUNT_NAV, ...PARTNER_ACCOUNT_NAV]
+    : BASE_ACCOUNT_NAV;
 
   return (
     <div className="lg:hidden -mx-4 sm:-mx-6 mb-6 overflow-x-auto border-b border-mp-border">
       <div className="flex min-w-max gap-1 px-4 sm:px-6 pb-2">
-        {ACCOUNT_NAV.map((item) => {
+        {accountNav.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
             : pathname.startsWith(item.href);

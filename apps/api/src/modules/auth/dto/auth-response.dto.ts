@@ -26,7 +26,7 @@ export class UserResponseDto {
   @ApiProperty({ enum: VerificationStatus, example: VerificationStatus.UNVERIFIED })
   verificationStatus!: VerificationStatus;
 
-  @ApiProperty({ enum: UserRole, example: UserRole.BUYER })
+  @ApiProperty({ enum: UserRole, example: UserRole.CLIENT })
   role!: UserRole;
 
   @ApiProperty({ example: 'ABC12345' })

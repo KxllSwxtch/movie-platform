@@ -8,7 +8,10 @@ import {
   InvoiceStatus,
   PaymentMethodType,
   Prisma,
+  Transaction,
   TransactionStatus,
+  VerificationMethod,
+  VerificationStatus,
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -30,6 +33,7 @@ import {
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
+  private readonly testPaymentMethod = 'TEST' as PaymentMethodType;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -77,6 +81,32 @@ export class PaymentsService {
         },
       },
     });
+
+    if (dto.paymentMethod === this.testPaymentMethod) {
+      this.assertTestPaymentsEnabled();
+
+      const externalPaymentId = `test_${transaction.id}`;
+      await this.prisma.transaction.update({
+        where: { id: transaction.id },
+        data: { externalPaymentId },
+      });
+
+      await this.markPaymentCompleted(transaction.id, userId);
+
+      const completed = await this.prisma.transaction.findUnique({
+        where: { id: transaction.id },
+      });
+
+      return {
+        transactionId: transaction.id,
+        status: TransactionStatus.COMPLETED,
+        paymentMethod: dto.paymentMethod,
+        amount: dto.amount,
+        bonusAmountUsed: bonusAmount,
+        amountToPay,
+        createdAt: completed?.createdAt ?? transaction.createdAt,
+      };
+    }
 
     // If amount to pay is 0 (fully covered by bonus), complete immediately
     if (amountToPay <= 0) {
@@ -305,7 +335,28 @@ export class PaymentsService {
     await this.markPaymentCompleted(transactionId, transaction.userId);
   }
 
+  /**
+   * Simulate a successful payment in dev/staging/test environments.
+   */
+  async simulateSuccessfulPayment(transactionId: string): Promise<void> {
+    this.assertTestPaymentsEnabled();
+    await this.completePaymentById(transactionId);
+  }
+
   // ============ Private Helper Methods ============
+
+  private isTestPaymentsEnabled(): boolean {
+    const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'development';
+    const isProduction = appEnv === 'production';
+
+    return process.env.ENABLE_TEST_PAYMENTS === 'true' && !isProduction;
+  }
+
+  private assertTestPaymentsEnabled(): void {
+    if (!this.isTestPaymentsEnabled()) {
+      throw new BadRequestException('Тестовая оплата недоступна в этом окружении');
+    }
+  }
 
   private async routeToProvider(
     transactionId: string,
@@ -429,7 +480,18 @@ export class PaymentsService {
   ): Promise<PaymentResultDto> {
     // Deduct bonus and complete transaction in one atomic operation
     await this.prisma.$transaction(async (tx) => {
-      // Deduct bonus
+      const updated = await tx.transaction.updateMany({
+        where: { id: transactionId, status: TransactionStatus.PENDING },
+        data: {
+          status: TransactionStatus.COMPLETED,
+          completedAt: new Date(),
+        },
+      });
+
+      if (updated.count === 0) {
+        return;
+      }
+
       await this.bonusesService.spendBonuses(
         {
           userId,
@@ -440,14 +502,17 @@ export class PaymentsService {
         tx as unknown as Prisma.TransactionClient,
       );
 
-      // Mark transaction as completed
-      await tx.transaction.update({
+      const transaction = await tx.transaction.findUnique({
         where: { id: transactionId },
-        data: {
-          status: TransactionStatus.COMPLETED,
-          completedAt: new Date(),
-        },
       });
+
+      if (transaction) {
+        await this.processCompletedPaymentEffects(
+          tx as unknown as Prisma.TransactionClient,
+          transaction,
+          userId,
+        );
+      }
     });
 
     const transaction = await this.prisma.transaction.findUnique({
@@ -473,6 +538,19 @@ export class PaymentsService {
     if (!transaction) return;
 
     await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.transaction.updateMany({
+        where: { id: transactionId, status: TransactionStatus.PENDING },
+        data: {
+          status: TransactionStatus.COMPLETED,
+          completedAt: new Date(),
+        },
+      });
+
+      if (updated.count === 0) {
+        this.logger.log(`Transaction ${transactionId} already processed`);
+        return;
+      }
+
       // Deduct bonus if used
       const bonusUsed = Number(transaction.bonusAmountUsed);
       if (bonusUsed > 0) {
@@ -487,47 +565,234 @@ export class PaymentsService {
         );
       }
 
-      // Update transaction status
-      await tx.transaction.update({
-        where: { id: transactionId },
-        data: {
-          status: TransactionStatus.COMPLETED,
-          completedAt: new Date(),
-        },
-      });
-
-      // Create partner commissions
-      await this.partnersService.calculateAndCreateCommissions(
-        transactionId,
+      await this.processCompletedPaymentEffects(
+        tx as unknown as Prisma.TransactionClient,
+        transaction,
         userId,
-        new Decimal(transaction.amount.toString()),
       );
-
-      // Update invoice if exists
-      await tx.invoice.updateMany({
-        where: { transactionId, status: InvoiceStatus.PENDING },
-        data: {
-          status: InvoiceStatus.PAID,
-          paidAt: new Date(),
-        },
-      });
-
-      // Log to audit trail
-      await tx.auditLog.create({
-        data: {
-          userId,
-          action: 'PAYMENT_COMPLETED',
-          entityType: 'Transaction',
-          entityId: transactionId,
-          newValue: {
-            amount: transaction.amount.toString(),
-            type: transaction.type,
-            paymentMethod: transaction.paymentMethod,
-          },
-        },
-      });
     });
 
     this.logger.log(`Payment completed: ${transactionId}`);
+  }
+
+  private async processCompletedPaymentEffects(
+    tx: Prisma.TransactionClient,
+    transaction: Transaction | null,
+    userId: string,
+  ): Promise<void> {
+    if (!transaction) return;
+
+    const metadata = (transaction.metadata ?? {}) as Record<string, any>;
+
+    if (transaction.type === 'SUBSCRIPTION' && metadata.subscriptionPlanId) {
+      await this.activateSubscriptionAfterPayment(
+        tx,
+        userId,
+        String(metadata.subscriptionPlanId),
+        transaction.id,
+        metadata.autoRenew !== false,
+      );
+    }
+
+    if (transaction.type === 'STORE' && metadata.orderId) {
+      await tx.order.updateMany({
+        where: {
+          id: String(metadata.orderId),
+          userId,
+          status: 'PENDING',
+        },
+        data: { status: 'PAID' },
+      });
+    }
+
+    if (
+      transaction.type === 'VERIFICATION' ||
+      metadata.purpose === 'verification'
+    ) {
+      await this.completePaymentVerification(
+        tx,
+        userId,
+        transaction.id,
+        typeof metadata.verificationId === 'string'
+          ? metadata.verificationId
+          : undefined,
+      );
+    }
+
+    await this.partnersService.calculateAndCreateCommissions(
+      transaction.id,
+      userId,
+      new Decimal(transaction.amount.toString()),
+      tx,
+    );
+
+    await this.bonusesService.grantReferralBonus(
+      userId,
+      new Decimal(transaction.amount.toString()),
+      transaction.id,
+      tx,
+    );
+
+    await tx.invoice.updateMany({
+      where: { transactionId: transaction.id, status: InvoiceStatus.PENDING },
+      data: {
+        status: InvoiceStatus.PAID,
+        paidAt: new Date(),
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        userId,
+        action: 'PAYMENT_COMPLETED',
+        entityType: 'Transaction',
+        entityId: transaction.id,
+        newValue: {
+          amount: transaction.amount.toString(),
+          type: transaction.type,
+          paymentMethod: transaction.paymentMethod,
+        },
+      },
+    });
+  }
+
+  private async activateSubscriptionAfterPayment(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    planId: string,
+    transactionId: string,
+    autoRenew: boolean,
+  ): Promise<void> {
+    const plan = await tx.subscriptionPlan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!plan) {
+      this.logger.warn(`Subscription plan not found for completed payment: ${planId}`);
+      return;
+    }
+
+    const existing = await tx.userSubscription.findFirst({
+      where: {
+        userId,
+        planId,
+        status: 'ACTIVE',
+        expiresAt: { gte: new Date() },
+      },
+    });
+
+    if (existing) {
+      return;
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+
+    const subscription = await tx.userSubscription.create({
+      data: {
+        userId,
+        planId,
+        status: 'ACTIVE',
+        startedAt: now,
+        expiresAt,
+        autoRenew,
+      },
+    });
+
+    if (plan.contentId) {
+      await tx.subscriptionAccess.create({
+        data: {
+          subscriptionId: subscription.id,
+          contentId: plan.contentId,
+        },
+      });
+    }
+
+    await tx.auditLog.create({
+      data: {
+        userId,
+        action: 'SUBSCRIPTION_ACTIVATED',
+        entityType: 'UserSubscription',
+        entityId: subscription.id,
+        newValue: {
+          planId,
+          transactionId,
+          expiresAt: expiresAt.toISOString(),
+        },
+      },
+    });
+  }
+
+  private async completePaymentVerification(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    transactionId: string,
+    verificationId?: string,
+  ): Promise<void> {
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { verificationStatus: true },
+    });
+
+    if (!user || user.verificationStatus === VerificationStatus.VERIFIED) {
+      return;
+    }
+
+    const verification = verificationId
+      ? await tx.userVerification.findFirst({
+          where: {
+            id: verificationId,
+            userId,
+            method: VerificationMethod.PAYMENT,
+          },
+        })
+      : await tx.userVerification.findFirst({
+          where: {
+            userId,
+            method: VerificationMethod.PAYMENT,
+            status: VerificationStatus.PENDING,
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+    if (!verification) {
+      return;
+    }
+
+    const now = new Date();
+
+    await tx.userVerification.updateMany({
+      where: {
+        id: verification.id,
+        status: { not: VerificationStatus.VERIFIED },
+      },
+      data: {
+        status: VerificationStatus.VERIFIED,
+        reviewedAt: now,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        verificationStatus: VerificationStatus.VERIFIED,
+        verificationMethod: VerificationMethod.PAYMENT,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        userId,
+        action: 'VERIFICATION_PAYMENT_COMPLETED',
+        entityType: 'UserVerification',
+        entityId: verification.id,
+        oldValue: { status: user.verificationStatus },
+        newValue: {
+          status: VerificationStatus.VERIFIED,
+          method: VerificationMethod.PAYMENT,
+          transactionId,
+        },
+      },
+    });
   }
 }

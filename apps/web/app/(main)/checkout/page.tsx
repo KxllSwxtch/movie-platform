@@ -84,6 +84,12 @@ export default function CheckoutPage() {
     }
   }, [selectedPlan, router]);
 
+  React.useEffect(() => {
+    if (checkoutStep === 'processing' && !transactionId) {
+      setCheckoutStep('payment');
+    }
+  }, [checkoutStep, setCheckoutStep, transactionId]);
+
   // Handle payment status changes
   React.useEffect(() => {
     if (paymentStatus.isCompleted) {

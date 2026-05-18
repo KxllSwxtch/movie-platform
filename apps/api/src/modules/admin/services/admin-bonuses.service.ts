@@ -5,6 +5,7 @@ import {
   BonusSource,
   BonusTransactionType,
   Prisma,
+  WithdrawalStatus,
 } from '@prisma/client';
 
 import { PrismaService } from '../../../config/prisma.service';
@@ -200,6 +201,73 @@ export class AdminBonusesService {
     adminId: string,
   ) {
     return this.bonusesService.adjustBalance(userId, dto.amount, dto.reason, adminId);
+  }
+
+  async getWithdrawals(status?: string) {
+    const where: Prisma.BonusWithdrawalWhereInput = {};
+    if (status && Object.values(WithdrawalStatus).includes(status as WithdrawalStatus)) {
+      where.status = status as WithdrawalStatus;
+    }
+
+    const withdrawals = await this.prisma.bonusWithdrawal.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, email: true, firstName: true, lastName: true },
+        },
+        processedBy: {
+          select: { id: true, email: true, firstName: true, lastName: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    return withdrawals.map((withdrawal) => ({
+      id: withdrawal.id,
+      userId: withdrawal.userId,
+      user: withdrawal.user,
+      bonusAmount: Number(withdrawal.bonusAmount),
+      currencyAmount: Number(withdrawal.currencyAmount),
+      rate: Number(withdrawal.rate),
+      taxStatus: withdrawal.taxStatus,
+      taxAmount: Number(withdrawal.taxAmount),
+      netAmount: Number(withdrawal.netAmount),
+      paymentDetails: withdrawal.paymentDetails,
+      status: withdrawal.status,
+      processedById: withdrawal.processedById || undefined,
+      processedBy: withdrawal.processedBy || undefined,
+      processedAt: withdrawal.processedAt || undefined,
+      rejectionReason: withdrawal.rejectionReason || undefined,
+      createdAt: withdrawal.createdAt,
+    }));
+  }
+
+  approveWithdrawal(withdrawalId: string, adminId: string, note?: string) {
+    return this.bonusesService.updateWithdrawalStatus(
+      withdrawalId,
+      WithdrawalStatus.APPROVED,
+      adminId,
+      note,
+    );
+  }
+
+  rejectWithdrawal(withdrawalId: string, adminId: string, reason?: string) {
+    return this.bonusesService.updateWithdrawalStatus(
+      withdrawalId,
+      WithdrawalStatus.REJECTED,
+      adminId,
+      reason,
+    );
+  }
+
+  completeWithdrawal(withdrawalId: string, adminId: string, note?: string) {
+    return this.bonusesService.updateWithdrawalStatus(
+      withdrawalId,
+      WithdrawalStatus.COMPLETED,
+      adminId,
+      note,
+    );
   }
 
   // ==================== RATE MANAGEMENT ====================

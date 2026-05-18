@@ -26,6 +26,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   useEffect(() => {
     if (inView) {
       motionValue.set(value);
+      return undefined;
     } else {
       // Fallback: if IntersectionObserver hasn't fired within 2s, animate anyway
       const timer = setTimeout(() => {

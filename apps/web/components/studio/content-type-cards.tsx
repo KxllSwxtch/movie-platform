@@ -25,8 +25,8 @@ const CONTENT_TYPES = [
   },
   {
     type: 'CLIP',
-    label: 'Клип',
-    description: 'Музыкальные клипы и видео',
+    label: 'Видео',
+    description: 'Видео для каталога и тематических категорий',
     icon: MusicNote,
   },
   {

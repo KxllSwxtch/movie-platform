@@ -22,10 +22,10 @@ const CONTENT_TYPES = [
   },
   {
     type: 'CLIP',
-    label: 'Клип',
-    description: 'Музыкальные клипы, трейлеры и промо-видео',
+    label: 'Видео',
+    description: 'Музыкальные видео, трейлеры и промо-видео',
     icon: MusicNote,
-    href: '/studio/create/clip',
+    href: '/studio/create/video',
     color: '#28e0c4',
   },
   {

@@ -386,12 +386,12 @@ export interface ToggleAutoRenewRequest {
 /**
  * Payment method types
  */
-export type PaymentMethodType = 'CARD' | 'SBP' | 'BANK_TRANSFER';
+export type PaymentMethodType = 'CARD' | 'SBP' | 'BANK_TRANSFER' | 'QR' | 'TEST';
 
 /**
  * Transaction type
  */
-export type TransactionType = 'SUBSCRIPTION' | 'STORE' | 'BONUS_PURCHASE' | 'WITHDRAWAL';
+export type TransactionType = 'SUBSCRIPTION' | 'STORE' | 'VERIFICATION' | 'BONUS_PURCHASE' | 'WITHDRAWAL';
 
 /**
  * Transaction status
@@ -422,6 +422,7 @@ export interface PaymentResult {
   bonusAmountUsed: number;
   amountToPay: number;
   redirectUrl?: string;
+  paymentUrl?: string;
   qrCodeUrl?: string;
   expiresAt?: string;
   bankDetails?: BankDetails;

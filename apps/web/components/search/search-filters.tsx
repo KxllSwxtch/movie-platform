@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { X, SlidersHorizontal } from '@phosphor-icons/react';
+import { SlidersHorizontal, X } from '@phosphor-icons/react';
 
+import { type AgeCategory } from '@/components/content';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -20,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { type AgeCategory } from '@/components/content';
 import { cn } from '@/lib/utils';
 
 export interface SearchFiltersState {
@@ -34,26 +34,16 @@ export interface SearchFiltersState {
 interface SearchFiltersProps {
   filters: SearchFiltersState;
   onFiltersChange: (filters: SearchFiltersState) => void;
+  categories?: Array<{ id: string; name: string; iconUrl?: string }>;
   className?: string;
 }
 
 const CONTENT_TYPES = [
   { value: 'all', label: 'Все типы' },
   { value: 'series', label: 'Сериалы' },
-  { value: 'movies', label: 'Фильмы' },
+  { value: 'clip', label: 'Видео' },
+  { value: 'short', label: 'Шортсы' },
   { value: 'tutorials', label: 'Обучение' },
-];
-
-const CATEGORIES = [
-  { value: 'all', label: 'Все категории' },
-  { value: 'drama', label: 'Драма' },
-  { value: 'comedy', label: 'Комедия' },
-  { value: 'thriller', label: 'Триллер' },
-  { value: 'horror', label: 'Ужасы' },
-  { value: 'scifi', label: 'Фантастика' },
-  { value: 'action', label: 'Боевик' },
-  { value: 'romance', label: 'Мелодрама' },
-  { value: 'documentary', label: 'Документальный' },
 ];
 
 const AGE_RATINGS: { value: AgeCategory | 'all'; label: string }[] = [
@@ -67,11 +57,11 @@ const AGE_RATINGS: { value: AgeCategory | 'all'; label: string }[] = [
 
 const YEARS = [
   { value: 'all', label: 'Все годы' },
+  { value: '2026', label: '2026' },
+  { value: '2025', label: '2025' },
   { value: '2024', label: '2024' },
   { value: '2023', label: '2023' },
   { value: '2022', label: '2022' },
-  { value: '2021', label: '2021' },
-  { value: '2020', label: '2020' },
 ];
 
 const SORT_OPTIONS = [
@@ -82,9 +72,6 @@ const SORT_OPTIONS = [
   { value: 'popular', label: 'По популярности' },
 ];
 
-/**
- * Count active filters (non-'all' values, excluding sortBy)
- */
 function countActiveFilters(filters: SearchFiltersState): number {
   let count = 0;
   if (filters.type !== 'all') count++;
@@ -94,16 +81,15 @@ function countActiveFilters(filters: SearchFiltersState): number {
   return count;
 }
 
-/**
- * Inline filter select components (shared between desktop and drawer)
- */
 function FilterSelects({
   filters,
   onFiltersChange,
+  categories = [],
   layout = 'inline',
 }: {
   filters: SearchFiltersState;
   onFiltersChange: (filters: SearchFiltersState) => void;
+  categories?: Array<{ id: string; name: string; iconUrl?: string }>;
   layout?: 'inline' | 'stacked';
 }) {
   const handleChange = (key: keyof SearchFiltersState, value: string) => {
@@ -114,10 +100,7 @@ function FilterSelects({
 
   return (
     <>
-      <Select
-        value={filters.type}
-        onValueChange={(v) => handleChange('type', v)}
-      >
+      <Select value={filters.type} onValueChange={(v) => handleChange('type', v)}>
         <SelectTrigger className={cn(selectWidth || 'w-[140px]')}>
           <SelectValue placeholder="Тип" />
         </SelectTrigger>
@@ -130,17 +113,15 @@ function FilterSelects({
         </SelectContent>
       </Select>
 
-      <Select
-        value={filters.category}
-        onValueChange={(v) => handleChange('category', v)}
-      >
-        <SelectTrigger className={cn(selectWidth || 'w-[160px]')}>
+      <Select value={filters.category} onValueChange={(v) => handleChange('category', v)}>
+        <SelectTrigger className={cn(selectWidth || 'w-[180px]')}>
           <SelectValue placeholder="Категория" />
         </SelectTrigger>
         <SelectContent>
-          {CATEGORIES.map((cat) => (
-            <SelectItem key={cat.value} value={cat.value}>
-              {cat.label}
+          <SelectItem value="all">Все категории</SelectItem>
+          {categories.map((cat) => (
+            <SelectItem key={cat.id} value={cat.id}>
+              {cat.name}
             </SelectItem>
           ))}
         </SelectContent>
@@ -162,10 +143,7 @@ function FilterSelects({
         </SelectContent>
       </Select>
 
-      <Select
-        value={filters.year}
-        onValueChange={(v) => handleChange('year', v)}
-      >
+      <Select value={filters.year} onValueChange={(v) => handleChange('year', v)}>
         <SelectTrigger className={cn(selectWidth || 'w-[120px]')}>
           <SelectValue placeholder="Год" />
         </SelectTrigger>
@@ -178,11 +156,13 @@ function FilterSelects({
         </SelectContent>
       </Select>
 
-      <Select
-        value={filters.sortBy}
-        onValueChange={(v) => handleChange('sortBy', v)}
-      >
-        <SelectTrigger className={cn(layout === 'stacked' ? 'w-full' : 'w-[180px]', layout === 'inline' && 'ml-auto')}>
+      <Select value={filters.sortBy} onValueChange={(v) => handleChange('sortBy', v)}>
+        <SelectTrigger
+          className={cn(
+            layout === 'stacked' ? 'w-full' : 'w-[180px]',
+            layout === 'inline' && 'ml-auto',
+          )}
+        >
           <SelectValue placeholder="Сортировка" />
         </SelectTrigger>
         <SelectContent>
@@ -197,18 +177,14 @@ function FilterSelects({
   );
 }
 
-/**
- * Search filters bar - drawer on mobile, inline on desktop
- * Renders both variants; CSS toggles visibility to avoid hydration mismatch.
- */
-export function SearchFilters({ filters, onFiltersChange, className }: SearchFiltersProps) {
-  const hasActiveFilters =
-    filters.type !== 'all' ||
-    filters.category !== 'all' ||
-    filters.age !== 'all' ||
-    filters.year !== 'all';
-
+export function SearchFilters({
+  filters,
+  onFiltersChange,
+  categories = [],
+  className,
+}: SearchFiltersProps) {
   const activeCount = countActiveFilters(filters);
+  const hasActiveFilters = activeCount > 0;
 
   const handleClearFilters = () => {
     onFiltersChange({
@@ -222,15 +198,14 @@ export function SearchFilters({ filters, onFiltersChange, className }: SearchFil
 
   return (
     <>
-      {/* Mobile: "Filters" button that opens a bottom drawer */}
       <div className={cn('flex items-center gap-3 md:hidden', className)}>
         <Drawer>
           <DrawerTrigger asChild>
             <Button variant="outline" size="default" className="gap-2">
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="h-4 w-4" />
               Фильтры
               {activeCount > 0 && (
-                <span className="bg-mp-accent-primary text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-mp-accent-primary text-xs font-semibold text-white">
                   {activeCount}
                 </span>
               )}
@@ -240,17 +215,18 @@ export function SearchFilters({ filters, onFiltersChange, className }: SearchFil
             <DrawerHeader>
               <DrawerTitle>Фильтры</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-2 space-y-3">
+            <div className="space-y-3 px-4 pb-2">
               <FilterSelects
                 filters={filters}
                 onFiltersChange={onFiltersChange}
+                categories={categories}
                 layout="stacked"
               />
             </div>
             <DrawerFooter>
               {hasActiveFilters && (
                 <Button variant="ghost" onClick={handleClearFilters} className="gap-1">
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" />
                   Сбросить фильтры
                 </Button>
               )}
@@ -261,7 +237,6 @@ export function SearchFilters({ filters, onFiltersChange, className }: SearchFil
           </DrawerContent>
         </Drawer>
 
-        {/* Sort select always visible on mobile */}
         <Select
           value={filters.sortBy}
           onValueChange={(v) => onFiltersChange({ ...filters, sortBy: v })}
@@ -279,18 +254,17 @@ export function SearchFilters({ filters, onFiltersChange, className }: SearchFil
         </Select>
       </div>
 
-      {/* Desktop: inline filter row */}
-      <div className={cn('hidden md:flex flex-wrap items-center gap-3', className)}>
+      <div className={cn('hidden flex-wrap items-center gap-3 md:flex', className)}>
         <FilterSelects
           filters={filters}
           onFiltersChange={onFiltersChange}
+          categories={categories}
           layout="inline"
         />
 
-        {/* Clear filters */}
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={handleClearFilters} className="gap-1">
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
             Сбросить
           </Button>
         )}
@@ -299,12 +273,10 @@ export function SearchFilters({ filters, onFiltersChange, className }: SearchFil
   );
 }
 
-/**
- * Active filter chips
- */
 export function SearchFilterChips({
   filters,
   onFiltersChange,
+  categories = [],
   className,
 }: SearchFiltersProps) {
   const activeFilters: { key: keyof SearchFiltersState; label: string }[] = [];
@@ -314,8 +286,8 @@ export function SearchFilterChips({
     if (type) activeFilters.push({ key: 'type', label: type.label });
   }
   if (filters.category !== 'all') {
-    const cat = CATEGORIES.find((c) => c.value === filters.category);
-    if (cat) activeFilters.push({ key: 'category', label: cat.label });
+    const cat = categories.find((c) => c.id === filters.category);
+    if (cat) activeFilters.push({ key: 'category', label: cat.name });
   }
   if (filters.age !== 'all') {
     activeFilters.push({ key: 'age', label: filters.age });
@@ -335,14 +307,14 @@ export function SearchFilterChips({
       {activeFilters.map(({ key, label }) => (
         <span
           key={key}
-          className="inline-flex items-center gap-1 px-2 py-1 bg-mp-accent-primary/20 text-mp-accent-primary rounded-full text-sm"
+          className="inline-flex items-center gap-1 rounded-full bg-mp-accent-primary/20 px-2 py-1 text-sm text-mp-accent-primary"
         >
           {label}
           <button
             onClick={() => handleRemove(key)}
-            className="p-0.5 hover:bg-mp-accent-primary/30 rounded-full transition-colors"
+            className="rounded-full p-0.5 transition-colors hover:bg-mp-accent-primary/30"
           >
-            <X className="w-3 h-3" />
+            <X className="h-3 w-3" />
           </button>
         </span>
       ))}

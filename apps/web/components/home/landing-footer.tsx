@@ -10,7 +10,7 @@ const footerLinks = {
   content: [
     { label: 'Сериалы', href: '/series' },
     { label: 'Обучение', href: '/tutorials' },
-    { label: 'Клипы', href: '/clips' },
+    { label: 'Видео', href: '/videos' },
     { label: 'Шортс', href: '/shorts' },
   ],
   company: [

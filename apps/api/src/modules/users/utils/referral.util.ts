@@ -42,9 +42,8 @@ export function isValidReferralCodeFormat(code: string): boolean {
     return false;
   }
 
-  // Must only contain valid alphabet characters
-  const validPattern = new RegExp(`^[${REFERRAL_ALPHABET}]+$`);
-  return validPattern.test(code);
+  // Accept legacy codes that may contain ambiguous characters such as O/I/0.
+  return /^[A-Z0-9]+$/.test(code);
 }
 
 /**
@@ -55,4 +54,39 @@ export function isValidReferralCodeFormat(code: string): boolean {
  */
 export function normalizeReferralCode(code: string): string {
   return code.trim().toUpperCase();
+}
+
+/**
+ * Extract a referral code from either a plain code or an invite URL.
+ *
+ * Accepted examples:
+ * - ABC12345
+ * - /register?ref=ABC12345
+ * - https://example.com/register?ref=ABC12345
+ */
+export function extractReferralCode(value?: string): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const input = value.trim();
+  if (!input) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(input, 'https://movieplatform.local');
+    const code =
+      url.searchParams.get('ref') ||
+      url.searchParams.get('referralCode') ||
+      url.searchParams.get('referral');
+
+    if (code) {
+      return normalizeReferralCode(code);
+    }
+  } catch {
+    // Fall through and treat the value as a plain referral code.
+  }
+
+  return normalizeReferralCode(input);
 }

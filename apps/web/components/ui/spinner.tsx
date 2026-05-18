@@ -1,5 +1,3 @@
-import { SpinnerGap } from '@phosphor-icons/react';
-
 import { cn } from '@/lib/utils';
 
 interface SpinnerProps {
@@ -16,8 +14,13 @@ const sizeClasses = {
 
 export function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
-    <SpinnerGap
-      className={cn('animate-spin text-mp-accent-primary', sizeClasses[size], className)}
+    <span
+      className={cn(
+        'inline-block animate-spin rounded-full border-2 border-mp-accent-primary/25 border-t-mp-accent-primary',
+        sizeClasses[size],
+        className,
+      )}
+      aria-hidden="true"
     />
   );
 }

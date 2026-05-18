@@ -161,7 +161,7 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
       await expect(
         service.validateUser(mockUser.email, DEFAULT_PASSWORD),
-      ).rejects.toThrow('Account is deactivated');
+      ).rejects.toThrow('Аккаунт деактивирован');
     });
   });
 
@@ -184,7 +184,7 @@ describe('AuthService', () => {
 
       usersService.findByEmail.mockResolvedValue(null);
       usersService.findByReferralCode.mockResolvedValue(null);
-      prismaService.user.create.mockResolvedValue(mockUser);
+      prismaService.user.create.mockResolvedValue({ ...mockUser, role: 'CLIENT' });
 
       const result = await service.register(registerDto, '127.0.0.1', 'Test Agent');
 
@@ -201,20 +201,20 @@ describe('AuthService', () => {
       expect(emailService.sendEmailVerification).toHaveBeenCalled();
     });
 
-    it('should register minor user with MINOR role', async () => {
+    it('should register minor user with CLIENT role and minor age category', async () => {
       const minorDto = {
         ...registerDto,
         dateOfBirth: new Date(Date.now() - 15 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 15 years old
       };
 
-      const mockUser = createMinorUser(15, { email: minorDto.email });
+      const mockUser = createMinorUser(15, { email: minorDto.email } as any);
       usersService.findByEmail.mockResolvedValue(null);
       usersService.findByReferralCode.mockResolvedValue(null);
-      prismaService.user.create.mockResolvedValue(mockUser);
+      prismaService.user.create.mockResolvedValue({ ...mockUser, role: 'CLIENT' });
 
       const result = await service.register(minorDto, '127.0.0.1');
 
-      expect(result.user.role).toBe('MINOR');
+      expect(result.user.role).toBe('CLIENT');
     });
 
     it('should throw BadRequestException when terms not accepted', async () => {
@@ -224,7 +224,7 @@ describe('AuthService', () => {
         BadRequestException,
       );
       await expect(service.register(dtoWithoutTerms, '127.0.0.1')).rejects.toThrow(
-        'You must accept the terms and conditions',
+        'Необходимо принять условия использования',
       );
     });
 
@@ -236,12 +236,15 @@ describe('AuthService', () => {
         ConflictException,
       );
       await expect(service.register(registerDto, '127.0.0.1')).rejects.toThrow(
-        'Email already registered',
+        'Email уже зарегистрирован',
       );
     });
 
     it('should handle referral code during registration', async () => {
-      const referrer = createAdultUser({ referralCode: 'REF123' });
+      const referrer = {
+        ...createAdultUser({ referralCode: 'REF123', role: 'PARTNER' as any }),
+        referralCodeActive: true,
+      };
       const newUser = createAdultUser({ email: registerDto.email, referredById: referrer.id });
 
       usersService.findByEmail.mockResolvedValue(null);
@@ -383,7 +386,7 @@ describe('AuthService', () => {
         UnauthorizedException,
       );
       await expect(service.refreshToken('invalid.token')).rejects.toThrow(
-        'Invalid or expired refresh token',
+        'Недействительный или просроченный токен обновления',
       );
     });
 

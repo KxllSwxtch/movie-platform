@@ -1,41 +1,46 @@
-'use client';
+"use client";
 
-import { useContentList } from '@/hooks/use-content';
-import { useContinueWatching } from '@/hooks/use-account';
+import { useContentList } from "@/hooks/use-content";
+import { useContinueWatching } from "@/hooks/use-account";
 
 /**
  * Aggregates data for the authenticated dashboard home page
  */
 export function useDashboardHome() {
   const heroContent = useContentList({
-    sortBy: 'viewCount',
+    sortBy: "viewCount",
     limit: 1,
   });
 
   const continueWatching = useContinueWatching(10);
 
   const trending = useContentList({
-    sortBy: 'viewCount',
+    sortBy: "viewCount",
     limit: 12,
   });
 
   const newReleases = useContentList({
-    sortBy: 'publishedAt',
+    sortBy: "publishedAt",
     limit: 12,
   });
 
   const series = useContentList({
-    type: 'SERIES',
+    type: "SERIES",
     limit: 12,
   });
 
   const tutorials = useContentList({
-    type: 'TUTORIAL',
+    type: "TUTORIAL",
     limit: 12,
   });
 
-  const clips = useContentList({
-    type: 'CLIP',
+  const videos = useContentList({
+    type: "CLIP",
+    limit: 12,
+  });
+
+  const shorts = useContentList({
+    type: "SHORT",
     limit: 12,
   });
 
@@ -46,6 +51,7 @@ export function useDashboardHome() {
     newReleases,
     series,
     tutorials,
-    clips,
+    videos,
+    shorts,
   };
 }

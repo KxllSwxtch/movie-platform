@@ -16,6 +16,7 @@ datasource db {
 
 enum UserRole {
   GUEST
+  CLIENT
   BUYER
   PARTNER
   MINOR
@@ -56,7 +57,7 @@ model User {
   avatarUrl          String?             @map("avatar_url")
   verificationStatus VerificationStatus  @default(UNVERIFIED) @map("verification_status")
   verificationMethod VerificationMethod? @map("verification_method")
-  role               UserRole            @default(BUYER)
+  role               UserRole            @default(CLIENT)
   referralCode       String              @unique @map("referral_code")
   referredById       String?             @map("referred_by_id")
   bonusBalance       Decimal             @default(0) @map("bonus_balance") @db.Decimal(12, 2)
@@ -94,8 +95,9 @@ model User {
   createdContent        Content[]              @relation("CreatedContent")
 
   // Admin relations
-  reviewedVerifications UserVerification[]  @relation("ReviewedVerifications")
-  processedWithdrawals  WithdrawalRequest[] @relation("ProcessedWithdrawals")
+  reviewedVerifications         UserVerification[]  @relation("ReviewedVerifications")
+  partnerConfirmedVerifications UserVerification[]  @relation("PartnerConfirmedVerifications")
+  processedWithdrawals          WithdrawalRequest[] @relation("ProcessedWithdrawals")
 
   // Bonus relations
   bonusWithdrawals          BonusWithdrawal[]   @relation("BonusWithdrawals")
@@ -111,21 +113,29 @@ model User {
 }
 
 model UserVerification {
-  id              String             @id @default(uuid())
-  userId          String             @map("user_id")
-  method          VerificationMethod
-  documentUrl     String?            @map("document_url")
-  status          VerificationStatus @default(PENDING)
-  reviewedById    String?            @map("reviewed_by_id")
-  reviewedAt      DateTime?          @map("reviewed_at")
-  rejectionReason String?            @map("rejection_reason")
-  createdAt       DateTime           @default(now()) @map("created_at")
+  id                    String             @id @default(uuid())
+  userId                String             @map("user_id")
+  method                VerificationMethod
+  documentUrl           String?            @map("document_url")
+  documentKey           String?            @map("document_key")
+  status                VerificationStatus @default(PENDING)
+  reviewedById          String?            @map("reviewed_by_id")
+  reviewedAt            DateTime?          @map("reviewed_at")
+  rejectionReason       String?            @map("rejection_reason")
+  confirmedByPartnerId  String?            @map("confirmed_by_partner_id")
+  confirmedAt           DateTime?          @map("confirmed_at")
+  partnerRelationshipId String?            @map("partner_relationship_id")
+  createdAt             DateTime           @default(now()) @map("created_at")
 
-  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewedBy User? @relation("ReviewedVerifications", fields: [reviewedById], references: [id])
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy          User?                @relation("ReviewedVerifications", fields: [reviewedById], references: [id])
+  confirmedByPartner  User?                @relation("PartnerConfirmedVerifications", fields: [confirmedByPartnerId], references: [id])
+  partnerRelationship PartnerRelationship? @relation(fields: [partnerRelationshipId], references: [id])
 
   @@index([userId])
   @@index([status])
+  @@index([confirmedByPartnerId])
+  @@index([partnerRelationshipId])
   @@map("user_verifications")
 }
 
@@ -344,12 +354,14 @@ model Category {
   parentId String? @map("parent_id")
   iconUrl  String? @map("icon_url")
   order    Int     @default(0)
+  isActive Boolean @default(true) @map("is_active")
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children Category[] @relation("CategoryHierarchy")
   content  Content[]
 
   @@index([parentId])
+  @@index([isActive, order])
   @@map("categories")
 }
 
@@ -551,11 +563,13 @@ enum PaymentMethodType {
   SBP
   BANK_TRANSFER
   QR
+  TEST
 }
 
 enum TransactionType {
   SUBSCRIPTION
   STORE
+  VERIFICATION
   BONUS_PURCHASE
   WITHDRAWAL
 }
@@ -684,8 +698,9 @@ model PartnerRelationship {
   level      Int // Depth in tree (1-5)
   createdAt  DateTime @default(now()) @map("created_at")
 
-  partner  User @relation("PartnerRelation", fields: [partnerId], references: [id], onDelete: Cascade)
-  referral User @relation("ReferralRelation", fields: [referralId], references: [id], onDelete: Cascade)
+  partner       User               @relation("PartnerRelation", fields: [partnerId], references: [id], onDelete: Cascade)
+  referral      User               @relation("ReferralRelation", fields: [referralId], references: [id], onDelete: Cascade)
+  verifications UserVerification[]
 
   @@unique([partnerId, referralId])
   @@index([partnerId])
@@ -774,6 +789,7 @@ model BonusTransaction {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, source, referenceId, referenceType])
   @@index([userId])
   @@index([type])
   @@index([createdAt])

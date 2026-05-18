@@ -34,7 +34,7 @@ import { formatDate, formatDuration, cn } from '@/lib/utils';
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   SERIES: 'Сериал',
-  CLIP: 'Клип',
+  CLIP: 'Видео',
   SHORT: 'Короткое видео',
   TUTORIAL: 'Туториал',
 };
@@ -42,7 +42,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
 const TYPE_FILTERS = [
   { value: 'ALL', label: 'Все' },
   { value: 'SERIES', label: 'Сериалы' },
-  { value: 'CLIP', label: 'Клипы' },
+  { value: 'CLIP', label: 'Видео' },
   { value: 'SHORT', label: 'Короткие' },
   { value: 'TUTORIAL', label: 'Туториалы' },
 ];

@@ -10,14 +10,20 @@ import { ConfigService } from '@nestjs/config';
 import { VerificationStatus, VerificationMethod } from '@movie-platform/shared';
 import { v4 as uuidv4 } from 'uuid';
 import {
+  PaymentMethodType,
+  TransactionType,
+} from '@prisma/client';
+import {
   CreateBucketCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 
 import { PrismaService } from '../../config/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { PaymentsService } from '../payments/payments.service';
 import { TokenService } from '../auth/token.service';
 import { EmailService } from '../email/email.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerificationSubmissionDto } from './dto/verification-submission.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -25,6 +31,14 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 const AVATAR_BUCKET = 'avatars';
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
+const VERIFICATION_DOCUMENT_BUCKET = 'verification-documents';
+const ALLOWED_VERIFICATION_DOCUMENT_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+];
+const MAX_VERIFICATION_DOCUMENT_SIZE = 10 * 1024 * 1024;
 
 @Injectable()
 export class UsersService {
@@ -35,8 +49,10 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
+    private readonly paymentsService: PaymentsService,
     private readonly tokenService: TokenService,
     private readonly emailService: EmailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -162,9 +178,41 @@ export class UsersService {
       throw new ConflictException('You are already verified');
     }
 
-    // For DOCUMENT method, require document URL
-    if (dto.method === VerificationMethod.DOCUMENT && !dto.documentUrl) {
-      throw new BadRequestException('Document URL is required for document verification');
+    if (dto.method === VerificationMethod.DOCUMENT && !dto.documentKey) {
+      throw new BadRequestException('Document upload is required for document verification');
+    }
+
+    if (dto.documentUrl) {
+      throw new BadRequestException('External document URLs are not accepted');
+    }
+
+    if (dto.method === VerificationMethod.DOCUMENT) {
+      await this.assertVerificationDocumentOwnership(userId, dto.documentKey!);
+    }
+
+    if (dto.method === VerificationMethod.PAYMENT) {
+      if (!dto.paymentMethod) {
+        throw new BadRequestException('Payment method is required for payment verification');
+      }
+      return this.createPaymentVerification(userId, dto.paymentMethod, dto.returnUrl);
+    }
+
+    const partnerRelationship =
+      dto.method === VerificationMethod.THIRD_PARTY
+        ? await this.prisma.partnerRelationship.findFirst({
+            where: { referralId: userId, level: 1 },
+            include: {
+              partner: {
+                select: { id: true, email: true, firstName: true, lastName: true },
+              },
+            },
+          })
+        : null;
+
+    if (dto.method === VerificationMethod.THIRD_PARTY && !partnerRelationship) {
+      throw new BadRequestException(
+        'Partner verification is available only for users with a direct partner relationship',
+      );
     }
 
     // Create verification record
@@ -172,8 +220,9 @@ export class UsersService {
       data: {
         userId,
         method: dto.method,
-        documentUrl: dto.documentUrl,
+        documentKey: dto.documentKey,
         status: VerificationStatus.PENDING,
+        partnerRelationshipId: partnerRelationship?.id,
       },
     });
 
@@ -186,10 +235,72 @@ export class UsersService {
       },
     });
 
+    if (dto.method === VerificationMethod.THIRD_PARTY && partnerRelationship) {
+      await this.notificationsService.sendNotification({
+        userId: partnerRelationship.partnerId,
+        title: 'Новый запрос на подтверждение',
+        body: `${user.firstName} ${user.lastName} запросил верификацию через партнера. Проверьте заявку в партнерском кабинете.`,
+        data: {
+          type: 'VERIFICATION_PARTNER_REQUEST',
+          verificationId: verification.id,
+          targetUserId: userId,
+          path: '/partner/referrals',
+        },
+      });
+    }
+
+    await this.notifyModeratorsAboutVerification(verification.id, userId, dto.method);
+
     return {
       status: VerificationStatus.PENDING,
       method: dto.method,
       submittedAt: verification.createdAt,
+    };
+  }
+
+  async uploadVerificationDocument(userId: string, file: Express.Multer.File) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { verificationStatus: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.verificationStatus === VerificationStatus.PENDING) {
+      throw new ConflictException('You already have a pending verification request');
+    }
+
+    if (user.verificationStatus === VerificationStatus.VERIFIED) {
+      throw new ConflictException('You are already verified');
+    }
+
+    if (!ALLOWED_VERIFICATION_DOCUMENT_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException('Allowed formats: JPEG, PNG, WebP, PDF');
+    }
+
+    if (file.size > MAX_VERIFICATION_DOCUMENT_SIZE) {
+      throw new BadRequestException('Maximum document size is 10MB');
+    }
+
+    await this.storageService.ensureBucket(VERIFICATION_DOCUMENT_BUCKET);
+
+    const ext = this.getSafeDocumentExtension(file);
+    const documentKey = `${userId}/${uuidv4()}${ext}`;
+
+    await this.storageService.uploadFile(
+      VERIFICATION_DOCUMENT_BUCKET,
+      documentKey,
+      file.buffer,
+      file.mimetype,
+    );
+
+    return {
+      documentKey,
+      filename: file.originalname,
+      contentType: file.mimetype,
+      size: file.size,
     };
   }
 
@@ -592,6 +703,130 @@ export class UsersService {
     }
 
     this.bucketEnsured = true;
+  }
+
+  private async createPaymentVerification(
+    userId: string,
+    paymentMethod: PaymentMethodType,
+    returnUrl?: string,
+  ) {
+    const amount = Number(process.env.VERIFICATION_PAYMENT_AMOUNT || 10);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Verification payment amount is not configured');
+    }
+
+    const verification = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.userVerification.create({
+        data: {
+          userId,
+          method: VerificationMethod.PAYMENT,
+          status: VerificationStatus.PENDING,
+        },
+      });
+
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          verificationStatus: VerificationStatus.PENDING,
+          verificationMethod: VerificationMethod.PAYMENT,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'VERIFICATION_PAYMENT_STARTED',
+          entityType: 'UserVerification',
+          entityId: created.id,
+          oldValue: { status: VerificationStatus.UNVERIFIED },
+          newValue: {
+            status: VerificationStatus.PENDING,
+            method: VerificationMethod.PAYMENT,
+          },
+        },
+      });
+
+      return created;
+    });
+
+    const payment = await this.paymentsService.initiatePayment(userId, {
+      type: TransactionType.VERIFICATION,
+      amount,
+      paymentMethod,
+      returnUrl,
+      referenceId: verification.id,
+      metadata: {
+        purpose: 'verification',
+        verificationId: verification.id,
+      },
+    });
+
+    return {
+      status: VerificationStatus.PENDING,
+      method: VerificationMethod.PAYMENT,
+      submittedAt: verification.createdAt,
+      payment,
+    };
+  }
+
+  private async assertVerificationDocumentOwnership(
+    userId: string,
+    documentKey: string,
+  ) {
+    if (!documentKey.startsWith(`${userId}/`)) {
+      throw new BadRequestException('Document does not belong to current user');
+    }
+
+    const exists = await this.storageService.fileExists(
+      VERIFICATION_DOCUMENT_BUCKET,
+      documentKey,
+    );
+
+    if (!exists) {
+      throw new BadRequestException('Verification document was not found');
+    }
+  }
+
+  private async notifyModeratorsAboutVerification(
+    verificationId: string,
+    userId: string,
+    method: VerificationMethod,
+  ) {
+    const moderators = await this.prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'MODERATOR'] } },
+      select: { id: true },
+    });
+
+    await Promise.all(
+      moderators.map((moderator) =>
+        this.notificationsService.sendNotification({
+          userId: moderator.id,
+          title: 'Новая заявка на верификацию',
+          body:
+            method === VerificationMethod.THIRD_PARTY
+              ? 'Пользователь запросил подтверждение через партнера. Финальное решение остается за модератором.'
+              : 'Пользователь отправил заявку на ручную проверку.',
+          data: {
+            type: 'VERIFICATION_ADMIN_REVIEW',
+            verificationId,
+            targetUserId: userId,
+            method,
+            path: '/admin/verifications',
+          },
+        }),
+      ),
+    );
+  }
+
+  private getSafeDocumentExtension(file: Express.Multer.File): string {
+    const byMime: Record<string, string> = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/webp': '.webp',
+      'application/pdf': '.pdf',
+    };
+
+    return byMime[file.mimetype] || '.bin';
   }
 
   /**

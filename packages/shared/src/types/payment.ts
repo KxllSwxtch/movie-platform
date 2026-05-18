@@ -4,12 +4,14 @@ export enum PaymentMethodType {
   SBP = 'SBP',
   BANK_TRANSFER = 'BANK_TRANSFER',
   QR = 'QR',
+  TEST = 'TEST',
 }
 
 // Transaction types
 export enum TransactionType {
   SUBSCRIPTION = 'SUBSCRIPTION',
   STORE = 'STORE',
+  VERIFICATION = 'VERIFICATION',
   BONUS_PURCHASE = 'BONUS_PURCHASE',
   WITHDRAWAL = 'WITHDRAWAL',
 }

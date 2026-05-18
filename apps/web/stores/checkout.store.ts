@@ -3,37 +3,40 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { PaymentMethodType } from '@/types';
 import type { ShippingAddressDto } from '@/types/store.types';
 
-type CheckoutStep = 'shipping' | 'payment' | 'review' | 'processing' | 'complete';
+type CheckoutStep = 'shipping' | 'payment' | 'processing' | 'complete';
 
 interface CheckoutState {
   shippingAddress: ShippingAddressDto | null;
-  paymentMethod: PaymentMethodType;
+  paymentMethod: PaymentMethodType | null;
   bonusAmount: number;
   checkoutStep: CheckoutStep;
   orderId: string | null;
+  orderTotal: number;
   transactionId: string | null;
   error: string | null;
 
   setShippingAddress: (address: ShippingAddressDto) => void;
-  setPaymentMethod: (method: PaymentMethodType) => void;
+  setPaymentMethod: (method: PaymentMethodType | null) => void;
   setBonusAmount: (amount: number) => void;
   setCheckoutStep: (step: CheckoutStep) => void;
   nextStep: () => void;
   prevStep: () => void;
   setOrderId: (id: string | null) => void;
+  setOrderTotal: (total: number) => void;
   setTransactionId: (id: string | null) => void;
   setError: (error: string | null) => void;
   resetCheckout: () => void;
 }
 
-const STEP_ORDER: CheckoutStep[] = ['shipping', 'payment', 'review', 'processing', 'complete'];
+const STEP_ORDER: CheckoutStep[] = ['shipping', 'payment', 'processing', 'complete'];
 
 const DEFAULT_STATE = {
   shippingAddress: null,
-  paymentMethod: 'CARD' as PaymentMethodType,
+  paymentMethod: null,
   bonusAmount: 0,
   checkoutStep: 'shipping' as CheckoutStep,
   orderId: null,
+  orderTotal: 0,
   transactionId: null,
   error: null,
 };
@@ -70,6 +73,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       },
 
       setOrderId: (id) => set({ orderId: id }),
+      setOrderTotal: (total) => set({ orderTotal: Math.max(0, total) }),
       setTransactionId: (id) => set({ transactionId: id }),
       setError: (error) => set({ error }),
 
@@ -84,6 +88,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         bonusAmount: state.bonusAmount,
         checkoutStep: state.checkoutStep,
         orderId: state.orderId,
+        orderTotal: state.orderTotal,
         transactionId: state.transactionId,
       }),
     },
@@ -101,8 +106,6 @@ export const checkoutSelectors = {
         return !!state.shippingAddress;
       case 'payment':
         return !!state.paymentMethod;
-      case 'review':
-        return true;
       default:
         return false;
     }

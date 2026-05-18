@@ -128,6 +128,9 @@ export interface UpdateCartItemRequest {
 
 export interface CreateOrderRequest {
   shippingAddress: ShippingAddressDto;
+}
+
+export interface PayOrderRequest {
   paymentMethod: PaymentMethodType;
   bonusAmount?: number;
   returnUrl?: string;

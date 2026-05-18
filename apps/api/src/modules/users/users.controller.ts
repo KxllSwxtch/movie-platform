@@ -205,6 +205,26 @@ export class UsersController {
     return this.usersService.submitVerification(userId, dto);
   }
 
+  @Post('me/verification/document')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Upload private verification document' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async uploadVerificationDocument(
+    @CurrentUser('id') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Файл не предоставлен');
+    }
+
+    return this.usersService.uploadVerificationDocument(userId, file);
+  }
+
   /**
    * Get verification status.
    */

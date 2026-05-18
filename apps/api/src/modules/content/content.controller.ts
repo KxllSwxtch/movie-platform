@@ -6,6 +6,7 @@ import {
   Post,
   Query,
   Param,
+  UseGuards,
   HttpCode,
   HttpStatus,
 } from "@nestjs/common";
@@ -17,6 +18,7 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { AgeCategory } from "@prisma/client";
+import { UserRole } from "@movie-platform/shared";
 
 import { ContentService } from "./content.service";
 import { Public } from "../../common/decorators/public.decorator";
@@ -25,6 +27,9 @@ import {
   CacheControl,
   CACHE_PRESETS,
 } from "../../common/interceptors/cache-control.interceptor";
+import { Roles } from "../../common/decorators/roles.decorator";
+import { VerificationRequired } from "../../common/decorators/verification-required.decorator";
+import { RolesGuard } from "../auth/guards/roles.guard";
 import {
   ContentQueryDto,
   SearchQueryDto,
@@ -55,8 +60,9 @@ export class ContentController {
   async findAll(
     @Query() query: ContentQueryDto,
     @CurrentUser("ageCategory") userAgeCategory?: AgeCategory,
+    @CurrentUser("verificationStatus") verificationStatus?: string,
   ): Promise<ContentListResponseDto> {
-    return this.contentService.findAll(query, userAgeCategory);
+    return this.contentService.findAll(query, userAgeCategory, verificationStatus);
   }
 
   /**
@@ -79,8 +85,9 @@ export class ContentController {
   async search(
     @Query() query: SearchQueryDto,
     @CurrentUser("ageCategory") userAgeCategory?: AgeCategory,
+    @CurrentUser("verificationStatus") verificationStatus?: string,
   ): Promise<ContentListResponseDto> {
-    return this.contentService.search(query, userAgeCategory);
+    return this.contentService.search(query, userAgeCategory, verificationStatus);
   }
 
   /**
@@ -114,6 +121,23 @@ export class ContentController {
   })
   async getTags(): Promise<TagDto[]> {
     return this.contentService.getTags();
+  }
+
+  /**
+   * Create a normalized tag for creator/admin content forms.
+   */
+  @Post("tags")
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN, UserRole.MODERATOR)
+  @VerificationRequired()
+  @ApiOperation({ summary: "Create or reuse a normalized tag" })
+  @ApiResponse({
+    status: 201,
+    description: "Created or existing tag",
+    type: TagDto,
+  })
+  async createTag(@Body() body: { name: string }): Promise<TagDto> {
+    return this.contentService.createOrFindTag(body.name);
   }
 
   /**
@@ -157,10 +181,12 @@ export class ContentController {
     @CurrentUser("ageCategory") userAgeCategory?: AgeCategory,
     @CurrentUser("id") userId?: string,
     @CurrentUser("role") userRole?: string,
+    @CurrentUser("verificationStatus") verificationStatus?: string,
   ): Promise<ContentDetailDto> {
     return this.contentService.findBySlug(slug, userAgeCategory, {
       id: userId,
       role: userRole,
+      verificationStatus,
     });
   }
 

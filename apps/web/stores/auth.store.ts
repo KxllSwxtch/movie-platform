@@ -6,14 +6,22 @@ import type { User } from '@movie-platform/shared';
  * Sync auth state to cookies so Next.js middleware can detect authentication.
  * Middleware runs on the server and cannot read localStorage.
  */
-function syncAuthCookies(accessToken: string | null, isAuthenticated: boolean) {
+function syncAuthCookies(
+  accessToken: string | null,
+  isAuthenticated: boolean,
+  verificationStatus?: string | null,
+) {
   if (typeof document === 'undefined') return;
   if (isAuthenticated && accessToken) {
     document.cookie = `mp-auth-token=${accessToken};path=/;max-age=${60 * 60 * 24 * 7};samesite=lax`;
     document.cookie = `mp-authenticated=true;path=/;max-age=${60 * 60 * 24 * 7};samesite=lax`;
+    if (verificationStatus) {
+      document.cookie = `mp-verification-status=${verificationStatus};path=/;max-age=${60 * 60 * 24 * 7};samesite=lax`;
+    }
   } else {
     document.cookie = 'mp-auth-token=;path=/;max-age=0';
     document.cookie = 'mp-authenticated=;path=/;max-age=0';
+    document.cookie = 'mp-verification-status=;path=/;max-age=0';
   }
 }
 
@@ -55,7 +63,7 @@ export const useAuthStore = create<AuthState>()(
 
       // Set full auth state (after login)
       setAuth: (user, accessToken, refreshToken, sessionId) => {
-        syncAuthCookies(accessToken, true);
+        syncAuthCookies(accessToken, true, user.verificationStatus);
         set({
           user,
           accessToken,
@@ -66,7 +74,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       // Update user data
-      setUser: (user) => set({ user }),
+      setUser: (user) => {
+        syncAuthCookies(get().accessToken, get().isAuthenticated, user.verificationStatus);
+        set({ user });
+      },
 
       // Update tokens (after refresh)
       setTokens: (accessToken, refreshToken, sessionId) => {
@@ -80,9 +91,15 @@ export const useAuthStore = create<AuthState>()(
 
       // Partial user update
       updateUser: (updates) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...updates } : null,
-        })),
+        set((state) => {
+          const user = state.user ? { ...state.user, ...updates } : null;
+          syncAuthCookies(
+            state.accessToken,
+            state.isAuthenticated,
+            user?.verificationStatus,
+          );
+          return { user };
+        }),
 
       // Clear auth state (logout)
       logout: () => {
@@ -100,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
       setHydrated: (hydrated) => {
         if (hydrated) {
           const { accessToken, isAuthenticated } = get();
-          syncAuthCookies(accessToken, isAuthenticated);
+          syncAuthCookies(accessToken, isAuthenticated, get().user?.verificationStatus);
         }
         set({ isHydrated: hydrated });
       },

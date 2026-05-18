@@ -16,6 +16,7 @@ import { VideoProcessingModule } from './modules/video-processing/video-processi
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { VerificationGuard } from './modules/auth/guards/verification.guard';
 import { BonusesModule } from './modules/bonuses/bonuses.module';
 import { EdgeCenterModule } from './modules/edgecenter/edgecenter.module';
 import { ContentModule } from './modules/content/content.module';
@@ -117,6 +118,10 @@ import { UsersModule } from './modules/users/users.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: VerificationGuard,
     },
   ],
 })

@@ -113,6 +113,8 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_ENABLE_TEST_PAYMENTS: process.env.NEXT_PUBLIC_ENABLE_TEST_PAYMENTS,
+    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
   },
 
   // Turbopack resolve configuration for hoisted monorepo dependencies

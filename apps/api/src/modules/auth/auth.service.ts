@@ -7,7 +7,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from '@movie-platform/shared';
 import { VerificationStatus } from '@prisma/client';
 
 import { PrismaService } from '../../config/prisma.service';
@@ -16,8 +15,8 @@ import { SessionService } from './session.service';
 import { TokenService } from './token.service';
 import { EmailService } from '../email/email.service';
 import { RegisterDto, LoginResponseDto, RefreshResponseDto } from './dto';
-import { getAgeCategory, isMinor } from '../users/utils/age.util';
-import { generateReferralCode, normalizeReferralCode, isValidReferralCodeFormat } from '../users/utils/referral.util';
+import { getAgeCategory } from '../users/utils/age.util';
+import { generateReferralCode, extractReferralCode, isValidReferralCodeFormat } from '../users/utils/referral.util';
 
 export interface JwtPayload {
   sub: string;
@@ -88,19 +87,23 @@ export class AuthService {
     // Calculate age category from date of birth
     const dateOfBirth = new Date(dto.dateOfBirth);
     const ageCategory = getAgeCategory(dateOfBirth);
-    const userIsMinor = isMinor(dateOfBirth);
 
-    // Determine role based on age
-    const role = userIsMinor ? UserRole.MINOR : UserRole.BUYER;
+    // Age restrictions are handled by ageCategory; account access is CLIENT by default.
+    const role = 'CLIENT';
 
     // Handle referral code
     let referredById: string | undefined;
     if (dto.referralCode) {
-      const normalizedCode = normalizeReferralCode(dto.referralCode);
-      if (isValidReferralCodeFormat(normalizedCode)) {
+      const normalizedCode = extractReferralCode(dto.referralCode);
+      if (normalizedCode && isValidReferralCodeFormat(normalizedCode)) {
         const referrer = await this.usersService.findByReferralCode(normalizedCode);
+        const canRefer =
+          referrer?.role === 'PARTNER' ||
+          referrer?.role === 'ADMIN' ||
+          referrer?.role === 'MODERATOR';
         if (
           referrer &&
+          canRefer &&
           referrer.referralCodeActive &&
           referrer.email !== dto.email.toLowerCase() // Prevent self-referral
         ) {
@@ -139,15 +142,14 @@ export class AuthService {
           lastName: dto.lastName,
           dateOfBirth,
           ageCategory,
-          role,
+          role: role as any,
           referralCode,
           referredById,
           verificationStatus: VerificationStatus.UNVERIFIED,
         },
       });
 
-      // Create partner relationship if referred (skip for minors)
-      if (referredById && !userIsMinor) {
+      if (referredById) {
         await this.createPartnerRelationship(referredById, newUser.id, tx);
       }
 

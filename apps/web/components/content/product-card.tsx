@@ -56,7 +56,7 @@ export function ProductCard({ content, onAddToCart, isAddingToCart, className }:
       <div className="relative aspect-square rounded-xl overflow-hidden bg-mp-surface-2 mb-3">
         {/* Image with smooth zoom */}
         <ContentImage
-          src={content.thumbnailUrl}
+          src={content.thumbnailUrl ?? ''}
           alt={content.name}
           fill
           className="object-cover transition-transform duration-500 ease-out-expo group-hover:scale-110"

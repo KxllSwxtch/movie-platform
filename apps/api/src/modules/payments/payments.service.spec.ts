@@ -48,6 +48,7 @@ describe('PaymentsService', () => {
         findFirst: jest.fn(),
         findMany: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         count: jest.fn(),
       },
       invoice: {
@@ -64,6 +65,7 @@ describe('PaymentsService', () => {
       validateSpend: jest.fn(),
       spendBonuses: jest.fn(),
       earnBonuses: jest.fn(),
+      grantReferralBonus: jest.fn(),
     };
 
     mockPartnersService = {
@@ -318,9 +320,9 @@ describe('PaymentsService', () => {
 
       await service.completePayment(externalPaymentId, 'succeeded');
 
-      expect(mockPrisma.transaction.update).toHaveBeenCalledWith(
+      expect(mockPrisma.transaction.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'txn-123' },
+          where: { id: 'txn-123', status: TransactionStatus.PENDING },
           data: expect.objectContaining({
             status: TransactionStatus.COMPLETED,
           }),
@@ -428,8 +430,8 @@ describe('PaymentsService', () => {
       // Second duplicate webhook
       await service.completePayment(externalPaymentId, 'succeeded');
 
-      // Update should only be called once (from first webhook)
-      expect(mockPrisma.transaction.update).toHaveBeenCalledTimes(1);
+      // Conditional update should only be attempted once; duplicate webhook is skipped before completion.
+      expect(mockPrisma.transaction.updateMany).toHaveBeenCalledTimes(1);
     });
 
     it('should mark transaction as failed on failed webhook', async () => {
@@ -513,6 +515,7 @@ describe('PaymentsService', () => {
         'txn-123',
         userId,
         expect.any(Decimal),
+        expect.anything(),
       );
     });
 
@@ -570,7 +573,7 @@ describe('PaymentsService', () => {
 
       await service.completePaymentById('txn-123');
 
-      expect(mockPrisma.transaction.update).toHaveBeenCalled();
+      expect(mockPrisma.transaction.updateMany).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if transaction not found', async () => {

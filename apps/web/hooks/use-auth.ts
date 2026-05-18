@@ -51,7 +51,11 @@ export function useAuth() {
       setAuth(data.user, data.accessToken, data.refreshToken, data.sessionId);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success('Добро пожаловать!');
-      router.push('/dashboard');
+      router.push(
+        data.user.verificationStatus === 'UNVERIFIED'
+          ? '/account/verification'
+          : '/dashboard',
+      );
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Ошибка входа. Проверьте данные и попробуйте снова.');
@@ -73,7 +77,11 @@ export function useAuth() {
       setAuth(data.user, data.accessToken, data.refreshToken, data.sessionId);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success('Регистрация успешна! Добро пожаловать!');
-      router.push('/dashboard');
+      router.push(
+        data.user.verificationStatus === 'UNVERIFIED'
+          ? '/account/verification'
+          : '/dashboard',
+      );
     },
     onError: (error: ApiError) => {
       if (error.details) {

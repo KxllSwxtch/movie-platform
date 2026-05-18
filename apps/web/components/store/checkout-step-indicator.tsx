@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const STEPS = [
   { id: 'shipping', label: 'Доставка' },
   { id: 'payment', label: 'Оплата' },
-  { id: 'review', label: 'Подтверждение' },
+  { id: 'processing', label: 'Обработка' },
   { id: 'complete', label: 'Готово' },
 ] as const;
 

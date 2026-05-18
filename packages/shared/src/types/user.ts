@@ -1,6 +1,7 @@
 // User roles
 export enum UserRole {
   GUEST = 'GUEST',
+  CLIENT = 'CLIENT',
   BUYER = 'BUYER',
   PARTNER = 'PARTNER',
   MINOR = 'MINOR',
@@ -58,10 +59,14 @@ export interface UserVerification {
   userId: string;
   method: VerificationMethod;
   documentUrl?: string;
+  documentKey?: string;
   status: VerificationStatus;
   reviewedBy?: string;
   reviewedAt?: Date;
   rejectionReason?: string;
+  confirmedByPartnerId?: string;
+  confirmedAt?: Date;
+  partnerRelationshipId?: string;
   createdAt: Date;
 }
 

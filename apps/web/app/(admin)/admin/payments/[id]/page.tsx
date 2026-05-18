@@ -13,6 +13,7 @@ import {
   Globe,
   ArrowCounterClockwise,
   Warning,
+  Play,
 } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -38,6 +39,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   useAdminTransaction,
   useRefundTransaction,
+  useSimulateSuccessfulPayment,
 } from '@/hooks/use-admin-payments';
 
 // ============ Helpers ============
@@ -85,6 +87,7 @@ export default function AdminPaymentDetailPage() {
 
   const { data: transaction, isLoading } = useAdminTransaction(id);
   const refundMutation = useRefundTransaction();
+  const simulateSuccessMutation = useSimulateSuccessfulPayment();
 
   // Loading state
   if (isLoading) {
@@ -139,6 +142,12 @@ export default function AdminPaymentDetailPage() {
 
   const typeInfo = typeConfig[transaction.type] || { label: transaction.type, className: 'bg-gray-500/20 text-gray-400' };
   const statusInfo = statusConfig[transaction.status] || { label: transaction.status, className: 'bg-gray-500/20 text-gray-400' };
+  const canSimulatePayment =
+    transaction.status === 'PENDING' &&
+    process.env.NEXT_PUBLIC_ENABLE_TEST_PAYMENTS === 'true' &&
+    (process.env.NEXT_PUBLIC_APP_ENV
+      ? process.env.NEXT_PUBLIC_APP_ENV !== 'production'
+      : process.env.NODE_ENV !== 'production');
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -164,6 +173,17 @@ export default function AdminPaymentDetailPage() {
           { label: `Транзакция ${transaction.id.slice(0, 8)}...` },
         ]}
       >
+        {canSimulatePayment && (
+          <Button
+            variant="gradient"
+            size="sm"
+            onClick={() => simulateSuccessMutation.mutate(transaction.id)}
+            disabled={simulateSuccessMutation.isPending}
+          >
+            <Play className="mr-2 h-4 w-4" />
+            {simulateSuccessMutation.isPending ? 'Симулируем...' : 'Симулировать успешную оплату'}
+          </Button>
+        )}
         {transaction.status === 'COMPLETED' && (
           <Dialog>
             <DialogTrigger asChild>

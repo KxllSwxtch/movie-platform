@@ -21,6 +21,7 @@ import * as fs from 'fs';
 
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
 import { UploadService } from './upload.service';
 
 // Use the same UPLOAD_DIR that main.ts serves as static assets.
@@ -35,7 +36,8 @@ if (!fs.existsSync(VIDEO_UPLOAD_DIR)) {
 @ApiBearerAuth()
 @Controller('upload')
 @UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.BUYER, UserRole.PARTNER)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.PARTNER)
+@VerificationRequired()
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 

@@ -21,6 +21,7 @@ export type {
   WithdrawalPreview,
   WithdrawBonusRequest,
   WithdrawalResult,
+  BonusWithdrawal,
   BonusErrorCode,
 } from './use-bonus-transactions';
 export {
@@ -29,6 +30,7 @@ export {
   useBonusHistory,
   useWithdrawalPreview,
   useWithdrawBonus,
+  useBonusWithdrawals,
   useInvalidateBonusQueries,
   formatBonusAmount,
   getBonusTypeLabel,

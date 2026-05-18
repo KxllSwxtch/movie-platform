@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface BarChartCardProps {
   title: string;
   description?: string;
-  data: Record<string, unknown>[];
+  data: object[];
   xAxisKey: string;
   series: Array<{
     key: string;

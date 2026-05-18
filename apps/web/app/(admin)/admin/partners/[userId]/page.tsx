@@ -373,9 +373,9 @@ export default function AdminPartnerDetailPage() {
                 </Link>
               </Button>
               <Button variant="outline" className="w-full" asChild>
-                <Link href={`/admin/partners/withdrawals?userId=${partner.id}`}>
+                <Link href="/admin/bonuses/withdrawals">
                   <Wallet className="mr-2 h-4 w-4" />
-                  Все выводы
+                  Вывод баллов
                 </Link>
               </Button>
             </CardContent>

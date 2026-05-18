@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { Readable } from 'stream';
 
 import { StorageService } from './storage.service';
 
@@ -12,6 +13,14 @@ jest.mock('@aws-sdk/client-s3', () => {
     })),
     PutObjectCommand: jest.fn().mockImplementation((input) => ({
       _type: 'PutObjectCommand',
+      input,
+    })),
+    GetObjectCommand: jest.fn().mockImplementation((input) => ({
+      _type: 'GetObjectCommand',
+      input,
+    })),
+    CreateBucketCommand: jest.fn().mockImplementation((input) => ({
+      _type: 'CreateBucketCommand',
       input,
     })),
     DeleteObjectCommand: jest.fn().mockImplementation((input) => ({
@@ -95,7 +104,6 @@ describe('StorageService', () => {
       );
       expect(configService.get).toHaveBeenCalledWith(
         'MINIO_PUBLIC_ENDPOINT',
-        'http://localhost:9000',
       );
     });
   });
@@ -179,6 +187,38 @@ describe('StorageService', () => {
           'video/mp4',
         ),
       ).rejects.toThrow('upload from path failed');
+    });
+  });
+
+  describe('getObjectStream', () => {
+    it('should return a readable object stream with metadata', async () => {
+      const stream = Readable.from(['file-data']);
+      mockSend.mockResolvedValue({
+        Body: stream,
+        ContentType: 'application/pdf',
+        ContentLength: 123,
+      });
+
+      const result = await service.getObjectStream('verification-documents', 'user/doc.pdf');
+
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const command = mockSend.mock.calls[0][0];
+      expect(command._type).toBe('GetObjectCommand');
+      expect(command.input).toEqual({
+        Bucket: 'verification-documents',
+        Key: 'user/doc.pdf',
+      });
+      expect(result.stream).toBe(stream);
+      expect(result.contentType).toBe('application/pdf');
+      expect(result.contentLength).toBe(123);
+    });
+
+    it('should throw when object body is missing', async () => {
+      mockSend.mockResolvedValue({});
+
+      await expect(
+        service.getObjectStream('verification-documents', 'missing.pdf'),
+      ).rejects.toThrow('has no readable body');
     });
   });
 

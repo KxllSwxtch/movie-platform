@@ -26,4 +26,4 @@ WORKDIR /app/apps/api
 
 EXPOSE 4000
 
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "npm run db:migrate:prod && npm run dev"]

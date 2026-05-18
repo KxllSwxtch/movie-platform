@@ -1,14 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  CreateBucketCommand,
   S3Client,
+  GetObjectCommand,
   PutObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
   ListObjectsV2Command,
   HeadObjectCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as fs from 'fs';
+import { Readable } from 'stream';
+
+export interface StorageObjectStream {
+  stream: Readable;
+  contentType?: string;
+  contentLength?: number;
+  lastModified?: Date;
+  eTag?: string;
+}
 
 @Injectable()
 export class StorageService {
@@ -62,6 +74,52 @@ export class StorageService {
     const url = this.getPublicUrl(bucket, key);
     this.logger.debug(`Uploaded ${key} to ${bucket}`);
     return url;
+  }
+
+  async ensureBucket(bucket: string): Promise<void> {
+    try {
+      await this.s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
+      this.logger.log(`Created bucket: ${bucket}`);
+    } catch (err: any) {
+      if (
+        err?.name === 'BucketAlreadyOwnedByYou' ||
+        err?.name === 'BucketAlreadyExists' ||
+        err?.Code === 'BucketAlreadyOwnedByYou'
+      ) {
+        return;
+      }
+      throw err;
+    }
+  }
+
+  async getSignedReadUrl(
+    bucket: string,
+    key: string,
+    expiresInSeconds = 300,
+  ): Promise<string> {
+    return getSignedUrl(
+      this.s3Client,
+      new GetObjectCommand({ Bucket: bucket, Key: key }),
+      { expiresIn: expiresInSeconds },
+    );
+  }
+
+  async getObjectStream(bucket: string, key: string): Promise<StorageObjectStream> {
+    const result = await this.s3Client.send(
+      new GetObjectCommand({ Bucket: bucket, Key: key }),
+    );
+
+    if (!result.Body) {
+      throw new Error(`Object ${bucket}/${key} has no readable body`);
+    }
+
+    return {
+      stream: this.toNodeReadable(result.Body),
+      contentType: result.ContentType,
+      contentLength: result.ContentLength,
+      lastModified: result.LastModified,
+      eTag: result.ETag,
+    };
   }
 
   /**
@@ -160,5 +218,29 @@ export class StorageService {
     } catch {
       return false;
     }
+  }
+
+  private toNodeReadable(body: unknown): Readable {
+    if (body instanceof Readable) {
+      return body;
+    }
+
+    const maybeBody = body as {
+      transformToWebStream?: () => ReadableStream;
+      transformToByteArray?: () => Promise<Uint8Array>;
+    };
+
+    if (typeof maybeBody.transformToWebStream === 'function') {
+      return Readable.fromWeb(maybeBody.transformToWebStream() as any);
+    }
+
+    if (typeof maybeBody.transformToByteArray === 'function') {
+      return Readable.from((async function* () {
+        const bytes = await maybeBody.transformToByteArray!();
+        yield Buffer.from(bytes);
+      })());
+    }
+
+    throw new Error('Unsupported S3 object body stream type');
   }
 }

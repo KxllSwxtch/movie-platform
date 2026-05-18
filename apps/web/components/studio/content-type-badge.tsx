@@ -6,7 +6,7 @@ const TYPE_CONFIG: Record<string, { label: string; className: string }> = {
     className: 'bg-mp-accent-primary/10 text-mp-accent-primary',
   },
   CLIP: {
-    label: 'Клип',
+    label: 'Видео',
     className: 'bg-mp-accent-secondary/10 text-mp-accent-secondary',
   },
   SHORT: {

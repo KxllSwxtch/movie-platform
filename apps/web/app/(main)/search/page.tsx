@@ -14,6 +14,7 @@ import {
   type SearchFiltersState,
 } from '@/components/search';
 import { useSearchResults, type SearchResultItem } from '@/hooks/use-search';
+import { useContentCategories } from '@/hooks/use-content';
 
 const RECENT_SEARCHES_KEY = 'mp-recent-searches';
 
@@ -68,6 +69,7 @@ export default function SearchPage() {
   const [query, setQuery] = React.useState(queryFromUrl);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [recentSearches, setRecentSearches] = React.useState<string[]>([]);
+  const { data: categories = [] } = useContentCategories();
 
   const [filters, setFilters] = React.useState<SearchFiltersState>({
     type: 'all',
@@ -124,7 +126,7 @@ export default function SearchPage() {
       {/* Search input */}
       <div className="mb-6">
         <SearchInput
-          placeholder="Поиск сериалов, клипов, курсов..."
+          placeholder="Поиск сериалов, видео, курсов..."
           autoFocus
           isLoading={isLoading}
           onValueChange={setQuery}
@@ -136,6 +138,7 @@ export default function SearchPage() {
       <SearchFilters
         filters={filters}
         onFiltersChange={setFilters}
+        categories={categories}
         className="mb-4"
       />
 
@@ -143,6 +146,7 @@ export default function SearchPage() {
       <SearchFilterChips
         filters={filters}
         onFiltersChange={setFilters}
+        categories={categories}
         className="mb-6"
       />
 

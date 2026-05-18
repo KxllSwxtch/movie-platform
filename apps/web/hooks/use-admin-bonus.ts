@@ -126,6 +126,37 @@ export interface AdjustBalanceInput {
   reason: string;
 }
 
+export type BonusWithdrawalStatus = 'PENDING' | 'APPROVED' | 'COMPLETED' | 'REJECTED' | 'PROCESSING';
+
+export interface AdminBonusWithdrawal {
+  id: string;
+  userId: string;
+  user?: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  bonusAmount: number;
+  currencyAmount: number;
+  rate: number;
+  taxStatus: string;
+  taxAmount: number;
+  netAmount: number;
+  paymentDetails: Record<string, unknown>;
+  status: BonusWithdrawalStatus;
+  processedById?: string;
+  processedBy?: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  processedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+}
+
 // ============ Stats Queries ============
 
 /**
@@ -394,6 +425,56 @@ export function useAdjustUserBalance() {
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Не удалось скорректировать баланс');
+    },
+  });
+}
+
+export function useAdminBonusWithdrawals(status?: string) {
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
+
+  return useQuery({
+    queryKey: queryKeys.adminBonuses.withdrawals(status),
+    queryFn: async () => {
+      const response = await api.get<AdminBonusWithdrawal[]>(endpoints.adminBonuses.withdrawals, {
+        params: status && status !== 'ALL' ? { status } : undefined,
+      });
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated && isAdmin,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useUpdateBonusWithdrawalStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      action,
+      note,
+    }: {
+      id: string;
+      action: 'approve' | 'reject' | 'complete';
+      note?: string;
+    }) => {
+      const endpoint =
+        action === 'approve'
+          ? endpoints.adminBonuses.approveWithdrawal(id)
+          : action === 'reject'
+            ? endpoints.adminBonuses.rejectWithdrawal(id)
+            : endpoints.adminBonuses.completeWithdrawal(id);
+      const body = action === 'reject' ? { reason: note } : { note };
+      const response = await api.post(endpoint, body);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminBonuses.all });
+      toast.success('Статус заявки обновлён');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Не удалось обновить заявку');
     },
   });
 }

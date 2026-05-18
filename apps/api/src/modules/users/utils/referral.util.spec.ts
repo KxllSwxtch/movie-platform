@@ -1,5 +1,6 @@
 import {
   generateReferralCode,
+  extractReferralCode,
   isValidReferralCodeFormat,
   normalizeReferralCode,
 } from './referral.util';
@@ -102,14 +103,15 @@ describe('Referral Utilities', () => {
       expect(isValidReferralCodeFormat('ABCD!@#$')).toBe(false);
     });
 
-    it('should return false for codes with ambiguous characters', () => {
-      // '0', 'O', 'I' are not in the alphabet (excluded for readability)
-      // Note: 'L' IS in the alphabet, only 0, O, I are excluded
-      expect(isValidReferralCodeFormat('ABC0DEFG')).toBe(false); // 0 not allowed
-      expect(isValidReferralCodeFormat('ABCODEFG')).toBe(false); // O not allowed
-      expect(isValidReferralCodeFormat('ABCIDEFG')).toBe(false); // I not allowed
-      // L is allowed in the alphabet
+    it('should return true for legacy codes with ambiguous characters', () => {
+      expect(isValidReferralCodeFormat('ABC0DEFG')).toBe(true);
+      expect(isValidReferralCodeFormat('ABCODEFG')).toBe(true);
+      expect(isValidReferralCodeFormat('ABCIDEFG')).toBe(true);
       expect(isValidReferralCodeFormat('ABCLDEFG')).toBe(true);
+    });
+
+    it('should return true for a referral code copied from an invite URL', () => {
+      expect(isValidReferralCodeFormat('QPRFZOKU')).toBe(true);
     });
 
     it('should return true for generated codes', () => {
@@ -141,6 +143,25 @@ describe('Referral Utilities', () => {
     it('should handle edge cases', () => {
       expect(normalizeReferralCode(' abc ')).toBe('ABC');
       expect(normalizeReferralCode('  ')).toBe('');
+    });
+  });
+
+  describe('extractReferralCode', () => {
+    it('should normalize a plain referral code', () => {
+      expect(extractReferralCode('  abcd1234  ')).toBe('ABCD1234');
+    });
+
+    it('should extract referral code from a relative invite URL', () => {
+      expect(extractReferralCode('/register?ref=abcd1234')).toBe('ABCD1234');
+    });
+
+    it('should extract referral code from an absolute invite URL', () => {
+      expect(extractReferralCode('https://example.com/register?ref=abcd1234')).toBe('ABCD1234');
+    });
+
+    it('should return email-shaped input unchanged so validation rejects it', () => {
+      expect(extractReferralCode('partner@movieplatform.local')).toBe('PARTNER@MOVIEPLATFORM.LOCAL');
+      expect(isValidReferralCodeFormat(extractReferralCode('partner@movieplatform.local')!)).toBe(false);
     });
   });
 

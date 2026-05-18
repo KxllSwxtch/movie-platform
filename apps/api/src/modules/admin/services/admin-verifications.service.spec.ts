@@ -15,10 +15,14 @@ import { VerificationStatus, VerificationMethod } from '@prisma/client';
 
 import { AdminVerificationsService } from './admin-verifications.service';
 import { PrismaService } from '../../../config/prisma.service';
+import { StorageService } from '../../storage/storage.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 describe('AdminVerificationsService', () => {
   let service: AdminVerificationsService;
   let mockPrisma: any;
+  let mockStorageService: any;
+  let mockNotificationsService: any;
 
   const mockUser = {
     id: 'user-123',
@@ -60,14 +64,26 @@ describe('AdminVerificationsService', () => {
       },
       auditLog: {
         create: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
+      },
+      transaction: {
+        findFirst: jest.fn().mockResolvedValue(null),
       },
       $transaction: jest.fn((callback) => callback(mockPrisma)),
+    };
+    mockStorageService = {
+      getObjectStream: jest.fn(),
+    };
+    mockNotificationsService = {
+      sendNotification: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminVerificationsService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: StorageService, useValue: mockStorageService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 
@@ -191,6 +207,97 @@ describe('AdminVerificationsService', () => {
       await expect(service.getVerificationById('nonexistent')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('getDocumentStream', () => {
+    it('should stream document by documentKey and create audit log', async () => {
+      const stream = {} as any;
+      mockPrisma.userVerification.findUnique.mockResolvedValue({
+        id: 'verification-123',
+        userId: 'user-123',
+        documentKey: 'user-123/doc.pdf',
+        documentUrl: null,
+      });
+      mockStorageService.getObjectStream.mockResolvedValue({
+        stream,
+        contentType: 'application/pdf',
+        contentLength: 2048,
+      });
+      mockPrisma.auditLog.create.mockResolvedValue({});
+
+      const result = await service.getDocumentStream('verification-123', mockAdmin.id);
+
+      expect(mockStorageService.getObjectStream).toHaveBeenCalledWith(
+        'verification-documents',
+        'user-123/doc.pdf',
+      );
+      expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: mockAdmin.id,
+          action: 'VERIFICATION_DOCUMENT_VIEWED',
+          entityType: 'UserVerification',
+          entityId: 'verification-123',
+        }),
+      });
+      expect(result).toMatchObject({
+        stream,
+        contentType: 'application/pdf',
+        contentLength: 2048,
+        filename: 'doc.pdf',
+        documentKey: 'user-123/doc.pdf',
+      });
+    });
+
+    it('should resolve legacy internal MinIO documentUrl to a storage key', async () => {
+      mockPrisma.userVerification.findUnique.mockResolvedValue({
+        id: 'verification-123',
+        userId: 'user-123',
+        documentKey: null,
+        documentUrl: 'http://minio:9000/verification-documents/user-123/old.png',
+      });
+      mockStorageService.getObjectStream.mockResolvedValue({
+        stream: {} as any,
+        contentType: 'image/png',
+      });
+      mockPrisma.auditLog.create.mockResolvedValue({});
+
+      await service.getDocumentStream('verification-123', mockAdmin.id);
+
+      expect(mockStorageService.getObjectStream).toHaveBeenCalledWith(
+        'verification-documents',
+        'user-123/old.png',
+      );
+    });
+
+    it('should throw BadRequestException when no document key can be resolved', async () => {
+      mockPrisma.userVerification.findUnique.mockResolvedValue({
+        id: 'verification-123',
+        userId: 'user-123',
+        documentKey: null,
+        documentUrl: null,
+      });
+
+      await expect(
+        service.getDocumentStream('verification-123', mockAdmin.id),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when document file is missing in storage', async () => {
+      mockPrisma.userVerification.findUnique.mockResolvedValue({
+        id: 'verification-123',
+        userId: 'user-123',
+        documentKey: 'user-123/missing.pdf',
+        documentUrl: null,
+      });
+      mockStorageService.getObjectStream.mockRejectedValue({
+        name: 'NoSuchKey',
+        $metadata: { httpStatusCode: 404 },
+      });
+
+      await expect(
+        service.getDocumentStream('verification-123', mockAdmin.id),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

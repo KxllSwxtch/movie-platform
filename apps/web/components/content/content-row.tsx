@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { CaretRight, CaretLeft } from '@phosphor-icons/react';
-import Link from 'next/link';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { CaretRight, CaretLeft } from "@phosphor-icons/react";
+import Link from "next/link";
+import { useRef, useState, useEffect, useCallback } from "react";
 
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ContentRowProps {
   /** Section title */
@@ -57,42 +57,43 @@ export function ContentRow({
     if (!container) return;
 
     checkScrollPosition();
-    container.addEventListener('scroll', checkScrollPosition);
-    window.addEventListener('resize', checkScrollPosition);
+    container.addEventListener("scroll", checkScrollPosition);
+    window.addEventListener("resize", checkScrollPosition);
 
     return () => {
-      container.removeEventListener('scroll', checkScrollPosition);
-      window.removeEventListener('resize', checkScrollPosition);
+      container.removeEventListener("scroll", checkScrollPosition);
+      window.removeEventListener("resize", checkScrollPosition);
     };
   }, [checkScrollPosition]);
 
   /**
    * Scroll by card width
    */
-  const scroll = useCallback((direction: 'left' | 'right') => {
+  const scroll = useCallback((direction: "left" | "right") => {
     const container = scrollRef.current;
     if (!container) return;
 
     const scrollAmount = 320; // Approximate card width + gap
     const newPosition =
-      container.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+      container.scrollLeft +
+      (direction === "left" ? -scrollAmount : scrollAmount);
 
     container.scrollTo({
       left: newPosition,
-      behavior: 'smooth',
+      behavior: "smooth",
     });
   }, []);
 
   return (
-    <section className={cn('relative', className)}>
+    <section className={cn("relative", className)}>
       {/* Header with improved typography */}
-      <div className="flex items-end justify-between mb-4 md:mb-8">
+      <div className="flex items-end justify-between mb-4">
         <div className="flex items-baseline gap-4">
-          <h2 className="text-title text-mp-text-primary">
-            {title}
-          </h2>
+          <h2 className="text-title text-mp-text-primary">{title}</h2>
           {subtitle && (
-            <span className="text-sm text-mp-text-secondary font-medium">{subtitle}</span>
+            <span className="text-sm text-mp-text-secondary font-medium">
+              {subtitle}
+            </span>
           )}
         </div>
 
@@ -116,7 +117,7 @@ export function ContentRow({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => scroll('left')}
+              onClick={() => scroll("left")}
               className="relative z-10 w-11 h-11 rounded-full bg-mp-surface-3/95 backdrop-blur-sm border border-mp-border/50 hover:bg-mp-surface-4 hover:border-mp-border opacity-0 group-hover/row:opacity-100 touch:hidden transition-all duration-200 ml-2"
             >
               <CaretLeft className="w-5 h-5" />
@@ -125,13 +126,13 @@ export function ContentRow({
         )}
 
         {/* Content scroll area with staggered animation support */}
-        <div
-          ref={scrollRef}
-          className="scroll-container content-row"
-        >
+        <div ref={scrollRef} className="scroll-container content-row">
           {isLoading
             ? Array.from({ length: skeletonCount }).map((_, i) => (
-                <div key={i} className="w-[280px] md:w-[308px] shrink-0 animate-pulse">
+                <div
+                  key={i}
+                  className="w-[68vw] sm:w-[240px] md:w-[260px] lg:w-[240px] xl:w-[260px] shrink-0 animate-pulse"
+                >
                   <div className="aspect-video rounded-xl bg-mp-surface mb-3" />
                   <div className="h-4 bg-mp-surface rounded w-4/5 mb-2" />
                   <div className="h-3 bg-mp-surface rounded w-1/3" />
@@ -147,7 +148,7 @@ export function ContentRow({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => scroll('right')}
+              onClick={() => scroll("right")}
               className="relative z-10 w-11 h-11 rounded-full bg-mp-surface-3/95 backdrop-blur-sm border border-mp-border/50 hover:bg-mp-surface-4 hover:border-mp-border opacity-0 group-hover/row:opacity-100 touch:hidden transition-all duration-200 mr-2"
             >
               <CaretRight className="w-5 h-5" />

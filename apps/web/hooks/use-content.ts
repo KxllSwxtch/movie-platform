@@ -29,7 +29,11 @@ interface ContentListItem {
   id: string;
   slug: string;
   title: string;
+  description?: string;
   thumbnailUrl: string;
+  coverUrl?: string;
+  bannerUrl?: string;
+  heroImageUrl?: string;
   contentType: string;
   ageCategory: string;
   duration: number;
@@ -59,6 +63,7 @@ interface CategoryDetail {
   description?: string;
   parentId?: string;
   iconUrl?: string;
+  children?: CategoryDetail[];
 }
 
 interface TutorialDetail {
@@ -224,6 +229,17 @@ export function useCategoryDetail(slug: string) {
     },
     enabled: !!slug,
     staleTime: Infinity, // Categories rarely change
+  });
+}
+
+export function useContentCategories() {
+  return useQuery({
+    queryKey: [...queryKeys.categories.all, "content-tree"],
+    queryFn: async () => {
+      const response = await api.get<{ categories: CategoryDetail[] }>("/categories");
+      return response.data.categories ?? [];
+    },
+    staleTime: 10 * 60_000,
   });
 }
 

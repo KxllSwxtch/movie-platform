@@ -22,7 +22,7 @@ import { useUIStore } from '@/stores/ui.store';
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Главная' },
   { href: '/series', label: 'Сериалы' },
-  { href: '/clips', label: 'Клипы' },
+  { href: '/videos', label: 'Видео' },
   { href: '/shorts', label: 'Шортсы' },
   { href: '/tutorials', label: 'Обучение' },
 ];
@@ -85,7 +85,7 @@ export function AppHeader({ className }: AppHeaderProps) {
 
         {/* Center section - Search bar */}
         <div className="flex-1 max-w-md mx-auto hidden sm:block">
-          <SearchInputCompact placeholder="Поиск сериалов, клипов..." />
+          <SearchInputCompact placeholder="Поиск сериалов, видео..." />
         </div>
 
         {/* Right section - Notifications + Profile */}

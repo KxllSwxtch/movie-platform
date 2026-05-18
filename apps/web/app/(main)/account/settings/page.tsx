@@ -392,7 +392,7 @@ function SessionsTab() {
   const [showTerminateCurrentDialog, setShowTerminateCurrentDialog] = React.useState(false);
   const [pendingSessionId, setPendingSessionId] = React.useState<string | null>(null);
 
-  const sessionsList = Array.isArray(sessions) ? sessions : sessions?.items || [];
+  const sessionsList = sessions ?? [];
 
   // Use the stored sessionId from login/refresh to reliably identify the current session
   const { sessionId: currentSessionId } = useAuthStore();

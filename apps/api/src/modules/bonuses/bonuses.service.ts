@@ -5,6 +5,7 @@ import {
   CommissionStatus,
   Prisma,
   TaxStatus,
+  TransactionStatus,
   WithdrawalStatus,
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -265,13 +266,10 @@ export class BonusesService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiryDays);
 
-    // Atomic: update balance and create transaction in single operation
-    const [, transaction] = await Promise.all([
-      client.user.update({
-        where: { id: userId },
-        data: { bonusBalance: { increment: amountDecimal } },
-      }),
-      client.bonusTransaction.create({
+    const createBonus = async (prismaClient: Prisma.TransactionClient) => {
+      // Create the idempotency-tracked transaction before touching balance.
+      // If the unique key rejects a duplicate reference, the balance is not incremented.
+      const transaction = await prismaClient.bonusTransaction.create({
         data: {
           userId,
           type: BonusTransactionType.EARNED,
@@ -283,8 +281,19 @@ export class BonusesService {
           expiresAt,
           metadata: metadata as Prisma.InputJsonValue,
         },
-      }),
-    ]);
+      });
+
+      await prismaClient.user.update({
+        where: { id: userId },
+        data: { bonusBalance: { increment: amountDecimal } },
+      });
+
+      return transaction;
+    };
+
+    const transaction = tx
+      ? await createBonus(client as Prisma.TransactionClient)
+      : await this.prisma.$transaction(createBonus);
 
     return this.mapToTransactionDto(transaction);
   }
@@ -476,6 +485,7 @@ export class BonusesService {
   async grantReferralBonus(
     referralUserId: string,
     purchaseAmount: number | Decimal,
+    sourceTransactionId: string = referralUserId,
     tx?: Prisma.TransactionClient,
   ): Promise<BonusTransactionDto | null> {
     const client = tx || this.prisma;
@@ -483,7 +493,17 @@ export class BonusesService {
     // Get the referred user and their referrer
     const user = await client.user.findUnique({
       where: { id: referralUserId },
-      select: { id: true, referredById: true },
+      select: {
+        id: true,
+        referredById: true,
+        referredBy: {
+          select: {
+            id: true,
+            role: true,
+            isActive: true,
+          },
+        },
+      },
     });
 
     if (!user || !user.referredById) {
@@ -491,34 +511,35 @@ export class BonusesService {
       return null;
     }
 
-    // Check if this is the user's first purchase (no prior SPENT transactions)
-    const priorPurchases = await client.bonusTransaction.count({
-      where: {
-        userId: referralUserId,
-        type: BonusTransactionType.SPENT,
-      },
-    });
+    const referrer =
+      user.referredBy ??
+      (await client.user.findUnique({
+        where: { id: user.referredById },
+        select: { id: true, role: true, isActive: true },
+      }));
 
-    // Also check for prior transactions in the Transaction table
-    const priorTransactions = await client.transaction.count({
-      where: {
-        userId: referralUserId,
-        status: 'COMPLETED',
-      },
-    });
-
-    // If this isn't the first purchase, don't grant
-    if (priorPurchases > 0 || priorTransactions > 1) {
+    if (!referrer?.isActive || !['PARTNER', 'ADMIN', 'MODERATOR'].includes(referrer.role)) {
       return null;
     }
 
-    // Check if referral bonus was already granted for this user
+    const completedPurchaseCount = await client.transaction.count({
+      where: {
+        userId: referralUserId,
+        status: TransactionStatus.COMPLETED,
+      },
+    });
+
+    if (completedPurchaseCount > 1) {
+      return null;
+    }
+
+    // Check if referral bonus was already granted for this successful payment.
     const existingBonus = await client.bonusTransaction.findFirst({
       where: {
         userId: user.referredById,
         source: BonusSource.REFERRAL_BONUS,
-        referenceId: referralUserId,
-        referenceType: 'ReferralFirstPurchase',
+        referenceId: sourceTransactionId,
+        referenceType: 'Transaction',
       },
     });
 
@@ -544,11 +565,12 @@ export class BonusesService {
         userId: user.referredById,
         amount: bonusAmount,
         source: BonusSource.REFERRAL_BONUS,
-        referenceId: referralUserId,
-        referenceType: 'ReferralFirstPurchase',
-        description: `Referral bonus for user's first purchase`,
+        referenceId: sourceTransactionId,
+        referenceType: 'Transaction',
+        description: 'Начисление за покупку по реферальной ссылке',
         metadata: {
           referralUserId,
+          sourceTransactionId,
           purchaseAmount: Number(purchaseAmount),
           bonusPercent: BONUS_CONFIG.REFERRAL_BONUS_PERCENT,
         },
@@ -879,6 +901,121 @@ export class BonusesService {
         netAmount: preview.estimatedNet,
         withdrawalId: withdrawal.id,
         message: 'Withdrawal request created successfully. Processing may take 1-3 business days.',
+      };
+    });
+  }
+
+  async getWithdrawalHistory(userId: string) {
+    const withdrawals = await this.prisma.bonusWithdrawal.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    return withdrawals.map((withdrawal) => ({
+      id: withdrawal.id,
+      bonusAmount: Number(withdrawal.bonusAmount),
+      currencyAmount: Number(withdrawal.currencyAmount),
+      rate: Number(withdrawal.rate),
+      taxStatus: withdrawal.taxStatus,
+      taxAmount: Number(withdrawal.taxAmount),
+      netAmount: Number(withdrawal.netAmount),
+      paymentDetails: withdrawal.paymentDetails,
+      status: withdrawal.status,
+      processedById: withdrawal.processedById || undefined,
+      processedAt: withdrawal.processedAt || undefined,
+      rejectionReason: withdrawal.rejectionReason || undefined,
+      createdAt: withdrawal.createdAt,
+    }));
+  }
+
+  async updateWithdrawalStatus(
+    withdrawalId: string,
+    status: WithdrawalStatus,
+    adminId: string,
+    note?: string,
+  ) {
+    const terminalStatuses: WithdrawalStatus[] = [
+      WithdrawalStatus.APPROVED,
+      WithdrawalStatus.REJECTED,
+      WithdrawalStatus.COMPLETED,
+    ];
+
+    if (!terminalStatuses.includes(status)) {
+      throw new BadRequestException('Unsupported withdrawal status transition');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const withdrawal = await tx.bonusWithdrawal.findUnique({
+        where: { id: withdrawalId },
+      });
+
+      if (!withdrawal) {
+        throw new BadRequestException('Withdrawal request not found');
+      }
+
+      if (withdrawal.status === WithdrawalStatus.COMPLETED) {
+        throw new BadRequestException('Completed withdrawal cannot be changed');
+      }
+
+      if (withdrawal.status === WithdrawalStatus.REJECTED) {
+        throw new BadRequestException('Rejected withdrawal cannot be changed');
+      }
+
+      if (status === WithdrawalStatus.COMPLETED && withdrawal.status !== WithdrawalStatus.APPROVED) {
+        throw new BadRequestException('Only approved withdrawals can be completed');
+      }
+
+      if (status === WithdrawalStatus.REJECTED) {
+        await tx.user.update({
+          where: { id: withdrawal.userId },
+          data: { bonusBalance: { increment: withdrawal.bonusAmount } },
+        });
+
+        await tx.bonusTransaction.create({
+          data: {
+            userId: withdrawal.userId,
+            type: BonusTransactionType.ADJUSTMENT,
+            amount: withdrawal.bonusAmount,
+            source: BonusSource.REFUND,
+            referenceId: withdrawal.id,
+            referenceType: 'BonusWithdrawal',
+            description: 'Refund for rejected bonus withdrawal',
+            metadata: {
+              withdrawalId: withdrawal.id,
+              rejectedBy: adminId,
+              reason: note,
+            },
+          },
+        });
+      }
+
+      const updated = await tx.bonusWithdrawal.update({
+        where: { id: withdrawalId },
+        data: {
+          status,
+          processedById: adminId,
+          processedAt: new Date(),
+          rejectionReason: status === WithdrawalStatus.REJECTED ? note : withdrawal.rejectionReason,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: adminId,
+          action: `BONUS_WITHDRAWAL_${status}`,
+          entityType: 'BonusWithdrawal',
+          entityId: withdrawal.id,
+          oldValue: { status: withdrawal.status },
+          newValue: { status, note },
+        },
+      });
+
+      return {
+        id: updated.id,
+        status: updated.status,
+        processedAt: updated.processedAt,
+        rejectionReason: updated.rejectionReason || undefined,
       };
     });
   }

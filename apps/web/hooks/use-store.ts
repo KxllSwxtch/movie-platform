@@ -18,6 +18,7 @@ import type {
   AddToCartRequest,
   UpdateCartItemRequest,
   CreateOrderRequest,
+  PayOrderRequest,
 } from '@/types/store.types';
 
 // =============================================================================
@@ -219,10 +220,7 @@ export function useCreateOrder() {
 
   return useMutation({
     mutationFn: async (data: CreateOrderRequest) => {
-      const response = await api.post<PaymentResult & { orderId: string }>(
-        endpoints.store.orders,
-        data,
-      );
+      const response = await api.post<OrderDto>(endpoints.store.orders, data);
       return response.data;
     },
     onSuccess: () => {
@@ -232,6 +230,28 @@ export function useCreateOrder() {
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Не удалось создать заказ');
+    },
+  });
+}
+
+export function usePayOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, data }: { orderId: string; data: PayOrderRequest }) => {
+      const response = await api.post<PaymentResult & { orderId: string }>(
+        endpoints.store.payOrder(orderId),
+        data,
+      );
+      return response.data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.store.orders() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.store.order(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.bonuses.all });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Не удалось запустить оплату');
     },
   });
 }

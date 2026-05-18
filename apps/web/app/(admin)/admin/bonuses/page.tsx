@@ -242,9 +242,9 @@ export default function AdminBonusesPage() {
               description="Управление балансами"
             />
             <QuickAction
-              href="/admin/bonuses/export"
-              title="Экспорт"
-              description="Выгрузить отчёт"
+              href="/admin/bonuses/withdrawals"
+              title="Заявки на вывод"
+              description="Approve, reject и complete"
             />
           </div>
         </CardContent>

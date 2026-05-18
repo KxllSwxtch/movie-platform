@@ -23,6 +23,7 @@ import type {
  */
 export function usePaymentStatus(transactionId: string | undefined) {
   const queryClient = useQueryClient();
+  const updateUser = useAuthStore((state) => state.updateUser);
   const pollIntervalRef = useRef<NodeJS.Timeout>();
 
   const query = useQuery({
@@ -55,6 +56,10 @@ export function usePaymentStatus(transactionId: string | undefined) {
         toast.success('Платёж успешно выполнен!');
         queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions.all });
         queryClient.invalidateQueries({ queryKey: queryKeys.bonuses.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.users.profile() });
+        api.get(endpoints.users.me)
+          .then((response) => updateUser(response.data as never))
+          .catch(() => undefined);
       } else if (query.data?.status === 'FAILED') {
         toast.error('Платёж не удался. Попробуйте ещё раз.');
       } else if (query.data?.status === 'CANCELLED') {
@@ -67,7 +72,7 @@ export function usePaymentStatus(transactionId: string | undefined) {
         clearInterval(pollIntervalRef.current);
       }
     };
-  }, [query.data?.status, query.refetch, queryClient]);
+  }, [query.data?.status, query.refetch, queryClient, updateUser]);
 
   return {
     status: query.data,
@@ -188,9 +193,11 @@ export function usePayment() {
  * Redirects user to payment provider page
  */
 export function handlePaymentRedirect(paymentResult: PaymentResult) {
-  if (paymentResult.redirectUrl) {
+  const redirectUrl = paymentResult.redirectUrl || paymentResult.paymentUrl;
+
+  if (redirectUrl) {
     // Card payments via YooKassa
-    window.location.href = paymentResult.redirectUrl;
+    window.location.href = redirectUrl;
   } else if (paymentResult.qrCodeUrl) {
     // SBP payments - QR code is displayed in the UI
     return { type: 'QR' as const, url: paymentResult.qrCodeUrl };

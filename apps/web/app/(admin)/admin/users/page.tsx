@@ -110,9 +110,7 @@ export default function AdminUsersPage() {
               { label: 'Админ', value: 'ADMIN' },
               { label: 'Модератор', value: 'MODERATOR' },
               { label: 'Партнёр', value: 'PARTNER' },
-              { label: 'Покупатель', value: 'BUYER' },
-              { label: 'Гость', value: 'GUEST' },
-              { label: 'Несовершеннолетний', value: 'MINOR' },
+              { label: 'Клиент', value: 'CLIENT' },
             ],
           },
           {

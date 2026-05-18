@@ -9,6 +9,9 @@ import {
   IsBoolean,
   Matches,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+import { extractReferralCode } from '../../users/utils/referral.util';
 
 export class RegisterDto {
   @ApiProperty({
@@ -65,11 +68,10 @@ export class RegisterDto {
     example: 'ABC12345',
   })
   @IsOptional()
+  @Transform(({ value }) => extractReferralCode(value))
   @IsString()
-  @MinLength(6, { message: 'Реферальный код должен содержать минимум 6 символов' })
-  @MaxLength(12, { message: 'Реферальный код не может превышать 12 символов' })
-  @Matches(/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6,12}$/, {
-    message: 'Реферальный код содержит недопустимые символы',
+  @Matches(/^[A-Z0-9]{6,12}$/, {
+    message: 'Введите реферальный код партнера из ссылки, например ABC12345. Email партнера не подходит.',
   })
   referralCode?: string;
 

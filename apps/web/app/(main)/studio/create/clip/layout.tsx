@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Создать клип | Студия',
-  description: 'Создание нового клипа на платформе',
+  title: 'Создать видео | Студия',
+  description: 'Создание нового видео на платформе',
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
-export default function CreateClipLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
+export default function LegacyCreateClipLayout({ children }: { children: React.ReactNode }) {
+  return children;
 }

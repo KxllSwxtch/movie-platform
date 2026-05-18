@@ -65,6 +65,21 @@ export interface WithdrawalResult {
   message?: string;
 }
 
+export interface BonusWithdrawal {
+  id: string;
+  bonusAmount: number;
+  currencyAmount: number;
+  rate: number;
+  taxStatus: string;
+  taxAmount: number;
+  netAmount: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'PROCESSING';
+  processedById?: string;
+  processedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+}
+
 // ============ Error Handling ============
 
 /**
@@ -175,6 +190,20 @@ export function useWithdrawBonus() {
       const message = getBonusErrorMessage(error);
       toast.error(message);
     },
+  });
+}
+
+export function useBonusWithdrawals() {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+
+  return useQuery({
+    queryKey: ['bonuses', 'withdrawals'],
+    queryFn: async () => {
+      const response = await api.get<BonusWithdrawal[]>(endpoints.bonuses.withdrawals);
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated,
+    staleTime: 30 * 1000,
   });
 }
 

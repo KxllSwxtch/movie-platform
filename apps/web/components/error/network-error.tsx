@@ -261,6 +261,7 @@ export function NetworkStatusToast() {
       const timer = setTimeout(() => setShow(false), 3000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [wasOffline, isOnline]);
 
   if (!show) return null;

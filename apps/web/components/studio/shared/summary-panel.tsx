@@ -24,7 +24,7 @@ export interface SummaryPanelProps {
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   SERIES: 'Сериал',
-  CLIP: 'Клип',
+  CLIP: 'Видео',
   SHORT: 'Шорт',
   TUTORIAL: 'Туториал',
 };

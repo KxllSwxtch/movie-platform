@@ -68,6 +68,15 @@ function mapSearchSort(sortBy?: string): {
   }
 }
 
+function mapSearchType(type?: string): string | undefined {
+  if (!type || type === "all") return undefined;
+  if (type === "clip") return "CLIP";
+  if (type === "short") return "SHORT";
+  if (type === "series") return "SERIES";
+  if (type === "tutorials") return "TUTORIAL";
+  return type.toUpperCase();
+}
+
 /**
  * Hook for fetching search suggestions as the user types
  */
@@ -123,7 +132,7 @@ export function useSearchResults(params: SearchResultsParams) {
         {
           params: {
             search: query,
-            type: type && type !== "all" ? type.toUpperCase() : undefined,
+            type: mapSearchType(type),
             categoryId: category !== "all" ? category : undefined,
             ageCategory: age !== "all" ? age : undefined,
             year: year !== "all" ? year : undefined,

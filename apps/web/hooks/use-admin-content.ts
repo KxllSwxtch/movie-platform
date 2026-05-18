@@ -84,7 +84,6 @@ export function useAdminContent(params?: AdminContentQueryParams) {
   const canUseStudio =
     user?.role === 'ADMIN' ||
     user?.role === 'MODERATOR' ||
-    user?.role === 'BUYER' ||
     user?.role === 'PARTNER';
 
   return useQuery({
@@ -108,7 +107,6 @@ export function useAdminContentDetail(id: string | undefined) {
   const canUseStudio =
     user?.role === 'ADMIN' ||
     user?.role === 'MODERATOR' ||
-    user?.role === 'BUYER' ||
     user?.role === 'PARTNER';
 
   return useQuery({

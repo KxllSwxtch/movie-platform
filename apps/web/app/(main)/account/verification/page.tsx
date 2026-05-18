@@ -30,7 +30,11 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useVerificationStatus, useSubmitVerification } from '@/hooks/use-account';
+import {
+  useSubmitVerification,
+  useUploadVerificationDocument,
+  useVerificationStatus,
+} from '@/hooks/use-account';
 import { cn, formatDate } from '@/lib/utils';
 
 // ==============================
@@ -39,7 +43,8 @@ import { cn, formatDate } from '@/lib/utils';
 
 interface VerificationFormValues {
   method: string;
-  documentUrl: string;
+  documentKey: string;
+  paymentMethod: string;
 }
 
 // ==============================
@@ -133,6 +138,7 @@ function StepProgress({ currentStep, status }: { currentStep: number; status: st
 export default function VerificationPage() {
   const { data: verification, isLoading } = useVerificationStatus();
   const submitVerification = useSubmitVerification();
+  const uploadVerificationDocument = useUploadVerificationDocument();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploadedFile, setUploadedFile] = React.useState<File | null>(null);
@@ -146,7 +152,8 @@ export default function VerificationPage() {
   } = useForm<VerificationFormValues>({
     defaultValues: {
       method: 'PAYMENT',
-      documentUrl: '',
+      documentKey: '',
+      paymentMethod: 'CARD',
     },
   });
 
@@ -167,10 +174,16 @@ export default function VerificationPage() {
     submitVerification.mutate(
       {
         method: data.method,
-        documentUrl: data.method === 'DOCUMENT' ? data.documentUrl : undefined,
+        documentKey: data.method === 'DOCUMENT' ? data.documentKey : undefined,
+        paymentMethod: data.method === 'PAYMENT' ? data.paymentMethod : undefined,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
+          const paymentUrl = result?.payment?.paymentUrl;
+          if (paymentUrl) {
+            window.location.href = paymentUrl;
+            return;
+          }
           toast.success('Заявка на верификацию отправлена');
         },
         onError: () => {
@@ -216,6 +229,15 @@ export default function VerificationPage() {
       return;
     }
     setUploadedFile(file);
+    uploadVerificationDocument.mutate(file, {
+      onSuccess: (data) => {
+        setValue('documentKey', data.documentKey, { shouldValidate: true });
+      },
+      onError: () => {
+        setUploadedFile(null);
+        setValue('documentKey', '');
+      },
+    });
     // In production, upload to storage and get URL
     toast.info('Загрузка файлов будет доступна после подключения хранилища');
   };
@@ -396,6 +418,26 @@ export default function VerificationPage() {
                 </p>
               </div>
 
+              {selectedMethod === 'PAYMENT' && (
+                <div className="space-y-2">
+                  <Label>Способ оплаты</Label>
+                  <Select
+                    value={watch('paymentMethod')}
+                    onValueChange={(value) => setValue('paymentMethod', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CARD">Карта</SelectItem>
+                      <SelectItem value="SBP">СБП</SelectItem>
+                      <SelectItem value="BANK_TRANSFER">Банковский перевод</SelectItem>
+                      <SelectItem value="QR">QR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Document upload (shown only for DOCUMENT method) */}
               {selectedMethod === 'DOCUMENT' && (
                 <div className="space-y-3">
@@ -476,21 +518,39 @@ export default function VerificationPage() {
                   </div>
 
                   <Input
-                    id="documentUrl"
-                    type="url"
+                    id="documentKey"
+                    type="hidden"
                     placeholder="https://example.com/document.pdf"
-                    error={!!errors.documentUrl}
-                    {...register('documentUrl', {
+                    error={!!errors.documentKey}
+                    {...register('documentKey', {
                       required: selectedMethod === 'DOCUMENT' && !uploadedFile
                         ? 'Загрузите документ или укажите ссылку'
                         : false,
                     })}
                   />
-                  {errors.documentUrl && (
+                  {errors.documentKey && (
                     <p className="text-sm text-mp-error-text">
-                      {errors.documentUrl.message}
+                      {errors.documentKey.message}
                     </p>
                   )}
+                </div>
+              )}
+
+              {selectedMethod === 'THIRD_PARTY' && (
+                <div className="rounded-lg border border-mp-border bg-mp-surface/50 p-4">
+                  <div className="flex gap-3">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-mp-accent-secondary" />
+                    <div className="space-y-2 text-sm text-mp-text-secondary">
+                      <p className="font-medium text-mp-text-primary">
+                        Как работает верификация через партнера
+                      </p>
+                      <p>
+                        Этот способ доступен только если вы зарегистрировались по партнерской ссылке
+                        или у вас есть прямая PartnerRelationship. Партнер подтверждает связь,
+                        после чего заявка остается в очереди модератора для финального решения.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -514,8 +574,8 @@ export default function VerificationPage() {
                 <Button
                   type="submit"
                   variant="gradient"
-                  disabled={submitVerification.isPending}
-                  isLoading={submitVerification.isPending}
+                  disabled={submitVerification.isPending || uploadVerificationDocument.isPending}
+                  isLoading={submitVerification.isPending || uploadVerificationDocument.isPending}
                 >
                   <PaperPlaneTilt className="mr-2 h-4 w-4" />
                   Отправить заявку

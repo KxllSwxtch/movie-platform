@@ -81,7 +81,7 @@ const DRAFT_STORAGE_KEY = 'studio-draft';
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   SERIES: 'Сериал',
-  CLIP: 'Клип',
+  CLIP: 'Видео',
   SHORT: 'Шорт',
   TUTORIAL: 'Туториал',
 };

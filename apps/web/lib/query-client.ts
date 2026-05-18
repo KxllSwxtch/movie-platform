@@ -1,4 +1,4 @@
-import { QueryClient, type Mutation, isServer } from '@tanstack/react-query';
+import { QueryClient, isServer } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from './error-messages';
 
@@ -30,17 +30,11 @@ function makeQueryClient(): QueryClient {
       },
       mutations: {
         retry: false,
-        onError: (error, _variables, _context, mutation: Mutation) => {
+        onError: (error) => {
           // Log mutation errors in development
           if (process.env.NODE_ENV === 'development') {
             console.error('Mutation error:', error);
           }
-
-          // Skip global toast if mutation opts into manual handling
-          const meta = mutation.options.meta as
-            | { skipGlobalError?: boolean }
-            | undefined;
-          if (meta?.skipGlobalError) return;
 
           // Show toast with user-friendly error message
           const message = getApiErrorMessage(error);
@@ -225,6 +219,8 @@ export const queryKeys = {
     campaign: (id: string) => [...queryKeys.adminBonuses.all, 'campaign', id] as const,
     userDetails: (userId: string) =>
       [...queryKeys.adminBonuses.all, 'userDetails', userId] as const,
+    withdrawals: (status?: string) =>
+      [...queryKeys.adminBonuses.all, 'withdrawals', status] as const,
   },
 
   // Store
@@ -374,6 +370,16 @@ export const queryKeys = {
       [...queryKeys.adminUsers.all, 'list', params] as const,
     detail: (userId: string) =>
       [...queryKeys.adminUsers.all, 'detail', userId] as const,
+  },
+
+  // Admin Verifications
+  adminVerifications: {
+    all: ['adminVerifications'] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.adminVerifications.all, 'list', params] as const,
+    stats: () => [...queryKeys.adminVerifications.all, 'stats'] as const,
+    detail: (id: string) =>
+      [...queryKeys.adminVerifications.all, 'detail', id] as const,
   },
 
   // Genres

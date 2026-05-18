@@ -2,8 +2,10 @@ import { Module, forwardRef } from '@nestjs/common';
 
 import { ContentModule } from '../content/content.module';
 import { BonusesModule } from '../bonuses/bonuses.module';
+import { PaymentsModule } from '../payments/payments.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { DocumentsModule } from '../documents/documents.module';
+import { StorageModule } from '../storage/storage.module';
 import { AdminContentController } from './admin-content.controller';
 import { AdminDashboardController } from './controllers/admin-dashboard.controller';
 import { AdminUsersController } from './controllers/admin-users.controller';
@@ -32,8 +34,10 @@ import { AdminStoreService } from './services/admin-store.service';
   imports: [
     ContentModule,
     forwardRef(() => BonusesModule),
+    forwardRef(() => PaymentsModule),
     NotificationsModule,
     DocumentsModule,
+    StorageModule,
   ],
   controllers: [
     AdminContentController,

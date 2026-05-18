@@ -16,6 +16,7 @@ import {
   OrderDto,
   OrderItemDto,
   OrderQueryDto,
+  PayOrderDto,
   ShippingAddressDto,
   UpdateOrderStatusDto,
 } from '../dto';
@@ -44,7 +45,7 @@ export class OrdersService {
   /**
    * Create an order from cart.
    */
-  async createOrder(userId: string, dto: CreateOrderDto): Promise<PaymentResultDto> {
+  async createOrder(userId: string, dto: CreateOrderDto): Promise<OrderDto> {
     // Validate cart
     const validation = await this.cartService.validateCartForCheckout(userId);
 
@@ -60,18 +61,6 @@ export class OrdersService {
 
     // Get cart data
     const cart = await this.cartService.getCart(userId);
-
-    // Validate bonus amount
-    const bonusAmount = dto.bonusAmount || 0;
-    if (bonusAmount > 0) {
-      if (bonusAmount > (cart.maxBonusApplicable || 0)) {
-        throw new BadRequestException('Сумма бонусов превышает допустимую');
-      }
-      const isValid = await this.bonusesService.validateSpend(userId, bonusAmount);
-      if (!isValid) {
-        throw new BadRequestException('Недостаточно бонусов');
-      }
-    }
 
     // Create order in transaction
     const order = await this.prisma.$transaction(async (tx) => {
@@ -92,7 +81,7 @@ export class OrdersService {
           userId,
           status: OrderStatus.PENDING,
           totalAmount,
-          bonusAmountUsed: bonusAmount,
+          bonusAmountUsed: 0,
           shippingAddress: dto.shippingAddress as unknown as Prisma.InputJsonValue,
         },
       });
@@ -117,7 +106,7 @@ export class OrdersService {
           entityId: newOrder.id,
           newValue: {
             totalAmount,
-            bonusUsed: bonusAmount,
+            bonusUsed: 0,
             itemCount: cart.items.length,
           },
         },
@@ -126,25 +115,79 @@ export class OrdersService {
       return newOrder;
     });
 
-    // Initiate payment
-    const paymentResult = await this.paymentsService.initiatePayment(userId, {
-      type: TransactionType.STORE,
-      amount: cart.totalAmount,
-      paymentMethod: dto.paymentMethod,
-      bonusAmount,
-      referenceId: order.id,
-      returnUrl: dto.returnUrl,
-      metadata: {
-        orderId: order.id,
-      },
-    });
-
     // Clear cart after successful order creation
     await this.cartService.clearCart(userId);
 
     this.logger.log(`Order created: ${order.id} for user ${userId}`);
 
-    return paymentResult;
+    const createdOrder = await this.prisma.order.findUnique({
+      where: { id: order.id },
+      include: {
+        items: {
+          include: { product: true },
+        },
+      },
+    });
+
+    return this.mapToDto(createdOrder!);
+  }
+
+  /**
+   * Start payment for a pending order after user selected payment method.
+   */
+  async payOrder(
+    userId: string,
+    orderId: string,
+    dto: PayOrderDto,
+  ): Promise<PaymentResultDto & { orderId: string }> {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, userId },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Заказ не найден');
+    }
+
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException('Оплата доступна только для ожидающих заказов');
+    }
+
+    const totalAmount = Number(order.totalAmount);
+    const bonusAmount = dto.bonusAmount || 0;
+
+    if (bonusAmount > 0) {
+      const maxBonusApplicable = Math.floor(totalAmount * 0.5);
+      if (bonusAmount > maxBonusApplicable) {
+        throw new BadRequestException('Сумма бонусов превышает допустимую');
+      }
+
+      const isValid = await this.bonusesService.validateSpend(userId, bonusAmount);
+      if (!isValid) {
+        throw new BadRequestException('Недостаточно бонусов');
+      }
+    }
+
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: { bonusAmountUsed: bonusAmount },
+    });
+
+    const paymentResult = await this.paymentsService.initiatePayment(userId, {
+      type: TransactionType.STORE,
+      amount: totalAmount,
+      paymentMethod: dto.paymentMethod,
+      bonusAmount,
+      referenceId: orderId,
+      returnUrl: dto.returnUrl,
+      metadata: {
+        orderId,
+      },
+    });
+
+    return {
+      ...paymentResult,
+      orderId,
+    };
   }
 
   /**

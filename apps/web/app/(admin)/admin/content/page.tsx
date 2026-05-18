@@ -82,7 +82,7 @@ export default function AdminContentPage() {
             <SelectItem value="ALL">Все категории</SelectItem>
             <SelectItem value="TUTORIAL">Обучение</SelectItem>
             <SelectItem value="SERIES">Сериалы</SelectItem>
-            <SelectItem value="CLIP">Клипы</SelectItem>
+            <SelectItem value="CLIP">Видео</SelectItem>
             <SelectItem value="SHORT">Шорты</SelectItem>
           </SelectContent>
         </Select>

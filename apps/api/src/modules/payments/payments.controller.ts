@@ -106,7 +106,7 @@ export class PaymentsController {
   async completePayment(
     @Param('transactionId') transactionId: string,
   ): Promise<{ success: boolean }> {
-    await this.paymentsService.completePaymentById(transactionId);
+    await this.paymentsService.simulateSuccessfulPayment(transactionId);
     return { success: true };
   }
 }

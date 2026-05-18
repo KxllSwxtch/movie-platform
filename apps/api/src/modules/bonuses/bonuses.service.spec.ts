@@ -900,6 +900,11 @@ describe('BonusesService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: 'referred-user',
         referredById: 'referrer-user',
+        referredBy: {
+          id: 'referrer-user',
+          role: 'PARTNER',
+          isActive: true,
+        },
       });
       // No prior bonus transactions
       mockPrismaService.bonusTransaction.count.mockResolvedValue(0);
@@ -927,7 +932,7 @@ describe('BonusesService', () => {
           userId: 'referrer-user',
           source: BonusSource.REFERRAL_BONUS,
           referenceId: 'referred-user',
-          referenceType: 'ReferralFirstPurchase',
+          referenceType: 'Transaction',
         }),
       });
     });
@@ -947,6 +952,11 @@ describe('BonusesService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: 'user-id',
         referredById: 'referrer-user',
+        referredBy: {
+          id: 'referrer-user',
+          role: 'PARTNER',
+          isActive: true,
+        },
       });
       // User has prior bonus spend transactions
       mockPrismaService.bonusTransaction.count.mockResolvedValue(2);
@@ -961,6 +971,11 @@ describe('BonusesService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: 'user-id',
         referredById: 'referrer-user',
+        referredBy: {
+          id: 'referrer-user',
+          role: 'PARTNER',
+          isActive: true,
+        },
       });
       mockPrismaService.bonusTransaction.count.mockResolvedValue(0);
       mockPrismaService.transaction.count.mockResolvedValue(1);

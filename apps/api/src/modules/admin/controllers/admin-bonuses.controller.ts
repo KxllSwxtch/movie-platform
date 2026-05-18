@@ -71,6 +71,42 @@ export class AdminBonusesController {
     return this.adminBonusesService.adjustUserBalance(userId, dto, adminId);
   }
 
+  @Get('withdrawals')
+  @ApiOperation({ summary: 'Get bonus withdrawal requests' })
+  async getWithdrawals(@Query('status') status?: string) {
+    return this.adminBonusesService.getWithdrawals(status);
+  }
+
+  @Post('withdrawals/:id/approve')
+  @ApiOperation({ summary: 'Approve a bonus withdrawal request' })
+  async approveWithdrawal(
+    @Param('id') id: string,
+    @Body('note') note: string | undefined,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.adminBonusesService.approveWithdrawal(id, adminId, note);
+  }
+
+  @Post('withdrawals/:id/reject')
+  @ApiOperation({ summary: 'Reject a bonus withdrawal request and refund bonuses' })
+  async rejectWithdrawal(
+    @Param('id') id: string,
+    @Body('reason') reason: string | undefined,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.adminBonusesService.rejectWithdrawal(id, adminId, reason);
+  }
+
+  @Post('withdrawals/:id/complete')
+  @ApiOperation({ summary: 'Mark an approved bonus withdrawal as completed' })
+  async completeWithdrawal(
+    @Param('id') id: string,
+    @Body('note') note: string | undefined,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.adminBonusesService.completeWithdrawal(id, adminId, note);
+  }
+
   // ==================== RATE MANAGEMENT ====================
 
   @Get('rates')

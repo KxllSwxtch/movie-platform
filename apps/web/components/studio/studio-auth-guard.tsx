@@ -14,7 +14,6 @@ interface StudioAuthGuardProps {
 const STUDIO_ALLOWED_ROLES = [
   UserRole.ADMIN,
   UserRole.MODERATOR,
-  UserRole.BUYER,
   UserRole.PARTNER,
 ];
 

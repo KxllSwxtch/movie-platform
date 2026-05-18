@@ -455,7 +455,7 @@ async function seedUsers() {
             firstName: 'Иван',
             lastName: 'Петров',
             dateOfBirth: new Date('1999-03-25'),
-            role: client_1.UserRole.BUYER,
+            role: client_1.UserRole.CLIENT,
             verificationStatus: client_1.VerificationStatus.VERIFIED,
         },
         {
@@ -464,7 +464,7 @@ async function seedUsers() {
             firstName: 'Алексей',
             lastName: 'Сидоров',
             dateOfBirth: new Date('2011-07-12'),
-            role: client_1.UserRole.MINOR,
+            role: client_1.UserRole.CLIENT,
             verificationStatus: client_1.VerificationStatus.VERIFIED,
         },
     ];
@@ -802,8 +802,8 @@ async function main() {
         console.log('   - admin@movieplatform.local / admin123 (ADMIN)');
         console.log('   - moderator@movieplatform.local / mod123 (MODERATOR)');
         console.log('   - partner@movieplatform.local / partner123 (PARTNER)');
-        console.log('   - user@movieplatform.local / user123 (BUYER)');
-        console.log('   - minor@movieplatform.local / minor123 (MINOR)');
+        console.log('   - user@movieplatform.local / user123 (CLIENT)');
+        console.log('   - minor@movieplatform.local / minor123 (CLIENT, age-restricted by ageCategory)');
         console.log('');
     }
     catch (error) {

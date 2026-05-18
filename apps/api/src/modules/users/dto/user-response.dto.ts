@@ -32,7 +32,7 @@ export class UserProfileDto {
   @ApiPropertyOptional({ enum: VerificationMethod })
   verificationMethod?: VerificationMethod;
 
-  @ApiProperty({ enum: UserRole, example: UserRole.BUYER })
+  @ApiProperty({ enum: UserRole, example: UserRole.CLIENT })
   role!: UserRole;
 
   @ApiProperty({ example: 'ABC12345' })

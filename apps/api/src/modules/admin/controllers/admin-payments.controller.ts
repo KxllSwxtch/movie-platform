@@ -76,6 +76,16 @@ export class AdminPaymentsController {
   }
 
   /**
+   * Simulate successful payment in dev/staging/test mode.
+   */
+  @Post('transactions/:id/simulate-success')
+  @ApiOperation({ summary: 'Simulate successful payment (dev/staging/test only)' })
+  @ApiParam({ name: 'id', description: 'Transaction ID' })
+  async simulateSuccessfulPayment(@Param('id') id: string) {
+    return this.paymentsService.simulateSuccessfulPayment(id);
+  }
+
+  /**
    * Get revenue stats.
    */
   @Get('stats')

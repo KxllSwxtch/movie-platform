@@ -1,10 +1,14 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TaxStatus } from '@prisma/client';
+import { UserRole } from '@movie-platform/shared';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
 import { BonusesService } from './bonuses.service';
 import {
   BonusBalanceDto,
@@ -84,6 +88,9 @@ export class BonusesController {
   }
 
   @Get('withdrawal-preview')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.PARTNER)
+  @VerificationRequired()
   @ApiOperation({ summary: 'Preview bonus withdrawal with tax calculation' })
   @ApiResponse({ status: 200, type: WithdrawalPreviewDto })
   async previewWithdrawal(
@@ -95,6 +102,9 @@ export class BonusesController {
   }
 
   @Post('withdraw')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.PARTNER)
+  @VerificationRequired()
   @ApiOperation({ summary: 'Withdraw bonuses to currency' })
   @ApiResponse({ status: 201, type: WithdrawalResultDto })
   @ApiResponse({ status: 400, description: 'Insufficient balance or below minimum amount' })
@@ -103,6 +113,15 @@ export class BonusesController {
     @Body() dto: WithdrawBonusDto,
   ): Promise<WithdrawalResultDto> {
     return this.bonusesService.withdrawBonusesToCurrency(userId, dto);
+  }
+
+  @Get('withdrawals')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.PARTNER)
+  @VerificationRequired()
+  @ApiOperation({ summary: 'Get bonus withdrawal history' })
+  async getWithdrawals(@CurrentUser('id') userId: string) {
+    return this.bonusesService.getWithdrawalHistory(userId);
   }
 
   @Get('rate')

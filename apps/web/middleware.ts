@@ -13,6 +13,30 @@ const PROTECTED_ROUTES = [
   '/studio',
 ];
 
+const PARTNER_ONLY_ROUTES = [
+  '/account/referrals',
+  '/account/withdrawals',
+  '/bonuses/withdraw',
+  '/partner',
+];
+
+const CREATOR_TOOL_ROUTES = [
+  '/studio',
+];
+
+const VERIFIED_ONLY_ROUTES = [
+  '/partner',
+  '/account/referrals',
+  '/account/withdrawals',
+  '/bonuses/withdraw',
+  '/studio',
+  '/store/checkout',
+  '/checkout',
+];
+
+const PARTNER_ALLOWED_ROLES = new Set(['PARTNER']);
+const CREATOR_TOOL_ALLOWED_ROLES = new Set(['PARTNER', 'ADMIN', 'MODERATOR']);
+
 /**
  * Routes only for unauthenticated users — redirect to / if has token
  */
@@ -57,10 +81,47 @@ function hasAuthToken(request: NextRequest): boolean {
   return false;
 }
 
+function getTokenPayload(request: NextRequest): Record<string, unknown> | null {
+  const authCookie = request.cookies.get('mp-auth-token');
+  if (!authCookie?.value) return null;
+
+  try {
+    const [, payload] = authCookie.value.split('.');
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      '=',
+    );
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function getUserRole(request: NextRequest): string | null {
+  const payload = getTokenPayload(request);
+  return typeof payload?.role === 'string' ? payload.role : null;
+}
+
+function getVerificationStatus(request: NextRequest): string | null {
+  const explicit = request.cookies.get('mp-verification-status')?.value;
+  if (explicit) return explicit;
+
+  const payload = getTokenPayload(request);
+  return typeof payload?.verificationStatus === 'string'
+    ? payload.verificationStatus
+    : null;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthenticated = hasAuthToken(request);
+  const role = isAuthenticated ? getUserRole(request) : null;
+  const verificationStatus = isAuthenticated
+    ? getVerificationStatus(request)
+    : null;
 
   // If not authenticated but stale cookies remain, clear them proactively
   if (!isAuthenticated) {
@@ -79,6 +140,42 @@ export function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (matchesRoute(pathname, PARTNER_ONLY_ROUTES)) {
+    if (!isAuthenticated) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (!role || !PARTNER_ALLOWED_ROLES.has(role)) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
+  if (
+    matchesRoute(pathname, VERIFIED_ONLY_ROUTES) &&
+    isAuthenticated &&
+    role !== 'ADMIN' &&
+    role !== 'MODERATOR' &&
+    verificationStatus !== 'VERIFIED'
+  ) {
+    const verificationUrl = new URL('/account/verification', request.url);
+    verificationUrl.searchParams.set('restricted', pathname);
+    return NextResponse.redirect(verificationUrl);
+  }
+
+  if (matchesRoute(pathname, CREATOR_TOOL_ROUTES)) {
+    if (!isAuthenticated) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (!role || !CREATOR_TOOL_ALLOWED_ROLES.has(role)) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   // Auth routes: redirect to home if already authenticated

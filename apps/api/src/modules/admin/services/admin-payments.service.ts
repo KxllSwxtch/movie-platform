@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { Prisma, TransactionStatus } from '@prisma/client';
 
 import { PrismaService } from '../../../config/prisma.service';
+import { PaymentsService } from '../../payments/payments.service';
 
 export interface TransactionFilters {
   status?: string;
@@ -13,7 +14,10 @@ export interface TransactionFilters {
 
 @Injectable()
 export class AdminPaymentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paymentsService: PaymentsService,
+  ) {}
 
   /**
    * Get paginated transactions with optional filters.
@@ -117,6 +121,27 @@ export class AdminPaymentsService {
       where: { id },
       data: { status: TransactionStatus.REFUNDED },
     });
+  }
+
+  /**
+   * Simulate a successful payment in dev/staging/test mode.
+   */
+  async simulateSuccessfulPayment(id: string) {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException('Транзакция не найдена');
+    }
+
+    if (transaction.status !== TransactionStatus.PENDING) {
+      throw new BadRequestException('Симуляция доступна только для ожидающих транзакций');
+    }
+
+    await this.paymentsService.simulateSuccessfulPayment(id);
+
+    return this.getTransaction(id);
   }
 
   /**

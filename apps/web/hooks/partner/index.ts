@@ -10,7 +10,14 @@ export type {
   ApiReferralNodeResponse,
   ApiReferralTreeResponse,
 } from './use-partner-referrals';
-export { useReferralTree, useCommissions, useCommission } from './use-partner-referrals';
+export {
+  useReferralTree,
+  useCommissions,
+  useCommission,
+  usePartnerVerificationRequests,
+  useConfirmPartnerVerificationRequest,
+  useRejectPartnerVerificationRequest,
+} from './use-partner-referrals';
 
 export {
   useWithdrawals,

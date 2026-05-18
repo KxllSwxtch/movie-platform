@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   UseGuards,
@@ -15,8 +16,13 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { TaxStatus } from '@prisma/client';
+import { UserRole } from '@movie-platform/shared';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
+import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PartnersService } from './partners.service';
 import {
@@ -34,6 +40,8 @@ import {
 
 @ApiTags('Partners')
 @Controller('partners')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.PARTNER, UserRole.ADMIN, UserRole.MODERATOR)
 export class PartnersController {
   constructor(private readonly partnersService: PartnersService) {}
 
@@ -41,7 +49,7 @@ export class PartnersController {
    * Get partner dashboard with statistics.
    */
   @Get('dashboard')
-  @UseGuards(JwtAuthGuard)
+  @VerificationRequired()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get partner dashboard statistics' })
   @ApiOkResponse({ type: PartnerDashboardDto })
@@ -53,7 +61,7 @@ export class PartnersController {
    * Get referral tree structure.
    */
   @Get('referrals')
-  @UseGuards(JwtAuthGuard)
+  @VerificationRequired()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get referral tree structure' })
   @ApiQuery({ name: 'depth', required: false, type: Number, description: 'Tree depth (1-5)' })
@@ -70,7 +78,7 @@ export class PartnersController {
    * Get commission history.
    */
   @Get('commissions')
-  @UseGuards(JwtAuthGuard)
+  @VerificationRequired()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get commission history with pagination' })
   @ApiOkResponse({
@@ -96,7 +104,7 @@ export class PartnersController {
    * Get available balance for withdrawal.
    */
   @Get('balance')
-  @UseGuards(JwtAuthGuard)
+  @VerificationRequired()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get available balance for withdrawal' })
   @ApiOkResponse({ type: AvailableBalanceDto })
@@ -108,8 +116,8 @@ export class PartnersController {
    * Create withdrawal request.
    */
   @Post('withdrawals')
+  @VerificationRequired()
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create withdrawal request' })
   @ApiOkResponse({ type: WithdrawalDto })
@@ -120,11 +128,57 @@ export class PartnersController {
     return this.partnersService.createWithdrawal(userId, dto);
   }
 
+  @Post('verify-referral/:userId')
+  @VerificationRequired()
+  @ApiBearerAuth()
+  @Roles(UserRole.PARTNER)
+  @ApiOperation({ summary: 'Confirm verification for a direct referred user' })
+  async verifyReferral(
+    @CurrentUser('id') partnerId: string,
+    @Param('userId') targetUserId: string,
+  ) {
+    return this.partnersService.confirmReferralVerification(partnerId, targetUserId);
+  }
+
+  @Get('verification-requests')
+  @VerificationRequired()
+  @ApiBearerAuth()
+  @Roles(UserRole.PARTNER)
+  @ApiOperation({ summary: 'Get partner verification requests from direct referrals' })
+  async getVerificationRequests(@CurrentUser('id') partnerId: string) {
+    return this.partnersService.getVerificationRequests(partnerId);
+  }
+
+  @Post('verification-requests/:id/confirm')
+  @VerificationRequired()
+  @ApiBearerAuth()
+  @Roles(UserRole.PARTNER)
+  @ApiOperation({ summary: 'Confirm a partner verification request for admin review' })
+  async confirmVerificationRequest(
+    @CurrentUser('id') partnerId: string,
+    @Param('id') verificationId: string,
+  ) {
+    return this.partnersService.confirmVerificationRequest(partnerId, verificationId);
+  }
+
+  @Post('verification-requests/:id/reject')
+  @VerificationRequired()
+  @ApiBearerAuth()
+  @Roles(UserRole.PARTNER)
+  @ApiOperation({ summary: 'Reject a partner verification request' })
+  async rejectVerificationRequest(
+    @CurrentUser('id') partnerId: string,
+    @Param('id') verificationId: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.partnersService.rejectVerificationRequest(partnerId, verificationId, reason);
+  }
+
   /**
    * Get withdrawal history.
    */
   @Get('withdrawals')
-  @UseGuards(JwtAuthGuard)
+  @VerificationRequired()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get withdrawal history with pagination' })
   @ApiOkResponse({
@@ -150,7 +204,7 @@ export class PartnersController {
    * Preview tax calculation for withdrawal.
    */
   @Get('tax-preview')
-  @UseGuards(JwtAuthGuard)
+  @VerificationRequired()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Preview tax calculation for a withdrawal amount' })
   @ApiQuery({ name: 'amount', required: true, type: Number, description: 'Withdrawal amount' })
@@ -168,6 +222,8 @@ export class PartnersController {
    * Get partner levels configuration (public).
    */
   @Get('levels')
+  @Public()
+  @Roles()
   @ApiOperation({ summary: 'Get partner levels configuration (public)' })
   @ApiOkResponse({ type: [PartnerLevelDto] })
   getPartnerLevels(): PartnerLevelDto[] {

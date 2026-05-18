@@ -102,6 +102,7 @@ export const endpoints = {
     password: "/users/me/password",
     uploadAvatar: "/users/me/avatar",
     verification: "/users/me/verification",
+    verificationDocument: "/users/me/verification/document",
     verificationStatus: "/users/me/verification/status",
     requestEmailChange: "/users/me/email/request-code",
     confirmEmailChange: "/users/me/email/confirm",
@@ -182,6 +183,12 @@ export const endpoints = {
     withdrawal: (id: string) => `/partners/withdrawals/${id}`,
     createWithdrawal: "/partners/withdrawals",
     taxPreview: "/partners/tax-preview",
+    verifyReferral: (userId: string) => `/partners/verify-referral/${userId}`,
+    verificationRequests: "/partners/verification-requests",
+    confirmVerificationRequest: (id: string) =>
+      `/partners/verification-requests/${id}/confirm`,
+    rejectVerificationRequest: (id: string) =>
+      `/partners/verification-requests/${id}/reject`,
     paymentMethods: "/partners/payment-methods",
     addPaymentMethod: "/partners/payment-methods",
     deletePaymentMethod: (id: string) => `/partners/payment-methods/${id}`,
@@ -221,6 +228,7 @@ export const endpoints = {
     maxApplicable: "/bonuses/max-applicable",
     withdrawalPreview: "/bonuses/withdrawal-preview",
     withdraw: "/bonuses/withdraw",
+    withdrawals: "/bonuses/withdrawals",
     rate: "/bonuses/rate",
   },
 
@@ -236,6 +244,10 @@ export const endpoints = {
     userDetails: (userId: string) => `/admin/bonuses/users/${userId}`,
     adjustUserBalance: (userId: string) =>
       `/admin/bonuses/users/${userId}/adjust`,
+    withdrawals: "/admin/bonuses/withdrawals",
+    approveWithdrawal: (id: string) => `/admin/bonuses/withdrawals/${id}/approve`,
+    rejectWithdrawal: (id: string) => `/admin/bonuses/withdrawals/${id}/reject`,
+    completeWithdrawal: (id: string) => `/admin/bonuses/withdrawals/${id}/complete`,
     export: "/admin/bonuses/export",
   },
 
@@ -251,6 +263,7 @@ export const endpoints = {
     cartItem: (productId: string) => `/store/cart/items/${productId}`,
     orders: "/store/orders",
     order: (id: string) => `/store/orders/${id}`,
+    payOrder: (id: string) => `/store/orders/${id}/pay`,
     cancelOrder: (id: string) => `/store/orders/${id}/cancel`,
   },
 
@@ -321,6 +334,7 @@ export const endpoints = {
     transactions: "/admin/payments/transactions",
     transaction: (id: string) => `/admin/payments/transactions/${id}`,
     refund: (id: string) => `/admin/payments/transactions/${id}/refund`,
+    simulateSuccess: (id: string) => `/admin/payments/transactions/${id}/simulate-success`,
     stats: "/admin/payments/stats",
   },
 
@@ -331,6 +345,8 @@ export const endpoints = {
     create: "/admin/content",
     update: (id: string) => `/admin/content/${id}`,
     delete: (id: string) => `/admin/content/${id}`,
+    categories: "/admin/content/categories",
+    category: (id: string) => `/admin/content/categories/${id}`,
     createSeries: "/admin/content/series",
     structure: (id: string) => `/admin/content/${id}/structure`,
     reorderStructure: (id: string) => `/admin/content/${id}/structure`,
@@ -390,11 +406,25 @@ export const endpoints = {
     update: (userId: string) => `/admin/users/${userId}`,
   },
 
+  // Admin Verifications
+  adminVerifications: {
+    list: "/admin/verifications",
+    stats: "/admin/verifications/stats",
+    detail: (id: string) => `/admin/verifications/${id}`,
+    document: (id: string) => `/admin/verifications/${id}/document`,
+    approve: (id: string) => `/admin/verifications/${id}/approve`,
+    reject: (id: string) => `/admin/verifications/${id}/reject`,
+  },
+
   // Genres
   genres: {
     list: "/genres",
     detail: (id: string) => `/genres/${id}`,
     bySlug: (slug: string) => `/genres/slug/${slug}`,
+    adminList: "/genres/admin/all",
+    create: "/genres",
+    update: (id: string) => `/genres/${id}`,
+    delete: (id: string) => `/genres/${id}`,
   },
 
   // User Genre Preferences
@@ -409,5 +439,7 @@ export const endpoints = {
   // Tags
   tags: {
     list: "/tags",
+    create: "/tags",
   },
+
 } as const;

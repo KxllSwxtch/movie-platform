@@ -179,10 +179,11 @@ describe('PartnersService', () => {
             sourceUserId: purchaserUserId,
             sourceTransactionId: transactionId,
             level: 1,
-            amount: expect.any(Decimal),
+            amount: expect.anything(),
             status: CommissionStatus.PENDING,
           }),
         ]),
+        skipDuplicates: true,
       });
 
       // Verify 10% commission

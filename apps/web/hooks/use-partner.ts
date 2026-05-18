@@ -18,6 +18,9 @@ export {
   useReferralTree,
   useCommissions,
   useCommission,
+  usePartnerVerificationRequests,
+  useConfirmPartnerVerificationRequest,
+  useRejectPartnerVerificationRequest,
   // Withdrawal hooks
   useWithdrawals,
   useWithdrawal,

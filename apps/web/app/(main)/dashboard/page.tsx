@@ -21,8 +21,14 @@ export default function DashboardPage() {
           typeof heroItem.category === "object" && heroItem.category !== null
             ? heroItem.category.name || ""
             : heroItem.category || "",
-        description: "",
-        thumbnailUrl: heroItem.thumbnailUrl || "/images/movie-placeholder.jpg",
+        description: heroItem.description || "",
+        thumbnailUrl:
+          heroItem.heroImageUrl ||
+          heroItem.bannerUrl ||
+          heroItem.coverUrl ||
+          heroItem.thumbnailUrl ||
+          "/images/movie-placeholder.jpg",
+        rating: heroItem.averageRating ?? heroItem.rating ?? 0,
         rank: 1,
       }
     : null;

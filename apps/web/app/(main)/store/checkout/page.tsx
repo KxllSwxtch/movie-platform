@@ -12,10 +12,7 @@ import {
   BonusApplicator,
   PaymentStatusPolling,
 } from '@/components/payment';
-import {
-  CartItemRow,
-  CheckoutStepIndicator,
-} from '@/components/store';
+import { CheckoutStepIndicator } from '@/components/store';
 
 const ShippingAddressForm = dynamic(
   () => import('@/components/store/shipping-address-form').then((m) => ({ default: m.ShippingAddressForm })),
@@ -33,11 +30,11 @@ const ShippingAddressForm = dynamic(
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
-import { useCart, useCreateOrder } from '@/hooks/use-store';
+import { useCart, useCreateOrder, usePayOrder } from '@/hooks/use-store';
 import { useBonusBalance, useMaxApplicable } from '@/hooks/use-bonus';
 import { handlePaymentRedirect } from '@/hooks';
 import { useAuthStore } from '@/stores/auth.store';
-import { useCheckoutStore, checkoutSelectors } from '@/stores/checkout.store';
+import { useCheckoutStore } from '@/stores/checkout.store';
 import type { ShippingAddressDto } from '@/types/store.types';
 
 function formatPrice(price: number): string {
@@ -54,30 +51,32 @@ export default function StoreCheckoutPage() {
     bonusAmount,
     checkoutStep,
     orderId,
+    orderTotal,
     transactionId,
     setShippingAddress,
     setPaymentMethod,
     setBonusAmount,
     setCheckoutStep,
     setOrderId,
+    setOrderTotal,
     setTransactionId,
-    setError,
-    nextStep,
     prevStep,
     resetCheckout,
   } = useCheckoutStore();
 
   const { data: cart, isLoading: isCartLoading } = useCart();
-  const { mutateAsync: createOrder, isPending: isCreating } = useCreateOrder();
+  const { mutateAsync: createOrder } = useCreateOrder();
+  const { mutateAsync: payOrder, isPending: isPaying } = usePayOrder();
 
   // Bonus data
   const cartTotal = cart?.totalAmount ?? 0;
+  const checkoutTotal = orderId ? orderTotal : cartTotal;
   const { data: bonusData, isLoading: isBonusLoading } = useBonusBalance();
-  const { data: maxApplicableData } = useMaxApplicable(cartTotal);
+  const { data: maxApplicableData } = useMaxApplicable(checkoutTotal);
   const bonusBalance = bonusData?.balance ?? 0;
   const maxApplicable = maxApplicableData?.maxAmount ?? 0;
-  const amountToPay = Math.max(0, cartTotal - bonusAmount);
-  const isFullyCoveredByBonus = bonusAmount >= cartTotal && cartTotal > 0;
+  const amountToPay = Math.max(0, checkoutTotal - bonusAmount);
+  const isFullyCoveredByBonus = bonusAmount >= checkoutTotal && checkoutTotal > 0;
 
   // Auth & cart guard
   React.useEffect(() => {
@@ -87,31 +86,55 @@ export default function StoreCheckoutPage() {
   }, [isAuthenticated, isHydrated, router]);
 
   React.useEffect(() => {
-    if (!isCartLoading && cart && cart.items.length === 0 && checkoutStep !== 'complete') {
+    if (!isCartLoading && cart && cart.items.length === 0 && !orderId && checkoutStep !== 'complete') {
       router.push('/store');
     }
-  }, [cart, isCartLoading, checkoutStep, router]);
+  }, [cart, isCartLoading, checkoutStep, orderId, router]);
+
+  React.useEffect(() => {
+    if (checkoutStep === 'processing' && !transactionId) {
+      setCheckoutStep(orderId ? 'payment' : 'shipping');
+    }
+  }, [checkoutStep, orderId, setCheckoutStep, transactionId]);
 
   if (!isHydrated || !isAuthenticated) return null;
 
   const items = cart?.items ?? [];
 
-  const handleShippingSubmit = (address: ShippingAddressDto) => {
-    setShippingAddress(address);
-    nextStep();
+  const handleShippingSubmit = async (address: ShippingAddressDto) => {
+    try {
+      setShippingAddress(address);
+
+      const order = await createOrder({
+        shippingAddress: address,
+      });
+
+      setOrderId(order.id);
+      setOrderTotal(order.totalAmount);
+      setPaymentMethod(null);
+      setCheckoutStep('payment');
+    } catch {
+      toast.error('Не удалось создать заказ');
+    }
   };
 
-  const handlePlaceOrder = async () => {
-    if (!shippingAddress) return;
+  const handleStartPayment = async () => {
+    if (!orderId) return;
+    if (!isFullyCoveredByBonus && !paymentMethod) {
+      toast.error('Выберите способ оплаты');
+      return;
+    }
 
     try {
       setCheckoutStep('processing');
 
-      const result = await createOrder({
-        shippingAddress,
-        paymentMethod,
-        bonusAmount: bonusAmount > 0 ? bonusAmount : undefined,
-        returnUrl: `${window.location.origin}/payment/callback`,
+      const result = await payOrder({
+        orderId,
+        data: {
+          paymentMethod: paymentMethod ?? 'CARD',
+          bonusAmount: bonusAmount > 0 ? bonusAmount : undefined,
+          returnUrl: `${window.location.origin}/payment/callback`,
+        },
       });
 
       setOrderId(result.orderId);
@@ -126,8 +149,8 @@ export default function StoreCheckoutPage() {
         }
       }
     } catch {
-      setCheckoutStep('review');
-      toast.error('Не удалось создать заказ');
+      setCheckoutStep('payment');
+      toast.error('Не удалось запустить оплату');
     }
   };
 
@@ -174,6 +197,20 @@ export default function StoreCheckoutPage() {
           {/* Step 2: Payment */}
           {checkoutStep === 'payment' && (
             <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Заказ готов к оплате</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm text-mp-text-secondary">
+                  <p>
+                    {orderId
+                      ? `Номер заказа: ${orderId.slice(0, 8)}...`
+                      : 'Заказ будет создан после заполнения данных.'}
+                  </p>
+                  <p>Выберите способ оплаты и подтвердите запуск платежа.</p>
+                </CardContent>
+              </Card>
+
               {/* Bonus applicator */}
               {!isBonusLoading && bonusBalance > 0 && (
                 <Card>
@@ -186,7 +223,7 @@ export default function StoreCheckoutPage() {
                       maxApplicable={maxApplicable}
                       appliedAmount={bonusAmount}
                       onApply={setBonusAmount}
-                      orderTotal={cartTotal}
+                      orderTotal={checkoutTotal}
                     />
                   </CardContent>
                 </Card>
@@ -211,71 +248,13 @@ export default function StoreCheckoutPage() {
                 <Button variant="outline" className="flex-1" onClick={prevStep}>
                   Назад
                 </Button>
-                <Button variant="gradient" className="flex-1" onClick={nextStep}>
-                  Продолжить
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Review */}
-          {checkoutStep === 'review' && (
-            <div className="space-y-6">
-              {/* Shipping summary */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-lg">Доставка</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setCheckoutStep('shipping')}>
-                    Изменить
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {shippingAddress && (
-                    <div className="text-sm text-mp-text-secondary space-y-1">
-                      <p className="text-mp-text-primary font-medium">{shippingAddress.fullName}</p>
-                      <p>{shippingAddress.phone}</p>
-                      <p>{shippingAddress.postalCode}, {shippingAddress.city}</p>
-                      <p>{shippingAddress.address}</p>
-                      {shippingAddress.instructions && (
-                        <p className="italic">{shippingAddress.instructions}</p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Items summary */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Товары ({items.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="divide-y divide-mp-border">
-                    {items.map((item) => (
-                      <div key={item.productId} className="flex items-center justify-between py-2 text-sm">
-                        <span className="text-mp-text-primary">
-                          {item.productName} × {item.quantity}
-                        </span>
-                        <span className="text-mp-text-primary font-medium">
-                          {formatPrice(item.totalPrice)} ₽
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex gap-4">
-                <Button variant="outline" className="flex-1" onClick={prevStep}>
-                  Назад
-                </Button>
                 <Button
                   variant="gradient"
                   className="flex-1"
-                  onClick={handlePlaceOrder}
-                  disabled={isCreating}
+                  onClick={handleStartPayment}
+                  disabled={isPaying || !orderId || (!isFullyCoveredByBonus && !paymentMethod)}
                 >
-                  {isCreating ? 'Оформляем...' : isFullyCoveredByBonus ? 'Оформить бесплатно' : 'Оформить заказ'}
+                  {isPaying ? 'Запускаем оплату...' : isFullyCoveredByBonus ? 'Оформить бесплатно' : 'Оплатить'}
                 </Button>
               </div>
             </div>
@@ -350,7 +329,7 @@ export default function StoreCheckoutPage() {
                   <div className="border-t border-mp-border pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-mp-text-secondary">Товары</span>
-                      <span className="text-mp-text-primary">{formatPrice(cartTotal)} ₽</span>
+                      <span className="text-mp-text-primary">{formatPrice(checkoutTotal)} ₽</span>
                     </div>
                     {bonusAmount > 0 && (
                       <div className="flex justify-between text-sm">

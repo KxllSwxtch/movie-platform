@@ -120,6 +120,31 @@ export function useRefundTransaction() {
 }
 
 /**
+ * Hook to simulate successful payment in dev/staging/test mode
+ */
+export function useSimulateSuccessfulPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.post<AdminTransaction>(
+        endpoints.adminPayments.simulateSuccess(id)
+      );
+      return response.data;
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminPayments.transactions() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminPayments.transaction(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminPayments.stats() });
+      toast.success('Платёж успешно симулирован');
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message || 'Не удалось симулировать оплату');
+    },
+  });
+}
+
+/**
  * Hook to fetch admin payment stats
  */
 export function useAdminPaymentStats() {

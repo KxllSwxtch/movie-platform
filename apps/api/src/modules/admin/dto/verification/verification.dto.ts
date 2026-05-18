@@ -3,9 +3,6 @@ import { IsEnum, IsOptional, IsString, IsInt, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { VerificationStatus, VerificationMethod } from '@prisma/client';
 
-/**
- * DTO for verification list item
- */
 export class AdminVerificationDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   id!: string;
@@ -16,17 +13,41 @@ export class AdminVerificationDto {
   @ApiProperty({ example: 'user@example.com' })
   userEmail!: string;
 
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/avatar.jpg' })
+  userAvatarUrl?: string | null;
+
   @ApiProperty({ example: 'Иван' })
   userFirstName!: string;
 
   @ApiProperty({ example: 'Иванов' })
   userLastName!: string;
 
+  @ApiProperty({ example: 'CLIENT' })
+  userRole!: string;
+
+  @ApiProperty({ example: '18+' })
+  userAgeCategory!: string;
+
+  @ApiPropertyOptional({ example: '1990-01-15T00:00:00Z' })
+  userDateOfBirth?: Date | null;
+
+  @ApiProperty({ example: '2024-01-01T10:00:00Z' })
+  userCreatedAt!: Date;
+
+  @ApiProperty({ example: '2024-01-15T10:00:00Z' })
+  userUpdatedAt!: Date;
+
+  @ApiProperty({ example: 'PENDING' })
+  userVerificationStatus!: string;
+
   @ApiProperty({ enum: VerificationMethod, example: VerificationMethod.DOCUMENT })
   method!: VerificationMethod;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/documents/passport.jpg' })
   documentUrl?: string | null;
+
+  @ApiPropertyOptional({ example: 'user-id/document.pdf' })
+  documentKey?: string | null;
 
   @ApiProperty({ enum: VerificationStatus, example: VerificationStatus.PENDING })
   status!: VerificationStatus;
@@ -40,13 +61,31 @@ export class AdminVerificationDto {
   @ApiPropertyOptional({ example: 'Документ нечитаемый' })
   rejectionReason?: string | null;
 
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440002' })
+  confirmedByPartnerId?: string | null;
+
+  @ApiPropertyOptional({ example: 'partner@example.com' })
+  confirmedByPartnerEmail?: string | null;
+
+  @ApiPropertyOptional({ example: '2024-01-12T10:30:00Z' })
+  confirmedAt?: Date | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440003' })
+  partnerRelationshipId?: string | null;
+
+  @ApiPropertyOptional({ example: { id: 'transaction-id', amount: 10, currency: 'RUB' } })
+  payment?: Record<string, unknown> | null;
+
+  @ApiPropertyOptional({ example: 3 })
+  auditEventsCount?: number;
+
+  @ApiPropertyOptional({ example: '2024-01-15T10:30:00Z' })
+  verifiedAt?: Date | null;
+
   @ApiProperty({ example: '2024-01-10T08:00:00Z' })
   createdAt!: Date;
 }
 
-/**
- * Query parameters for verification list
- */
 export class AdminVerificationQueryDto {
   @ApiPropertyOptional({ enum: VerificationStatus, description: 'Filter by status' })
   @IsOptional()
@@ -79,9 +118,6 @@ export class AdminVerificationQueryDto {
   limit?: number = 20;
 }
 
-/**
- * Paginated verification list response
- */
 export class AdminVerificationListDto {
   @ApiProperty({ type: [AdminVerificationDto] })
   items!: AdminVerificationDto[];
@@ -99,9 +135,6 @@ export class AdminVerificationListDto {
   totalPages!: number;
 }
 
-/**
- * Verification queue statistics
- */
 export class AdminVerificationStatsDto {
   @ApiProperty({ example: 15, description: 'Number of pending verifications' })
   pending!: number;
@@ -119,21 +152,15 @@ export class AdminVerificationStatsDto {
   overdueCount!: number;
 }
 
-/**
- * DTO for rejecting a verification
- */
 export class RejectVerificationDto {
   @ApiProperty({
     example: 'Документ нечитаемый. Пожалуйста, загрузите фотографию более высокого качества.',
-    description: 'Reason for rejection (will be shown to user)'
+    description: 'Reason for rejection (will be shown to user)',
   })
   @IsString()
   reason!: string;
 }
 
-/**
- * DTO for verification action response
- */
 export class VerificationActionResponseDto {
   @ApiProperty({ example: true })
   success!: boolean;

@@ -42,7 +42,10 @@ const registerSchema = z
         'Пароль должен содержать заглавную букву, строчную букву и цифру'
       ),
     confirmPassword: z.string().min(1, 'Подтвердите пароль'),
-    referralCode: z.string().optional(),
+    referralCode: z.string().optional().refine((value) => {
+      const code = extractReferralCode(value);
+      return !code || /^[A-Z0-9]{6,12}$/.test(code);
+    }, 'Введите реферальный код партнера из ссылки, например ABC12345. Email партнера не подходит.'),
     acceptTerms: z.literal(true, {
       errorMap: () => ({ message: 'Необходимо принять условия использования' }),
     }),
@@ -54,6 +57,29 @@ const registerSchema = z
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
+function extractReferralCode(value?: string) {
+  if (!value) return undefined;
+
+  const input = value.trim();
+  if (!input) return undefined;
+
+  try {
+    const baseUrl =
+      typeof window !== 'undefined' ? window.location.origin : 'https://movieplatform.local';
+    const url = new URL(input, baseUrl);
+    const code =
+      url.searchParams.get('ref') ||
+      url.searchParams.get('referralCode') ||
+      url.searchParams.get('referral');
+
+    if (code) return code.trim().toUpperCase();
+  } catch {
+    // Treat non-URL input as a plain referral code.
+  }
+
+  return input.toUpperCase();
+}
+
 /**
  * Registration page
  */
@@ -61,7 +87,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const searchParams = useSearchParams();
-  const referralCode = searchParams.get('ref') || '';
+  const referralCode = extractReferralCode(searchParams.get('ref') || '') || '';
 
   const { register: registerUser, isRegistering } = useAuth();
 
@@ -90,7 +116,7 @@ export default function RegisterPage() {
       email: data.email,
       dateOfBirth: data.dateOfBirth,
       password: data.password,
-      referralCode: data.referralCode || undefined,
+      referralCode: extractReferralCode(data.referralCode),
       acceptTerms: data.acceptTerms,
     });
   };
@@ -282,11 +308,18 @@ export default function RegisterPage() {
             </label>
             <Input
               id="referralCode"
-              placeholder="ABC123"
+              placeholder="ABC12345 или ссылка с ?ref=ABC12345"
               error={!!errors.referralCode}
               leftIcon={<Gift className="w-4 h-4" />}
-              {...register('referralCode')}
+              {...register('referralCode', {
+                setValueAs: (value) => extractReferralCode(value) || '',
+              })}
             />
+            {errors.referralCode && (
+              <p className="text-sm text-mp-error-text">
+                {errors.referralCode.message}
+              </p>
+            )}
           </div>
 
           {/* Terms acceptance */}

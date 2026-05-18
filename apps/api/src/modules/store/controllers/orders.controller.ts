@@ -22,6 +22,7 @@ import {
   CreateOrderDto,
   OrderDto,
   OrderQueryDto,
+  PayOrderDto,
 } from '../dto';
 import { PaymentResultDto } from '../../payments/dto';
 
@@ -41,8 +42,23 @@ export class OrdersController {
   async createOrder(
     @CurrentUser('id') userId: string,
     @Body() dto: CreateOrderDto,
-  ): Promise<PaymentResultDto> {
+  ): Promise<OrderDto> {
     return this.ordersService.createOrder(userId, dto);
+  }
+
+  /**
+   * Start payment for a pending order after user selected a payment method.
+   */
+  @Post(':orderId/pay')
+  @ApiOperation({ summary: 'Start payment for order' })
+  @ApiParam({ name: 'orderId', description: 'Order ID' })
+  @ApiOkResponse({ type: PaymentResultDto })
+  async payOrder(
+    @CurrentUser('id') userId: string,
+    @Param('orderId') orderId: string,
+    @Body() dto: PayOrderDto,
+  ): Promise<PaymentResultDto & { orderId: string }> {
+    return this.ordersService.payOrder(userId, orderId, dto);
   }
 
   /**

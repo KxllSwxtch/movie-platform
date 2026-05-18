@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
+import { UserRole } from '@movie-platform/shared';
 
 import {
   CreateGenreDto,
@@ -30,6 +32,8 @@ import {
 import { GenresService } from './genres.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @ApiTags('genres')
 @Controller('genres')
@@ -50,35 +54,11 @@ export class GenresController {
     return this.genresService.findAll(false);
   }
 
-  @Get(':id')
-  @Public()
-  @ApiOperation({ summary: 'Get a genre by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Genre details',
-    type: GenreResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Genre not found' })
-  async findById(@Param('id') id: string) {
-    return this.genresService.findById(id);
-  }
-
-  @Get('slug/:slug')
-  @Public()
-  @ApiOperation({ summary: 'Get a genre by slug' })
-  @ApiResponse({
-    status: 200,
-    description: 'Genre details',
-    type: GenreResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Genre not found' })
-  async findBySlug(@Param('slug') slug: string) {
-    return this.genresService.findBySlug(slug);
-  }
-
   // ==================== ADMIN GENRE ENDPOINTS ====================
 
   @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all genres including inactive (admin only)' })
   @ApiQuery({
@@ -96,7 +76,35 @@ export class GenresController {
     return this.genresService.findAll(includeInactive ?? true);
   }
 
+  @Get('slug/:slug')
+  @Public()
+  @ApiOperation({ summary: 'Get a genre by slug' })
+  @ApiResponse({
+    status: 200,
+    description: 'Genre details',
+    type: GenreResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Genre not found' })
+  async findBySlug(@Param('slug') slug: string) {
+    return this.genresService.findBySlug(slug);
+  }
+
+  @Get(':id')
+  @Public()
+  @ApiOperation({ summary: 'Get a genre by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Genre details',
+    type: GenreResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Genre not found' })
+  async findById(@Param('id') id: string) {
+    return this.genresService.findById(id);
+  }
+
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new genre (admin only)' })
   @ApiResponse({
@@ -110,6 +118,8 @@ export class GenresController {
   }
 
   @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a genre (admin only)' })
   @ApiResponse({
@@ -127,6 +137,8 @@ export class GenresController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a genre (admin only)' })

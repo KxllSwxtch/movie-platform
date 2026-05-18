@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import { api, endpoints } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
@@ -41,6 +42,27 @@ export interface ApiReferralTreeResponse {
   depth?: number;
   activeReferrals?: number;
   stats?: ReferralTree['stats'];
+}
+
+export interface PartnerVerificationRequest {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl?: string | null;
+    role: string;
+    ageCategory: string;
+    verificationStatus: string;
+    createdAt: string;
+  };
+  status: string;
+  createdAt: string;
+  confirmedAt?: string | null;
+  partnerRelationshipId?: string | null;
+  canConfirm: boolean;
 }
 
 // ============ Hooks ============
@@ -138,5 +160,50 @@ export function useCommission(id: string | undefined) {
       return response.data;
     },
     enabled: !!id && isAuthenticated && isHydrated,
+  });
+}
+
+export function usePartnerVerificationRequests() {
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
+
+  return useQuery({
+    queryKey: [...queryKeys.partners.all, 'verificationRequests'] as const,
+    queryFn: async () => {
+      const response = await api.get<{ items: PartnerVerificationRequest[]; total: number }>(
+        endpoints.partners.verificationRequests,
+      );
+      return response.data;
+    },
+    enabled: isAuthenticated && isHydrated && user?.role === 'PARTNER',
+  });
+}
+
+export function useConfirmPartnerVerificationRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.post(endpoints.partners.confirmVerificationRequest(id));
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all });
+      toast.success('Заявка подтверждена и отправлена на финальную проверку');
+    },
+  });
+}
+
+export function useRejectPartnerVerificationRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const response = await api.post(endpoints.partners.rejectVerificationRequest(id), { reason });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all });
+      toast.success('Заявка отклонена');
+    },
   });
 }

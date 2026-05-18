@@ -70,6 +70,12 @@ async function seedCategories() {
     { name: 'Наука и технологии', slug: 'science-tech', order: 6 },
     { name: 'Музыка', slug: 'music', order: 7 },
     { name: 'Спорт', slug: 'sport', order: 8 },
+    { name: 'Фильмы', slug: 'movies', order: 9 },
+    { name: 'Интервью', slug: 'interviews', order: 10 },
+    { name: 'Авто', slug: 'auto', order: 11 },
+    { name: 'Технологии', slug: 'technology', order: 12 },
+    { name: 'Игры', slug: 'games', order: 13 },
+    { name: 'Новости', slug: 'news', order: 14 },
   ];
 
   for (const category of categories) {
@@ -522,7 +528,7 @@ async function seedUsers() {
       firstName: 'Иван',
       lastName: 'Петров',
       dateOfBirth: new Date('1999-03-25'),
-      role: UserRole.BUYER,
+      role: UserRole.CLIENT,
       verificationStatus: VerificationStatus.VERIFIED,
     },
     {
@@ -531,7 +537,7 @@ async function seedUsers() {
       firstName: 'Алексей',
       lastName: 'Сидоров',
       dateOfBirth: new Date('2011-07-12'),
-      role: UserRole.MINOR,
+      role: UserRole.CLIENT,
       verificationStatus: VerificationStatus.VERIFIED,
     },
   ];
@@ -936,8 +942,8 @@ async function main() {
     console.log('   - admin@movieplatform.local / admin123 (ADMIN)');
     console.log('   - moderator@movieplatform.local / mod123 (MODERATOR)');
     console.log('   - partner@movieplatform.local / partner123 (PARTNER)');
-    console.log('   - user@movieplatform.local / user123 (BUYER)');
-    console.log('   - minor@movieplatform.local / minor123 (MINOR)');
+    console.log('   - user@movieplatform.local / user123 (CLIENT)');
+    console.log('   - minor@movieplatform.local / minor123 (CLIENT, age-restricted by ageCategory)');
     console.log('');
 
   } catch (error) {

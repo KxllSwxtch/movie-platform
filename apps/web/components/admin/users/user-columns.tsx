@@ -17,7 +17,8 @@ function getRoleBadge(role: string) {
     ADMIN: { label: 'Админ', className: 'bg-purple-500/20 text-purple-400 border-transparent' },
     MODERATOR: { label: 'Модератор', className: 'bg-blue-500/20 text-blue-400 border-transparent' },
     PARTNER: { label: 'Партнёр', className: 'bg-green-500/20 text-green-400 border-transparent' },
-    BUYER: { label: 'Покупатель', className: 'bg-gray-500/20 text-gray-400 border-transparent' },
+    CLIENT: { label: 'Клиент', className: 'bg-gray-500/20 text-gray-400 border-transparent' },
+    BUYER: { label: 'Клиент', className: 'bg-gray-500/20 text-gray-400 border-transparent' },
     GUEST: { label: 'Гость', className: 'bg-gray-500/20 text-gray-300 border-transparent' },
     MINOR: { label: 'Несовершеннолетний', className: 'bg-yellow-500/20 text-yellow-400 border-transparent' },
   };

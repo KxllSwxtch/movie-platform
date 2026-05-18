@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { useParams } from "next/navigation";
@@ -17,7 +17,7 @@ import {
 import { useContentList, useCategoryDetail } from "@/hooks/use-content";
 import { cn } from "@/lib/utils";
 
-type ContentTab = "all" | "series" | "clips" | "tutorials";
+type ContentTab = "all" | "series" | "videos" | "tutorials";
 
 export default function CategoryPage() {
   const params = useParams();
@@ -33,7 +33,7 @@ export default function CategoryPage() {
       ? undefined
       : activeTab === "series"
         ? "SERIES"
-        : activeTab === "clips"
+        : activeTab === "videos"
           ? "CLIP"
           : "TUTORIAL";
 
@@ -62,7 +62,7 @@ export default function CategoryPage() {
       year: item.year,
     }));
 
-  const clipItems = items
+  const videoItems = items
     .filter((i) => i.contentType === "CLIP")
     .map((item) => ({
       id: item.id,
@@ -98,16 +98,16 @@ export default function CategoryPage() {
     }));
 
   const tabs: { value: ContentTab; label: string }[] = [
-    { value: "all", label: "Все" },
-    { value: "series", label: "Сериалы" },
-    { value: "clips", label: "Клипы" },
-    { value: "tutorials", label: "Обучение" },
+    { value: "all", label: "Р’СЃРµ" },
+    { value: "series", label: "РЎРµСЂРёР°Р»С‹" },
+    { value: "videos", label: "Видео" },
+    { value: "tutorials", label: "РћР±СѓС‡РµРЅРёРµ" },
   ];
 
   const showSeries =
     activeTab === "all" ? seriesItems.length > 0 : activeTab === "series";
   const showClips =
-    activeTab === "all" ? clipItems.length > 0 : activeTab === "clips";
+    activeTab === "all" ? videoItems.length > 0 : activeTab === "videos";
   const showTutorials =
     activeTab === "all" ? tutorialItems.length > 0 : activeTab === "tutorials";
 
@@ -119,7 +119,7 @@ export default function CategoryPage() {
           {categoryName}
         </h1>
         <p className="text-sm text-mp-text-secondary mt-1">
-          {total} результатов в категории
+          {total} СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РІ РєР°С‚РµРіРѕСЂРёРё
         </p>
       </div>
 
@@ -153,10 +153,10 @@ export default function CategoryPage() {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Funnel className="w-12 h-12 text-mp-text-disabled mb-4" />
           <h3 className="text-lg font-medium text-mp-text-primary mb-2">
-            Контент не найден
+            РљРѕРЅС‚РµРЅС‚ РЅРµ РЅР°Р№РґРµРЅ
           </h3>
           <p className="text-mp-text-secondary">
-            В данной категории пока нет контента
+            Р’ РґР°РЅРЅРѕР№ РєР°С‚РµРіРѕСЂРёРё РїРѕРєР° РЅРµС‚ РєРѕРЅС‚РµРЅС‚Р°
           </p>
         </div>
       ) : (
@@ -166,7 +166,7 @@ export default function CategoryPage() {
             <section className="mb-8">
               {activeTab === "all" && (
                 <h2 className="text-lg font-semibold text-mp-text-primary mb-4">
-                  Сериалы
+                  РЎРµСЂРёР°Р»С‹
                 </h2>
               )}
               <ContentGrid>
@@ -178,16 +178,16 @@ export default function CategoryPage() {
           )}
 
           {/* Clips */}
-          {showClips && clipItems.length > 0 && (
+          {showClips && videoItems.length > 0 && (
             <section className="mb-8">
               {activeTab === "all" && (
                 <h2 className="text-lg font-semibold text-mp-text-primary mb-4">
-                  Клипы
+                  Видео
                 </h2>
               )}
               <ContentGrid>
-                {clipItems.map((clip) => (
-                  <ClipCard key={clip.id} content={clip} />
+                {videoItems.map((video) => (
+                  <ClipCard key={video.id} content={video} />
                 ))}
               </ContentGrid>
             </section>
@@ -198,7 +198,7 @@ export default function CategoryPage() {
             <section className="mb-8">
               {activeTab === "all" && (
                 <h2 className="text-lg font-semibold text-mp-text-primary mb-4">
-                  Обучение
+                  РћР±СѓС‡РµРЅРёРµ
                 </h2>
               )}
               <ContentGrid>
@@ -223,3 +223,4 @@ export default function CategoryPage() {
     </Container>
   );
 }
+

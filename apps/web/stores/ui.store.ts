@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 /**
  * Modal configuration
@@ -57,82 +58,97 @@ interface UIState {
 }
 
 /**
- * UI store for global UI state management
+ * UI store for global UI state management.
+ * Sidebar collapse is persisted so all desktop sidebars share the same state
+ * after reload: main, admin, studio, and account.
  */
-export const useUIStore = create<UIState>((set, get) => ({
-  // Initial state
-  isSidebarOpen: true,
-  isSidebarCollapsed: false,
-  isMobileMenuOpen: false,
-  modals: [],
-  isSearchOpen: false,
-  searchQuery: '',
-  isGlobalLoading: false,
-  loadingMessage: null,
+export const useUIStore = create<UIState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      isSidebarOpen: true,
+      isSidebarCollapsed: false,
+      isMobileMenuOpen: false,
+      modals: [],
+      isSearchOpen: false,
+      searchQuery: '',
+      isGlobalLoading: false,
+      loadingMessage: null,
 
-  // Sidebar actions
-  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
-  setSidebarOpen: (open) => set({ isSidebarOpen: open }),
-  toggleSidebarCollapsed: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
-  setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
+      // Sidebar actions
+      toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+      setSidebarOpen: (open) => set({ isSidebarOpen: open }),
+      toggleSidebarCollapsed: () =>
+        set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+      setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
 
-  // Mobile menu actions
-  toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
-  setMobileMenuOpen: (open) => set({ isMobileMenuOpen: open }),
+      // Mobile menu actions
+      toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
+      setMobileMenuOpen: (open) => set({ isMobileMenuOpen: open }),
 
-  // Modal actions
-  openModal: (id, data, onClose) =>
-    set((state) => {
-      // Don't add duplicate modals
-      if (state.modals.some((m) => m.id === id)) {
-        return state;
-      }
-      return {
-        modals: [...state.modals, { id, data, onClose }],
-      };
+      // Modal actions
+      openModal: (id, data, onClose) =>
+        set((state) => {
+          // Don't add duplicate modals
+          if (state.modals.some((m) => m.id === id)) {
+            return state;
+          }
+          return {
+            modals: [...state.modals, { id, data, onClose }],
+          };
+        }),
+
+      closeModal: (id) =>
+        set((state) => {
+          if (id) {
+            // Close specific modal
+            const modal = state.modals.find((m) => m.id === id);
+            modal?.onClose?.();
+            return {
+              modals: state.modals.filter((m) => m.id !== id),
+            };
+          }
+          // Close last modal
+          const lastModal = state.modals[state.modals.length - 1];
+          lastModal?.onClose?.();
+          return {
+            modals: state.modals.slice(0, -1),
+          };
+        }),
+
+      closeAllModals: () => {
+        const { modals } = get();
+        modals.forEach((m) => m.onClose?.());
+        set({ modals: [] });
+      },
+
+      getModalData: <T>(id: string) => {
+        const modal = get().modals.find((m) => m.id === id);
+        return modal?.data as T | undefined;
+      },
+
+      // Search actions
+      toggleSearch: () => set((state) => ({ isSearchOpen: !state.isSearchOpen })),
+      setSearchOpen: (open) =>
+        set({ isSearchOpen: open, searchQuery: open ? get().searchQuery : '' }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
+
+      // Loading actions
+      setGlobalLoading: (loading, message) =>
+        set({
+          isGlobalLoading: loading,
+          loadingMessage: loading ? message ?? null : null,
+        }),
     }),
-
-  closeModal: (id) =>
-    set((state) => {
-      if (id) {
-        // Close specific modal
-        const modal = state.modals.find((m) => m.id === id);
-        modal?.onClose?.();
-        return {
-          modals: state.modals.filter((m) => m.id !== id),
-        };
-      }
-      // Close last modal
-      const lastModal = state.modals[state.modals.length - 1];
-      lastModal?.onClose?.();
-      return {
-        modals: state.modals.slice(0, -1),
-      };
-    }),
-
-  closeAllModals: () => {
-    const { modals } = get();
-    modals.forEach((m) => m.onClose?.());
-    set({ modals: [] });
-  },
-
-  getModalData: <T>(id: string) => {
-    const modal = get().modals.find((m) => m.id === id);
-    return modal?.data as T | undefined;
-  },
-
-  // Search actions
-  toggleSearch: () => set((state) => ({ isSearchOpen: !state.isSearchOpen })),
-  setSearchOpen: (open) => set({ isSearchOpen: open, searchQuery: open ? get().searchQuery : '' }),
-  setSearchQuery: (query) => set({ searchQuery: query }),
-
-  // Loading actions
-  setGlobalLoading: (loading, message) =>
-    set({
-      isGlobalLoading: loading,
-      loadingMessage: loading ? message ?? null : null,
-    }),
-}));
+    {
+      name: 'mp-ui-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        isSidebarCollapsed: state.isSidebarCollapsed,
+      }),
+    },
+  ),
+);
 
 /**
  * Selector hooks for common UI state
