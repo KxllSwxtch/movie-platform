@@ -18,6 +18,7 @@ import type {
   ApiPartnerDashboardResponse,
   ApiPartnerBalanceResponse,
 } from '@/hooks/partner/use-partner-dashboard';
+import { buildAbsoluteAppUrl } from '@/lib/utils';
 
 // ============ Partner Normalizers ============
 
@@ -62,12 +63,14 @@ export function normalizePartnerDashboard(d: ApiPartnerDashboardResponse): Partn
     typeof rawLevel === 'number'
       ? (LEVEL_NUMBER_TO_NAME[rawLevel] ?? 'STARTER')
       : rawLevel;
+  const referralCode = d.referralCode ?? '';
+  const referralUrl = d.referralUrl || (referralCode ? `/register?ref=${referralCode}` : '');
 
   return {
     level,
     levelName: d.levelName ?? 'Стартер',
-    referralCode: d.referralCode ?? '',
-    referralUrl: d.referralUrl ?? '',
+    referralCode,
+    referralUrl: referralUrl ? buildAbsoluteAppUrl(referralUrl) : '',
     totalReferrals: d.totalReferrals ?? 0,
     activeReferrals: d.activeReferrals ?? 0,
     totalEarnings: d.totalEarnings ?? 0,

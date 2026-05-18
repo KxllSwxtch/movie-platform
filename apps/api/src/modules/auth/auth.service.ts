@@ -95,22 +95,26 @@ export class AuthService {
     let referredById: string | undefined;
     if (dto.referralCode) {
       const normalizedCode = extractReferralCode(dto.referralCode);
-      if (normalizedCode && isValidReferralCodeFormat(normalizedCode)) {
-        const referrer = await this.usersService.findByReferralCode(normalizedCode);
-        const canRefer =
-          referrer?.role === 'PARTNER' ||
-          referrer?.role === 'ADMIN' ||
-          referrer?.role === 'MODERATOR';
-        if (
-          referrer &&
-          canRefer &&
-          referrer.referralCodeActive &&
-          referrer.email !== dto.email.toLowerCase() // Prevent self-referral
-        ) {
-          referredById = referrer.id;
-        }
+      if (!normalizedCode || !isValidReferralCodeFormat(normalizedCode)) {
+        throw new BadRequestException('Реферальный код некорректен');
       }
-      // Silently ignore invalid/inactive referral codes (don't expose if code exists)
+
+      const referrer = await this.usersService.findByReferralCode(normalizedCode);
+      const canRefer =
+        referrer?.role === 'PARTNER' ||
+        referrer?.role === 'ADMIN' ||
+        referrer?.role === 'MODERATOR';
+
+      if (
+        !referrer ||
+        !canRefer ||
+        !referrer.referralCodeActive ||
+        referrer.email === dto.email.toLowerCase() // Prevent self-referral
+      ) {
+        throw new BadRequestException('Реферальный код не найден или больше не активен');
+      }
+
+      referredById = referrer.id;
     }
 
     // Generate unique referral code for new user

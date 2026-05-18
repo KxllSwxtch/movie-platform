@@ -214,3 +214,32 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Resolve the browser-facing application origin.
+ */
+export function getAppOrigin(): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, '');
+
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return window.location.origin;
+  }
+
+  return '';
+}
+
+/**
+ * Build a browser-facing absolute URL from a relative route or absolute URL.
+ */
+export function buildAbsoluteAppUrl(pathOrUrl: string): string {
+  if (!pathOrUrl) return getAppOrigin();
+
+  try {
+    return new URL(pathOrUrl).toString();
+  } catch {
+    const origin = getAppOrigin();
+    const path = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
+    return origin ? `${origin}${path}` : path;
+  }
+}

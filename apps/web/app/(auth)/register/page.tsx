@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeSlash, Envelope, Lock, User, Calendar, Gift } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -12,6 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
+
+const REFERRAL_STORAGE_KEY = 'mp-referral-code';
+const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{6,12}$/;
 
 /**
  * Registration form validation schema
@@ -44,7 +47,7 @@ const registerSchema = z
     confirmPassword: z.string().min(1, 'Подтвердите пароль'),
     referralCode: z.string().optional().refine((value) => {
       const code = extractReferralCode(value);
-      return !code || /^[A-Z0-9]{6,12}$/.test(code);
+      return !code || REFERRAL_CODE_PATTERN.test(code);
     }, 'Введите реферальный код партнера из ссылки, например ABC12345. Email партнера не подходит.'),
     acceptTerms: z.literal(true, {
       errorMap: () => ({ message: 'Необходимо принять условия использования' }),
@@ -80,6 +83,29 @@ function extractReferralCode(value?: string) {
   return input.toUpperCase();
 }
 
+function getStoredReferralCode() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  try {
+    const storedCode = extractReferralCode(
+      window.sessionStorage.getItem(REFERRAL_STORAGE_KEY) || '',
+    );
+    return storedCode && REFERRAL_CODE_PATTERN.test(storedCode) ? storedCode : '';
+  } catch {
+    return '';
+  }
+}
+
+function storeReferralCode(code: string) {
+  try {
+    window.sessionStorage.setItem(REFERRAL_STORAGE_KEY, code);
+  } catch {
+    // Registration still works if browser storage is unavailable.
+  }
+}
+
 /**
  * Registration page
  */
@@ -87,13 +113,29 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const searchParams = useSearchParams();
-  const referralCode = extractReferralCode(searchParams.get('ref') || '') || '';
+  const referralParam =
+    searchParams.get('ref') ||
+    searchParams.get('referralCode') ||
+    searchParams.get('referral') ||
+    '';
+  const referralCode = useMemo(() => {
+    const codeFromUrl = extractReferralCode(referralParam);
+    if (codeFromUrl && REFERRAL_CODE_PATTERN.test(codeFromUrl)) {
+      return codeFromUrl;
+    }
+
+    return getStoredReferralCode();
+  }, [referralParam]);
+  const [appliedReferralCode, setAppliedReferralCode] = useState(referralCode);
 
   const { register: registerUser, isRegistering } = useAuth();
 
   const {
     register,
     handleSubmit,
+    setValue,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -108,6 +150,25 @@ export default function RegisterPage() {
       acceptTerms: undefined,
     },
   });
+
+  useEffect(() => {
+    const codeFromUrl = extractReferralCode(referralParam);
+    if (referralParam && codeFromUrl && !REFERRAL_CODE_PATTERN.test(codeFromUrl)) {
+      setAppliedReferralCode('');
+      setError('referralCode', {
+        type: 'validate',
+        message: 'Реферальный код из ссылки некорректен. Проверьте ссылку партнёра.',
+      });
+      return;
+    }
+
+    if (referralCode) {
+      storeReferralCode(referralCode);
+      setValue('referralCode', referralCode, { shouldValidate: true });
+      setAppliedReferralCode(referralCode);
+      clearErrors('referralCode');
+    }
+  }, [clearErrors, referralCode, referralParam, setError, setValue]);
 
   const onSubmit = (data: RegisterFormData) => {
     registerUser({
@@ -299,6 +360,17 @@ export default function RegisterPage() {
 
           {/* Referral code */}
           <div className="space-y-2">
+            {appliedReferralCode && (
+              <div className="rounded-lg border border-mp-accent-secondary/40 bg-mp-accent-secondary/10 p-3 text-sm text-mp-text-primary">
+                <p className="font-medium">Реферальный код применён</p>
+                <p className="mt-1 text-mp-text-secondary">
+                  Вы приглашены партнёром. Код:{' '}
+                  <span className="font-mono text-mp-accent-secondary">
+                    {appliedReferralCode}
+                  </span>
+                </p>
+              </div>
+            )}
             <label
               htmlFor="referralCode"
               className="text-sm font-medium text-mp-text-primary"

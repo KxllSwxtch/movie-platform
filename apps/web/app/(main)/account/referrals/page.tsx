@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBonusHistory } from '@/hooks/bonus';
 import { useCommissions, usePartnerDashboard, useReferralTree } from '@/hooks/use-partner';
+import { buildAbsoluteAppUrl, copyTextToClipboard } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
+import { toast } from 'sonner';
 
 function formatNumber(value?: number) {
   return new Intl.NumberFormat('ru-RU').format(value ?? 0);
@@ -42,14 +44,19 @@ export default function AccountReferralsPage() {
   }
 
   const referralUrl =
-    dashboard?.referralUrl?.startsWith('http')
-      ? dashboard.referralUrl
-      : `${typeof window !== 'undefined' ? window.location.origin : ''}${dashboard?.referralUrl || `/register?ref=${dashboard?.referralCode || user?.referralCode || ''}`}`;
+    dashboard?.referralUrl ||
+    `/register?ref=${dashboard?.referralCode || user?.referralCode || ''}`;
+  const absoluteReferralUrl = buildAbsoluteAppUrl(referralUrl);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(referralUrl);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
+    const ok = await copyTextToClipboard(absoluteReferralUrl);
+    if (ok) {
+      setCopied(true);
+      toast.success('Ссылка скопирована');
+      window.setTimeout(() => setCopied(false), 1600);
+    } else {
+      toast.error('Не удалось скопировать. Выделите ссылку вручную.');
+    }
   };
 
   const purchasesCount = commissions?.items?.length ?? 0;
@@ -74,9 +81,9 @@ export default function AccountReferralsPage() {
         <CardContent>
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="min-w-0 flex-1 rounded-lg border border-mp-border bg-mp-bg-primary px-3 py-2 text-sm text-mp-text-secondary">
-              <span className="block truncate">{isLoading ? 'Загрузка...' : referralUrl}</span>
+              <span className="block truncate">{isLoading ? 'Загрузка...' : absoluteReferralUrl}</span>
             </div>
-            <Button onClick={handleCopy} disabled={isLoading}>
+            <Button onClick={handleCopy} disabled={isLoading} data-testid="copy-account-referral-link">
               {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
               {copied ? 'Скопировано' : 'Скопировать'}
             </Button>

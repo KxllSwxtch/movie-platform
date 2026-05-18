@@ -259,7 +259,7 @@ describe('AuthService', () => {
       expect(prismaService.partnerRelationship.create).toHaveBeenCalled();
     });
 
-    it('should silently ignore invalid referral codes', async () => {
+    it('should reject invalid referral codes', async () => {
       const newUser = createAdultUser({ email: registerDto.email });
 
       usersService.findByEmail.mockResolvedValue(null);
@@ -267,10 +267,11 @@ describe('AuthService', () => {
       prismaService.user.create.mockResolvedValue(newUser);
 
       const dtoWithInvalidReferral = { ...registerDto, referralCode: 'INVALID' };
-      const result = await service.register(dtoWithInvalidReferral, '127.0.0.1');
 
-      expect(result).toHaveProperty('accessToken');
-      // Should not create partner relationship
+      await expect(service.register(dtoWithInvalidReferral, '127.0.0.1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prismaService.user.create).not.toHaveBeenCalled();
       expect(prismaService.partnerRelationship.create).not.toHaveBeenCalled();
     });
   });

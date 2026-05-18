@@ -6,7 +6,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { buildAbsoluteAppUrl, cn } from '@/lib/utils';
 
 import { ReferralLinkDisplay } from './referral-link-display';
 
@@ -31,6 +31,8 @@ export function PartnerInviteCard({
     return null;
   }
 
+  const absoluteReferralUrl = buildAbsoluteAppUrl(referralUrl);
+
   const shareText = `Присоединяйся к MoviePlatform! Используй мой код ${referralCode} и получи бонусы при регистрации.`;
 
   const shareLinks = [
@@ -38,25 +40,25 @@ export function PartnerInviteCard({
       name: 'Telegram',
       icon: PaperPlaneTilt,
       color: 'hover:bg-[#0088cc]/20 hover:text-[#0088cc]',
-      url: `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(shareText)}`,
+      url: `https://t.me/share/url?url=${encodeURIComponent(absoluteReferralUrl)}&text=${encodeURIComponent(shareText)}`,
     },
     {
       name: 'WhatsApp',
       icon: ChatCircle,
       color: 'hover:bg-[#25D366]/20 hover:text-[#25D366]',
-      url: `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + referralUrl)}`,
+      url: `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + absoluteReferralUrl)}`,
     },
     {
       name: 'VK',
       icon: ShareNetwork,
       color: 'hover:bg-[#4C75A3]/20 hover:text-[#4C75A3]',
-      url: `https://vk.com/share.php?url=${encodeURIComponent(referralUrl)}&title=${encodeURIComponent(shareText)}`,
+      url: `https://vk.com/share.php?url=${encodeURIComponent(absoluteReferralUrl)}&title=${encodeURIComponent(shareText)}`,
     },
     {
       name: 'Email',
       icon: Envelope,
       color: 'hover:bg-mp-accent-primary/20 hover:text-mp-accent-primary',
-      url: `mailto:?subject=${encodeURIComponent('Приглашение в MoviePlatform')}&body=${encodeURIComponent(shareText + '\n\n' + referralUrl)}`,
+      url: `mailto:?subject=${encodeURIComponent('Приглашение в MoviePlatform')}&body=${encodeURIComponent(shareText + '\n\n' + absoluteReferralUrl)}`,
     },
   ];
 
@@ -74,7 +76,7 @@ export function PartnerInviteCard({
       <CardContent className="space-y-6">
         <ReferralLinkDisplay
           referralCode={referralCode}
-          referralUrl={referralUrl}
+          referralUrl={absoluteReferralUrl}
         />
 
         <div className="space-y-3">
