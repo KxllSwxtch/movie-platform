@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module } from "@nestjs/common";
 
-import { ContentService } from './content.service';
-import { ContentController } from './content.controller';
-import { SeriesService } from './series.service';
-import { WatchHistoryService } from './watch-history.service';
-import { WatchHistoryController } from './watch-history.controller';
+import { ContentService } from "./content.service";
+import { ContentController } from "./content.controller";
+import { SeriesService } from "./series.service";
+import { WatchHistoryService } from "./watch-history.service";
+import { WatchHistoryController } from "./watch-history.controller";
+import { NotificationsModule } from "../notifications/notifications.module";
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [ContentController, WatchHistoryController],
   providers: [ContentService, SeriesService, WatchHistoryService],
   exports: [ContentService, SeriesService, WatchHistoryService],

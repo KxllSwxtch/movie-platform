@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ArrowRight, X } from '@phosphor-icons/react';
-import { CheckCheck } from 'lucide-react';
+import Link from "next/link";
+import { ArrowRight, X } from "@phosphor-icons/react";
+import { CheckCheck } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import { useNotifications, useMarkAllAsRead } from '@/hooks/use-notifications';
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { useNotifications, useMarkAllAsRead } from "@/hooks/use-notifications";
 
-import { NotificationItem } from './notification-item';
+import { NotificationItem } from "./notification-item";
+import { isUnavailableContentNotification } from "./notification-utils";
 
 // =============================================================================
 // Skeleton Loader
@@ -42,11 +43,16 @@ interface NotificationDropdownProps {
  * Notification dropdown content displayed inside the popover or sheet
  * Shows a list of recent notifications with header and footer
  */
-export function NotificationDropdown({ onClose, showCloseButton = true }: NotificationDropdownProps) {
+export function NotificationDropdown({
+  onClose,
+  showCloseButton = true,
+}: NotificationDropdownProps) {
   const { data, isLoading } = useNotifications(1, 10);
   const markAllAsRead = useMarkAllAsRead();
 
-  const notifications = data?.items ?? [];
+  const notifications = (data?.items ?? []).filter(
+    (notification) => !isUnavailableContentNotification(notification),
+  );
   const hasUnread = notifications.some((n) => !n.isRead);
   const isEmpty = !isLoading && notifications.length === 0;
 
@@ -55,9 +61,9 @@ export function NotificationDropdown({ onClose, showCloseButton = true }: Notifi
   }
 
   return (
-    <div className="w-full sm:w-[380px] flex flex-col max-h-full">
+    <div className="w-full sm:w-[460px] md:w-[520px] max-w-[calc(100vw-1rem)] flex flex-col max-h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-mp-border">
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 border-b border-mp-border">
         <h3 className="text-sm font-semibold text-mp-text-primary">
           Уведомления
         </h3>
@@ -130,9 +136,9 @@ export function NotificationDropdown({ onClose, showCloseButton = true }: Notifi
             href="/account/notifications"
             onClick={onClose}
             className={cn(
-              'flex items-center justify-center gap-1.5',
-              'text-xs font-medium text-mp-accent-secondary',
-              'hover:text-mp-accent-secondary/80 transition-colors'
+              "flex items-center justify-center gap-1.5",
+              "text-xs font-medium text-mp-accent-secondary",
+              "hover:text-mp-accent-secondary/80 transition-colors",
             )}
           >
             Все уведомления

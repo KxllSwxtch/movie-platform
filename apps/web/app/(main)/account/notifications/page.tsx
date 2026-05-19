@@ -1,35 +1,31 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Bell,
-  Checks,
-  SpinnerGap,
-  Trash,
-} from '@phosphor-icons/react';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Bell, Checks, SpinnerGap, Trash } from "@phosphor-icons/react";
 
-import { Button } from '@/components/ui/button';
-import { NotificationItem } from '@/components/notifications/notification-item';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { NotificationItem } from "@/components/notifications/notification-item";
+import { isUnavailableContentNotification } from "@/components/notifications/notification-utils";
+import { cn } from "@/lib/utils";
 import {
   useInfiniteNotifications,
   useMarkAllAsRead,
   useDeleteAllNotifications,
-} from '@/hooks/use-notifications';
+} from "@/hooks/use-notifications";
 
 // =============================================================================
 // Filter tabs config
 // =============================================================================
 
 const FILTER_TABS: { label: string; value: string | undefined }[] = [
-  { label: 'Все', value: undefined },
-  { label: 'Система', value: 'SYSTEM' },
-  { label: 'Подписки', value: 'SUBSCRIPTION' },
-  { label: 'Платежи', value: 'PAYMENT' },
-  { label: 'Контент', value: 'CONTENT' },
-  { label: 'Партнёры', value: 'PARTNER' },
-  { label: 'Бонусы', value: 'BONUS' },
-  { label: 'Промо', value: 'PROMO' },
+  { label: "Все", value: undefined },
+  { label: "Система", value: "SYSTEM" },
+  { label: "Подписки", value: "SUBSCRIPTION" },
+  { label: "Платежи", value: "PAYMENT" },
+  { label: "Контент", value: "CONTENT" },
+  { label: "Партнёры", value: "PARTNER" },
+  { label: "Бонусы", value: "BONUS" },
+  { label: "Промо", value: "PROMO" },
 ];
 
 // =============================================================================
@@ -37,21 +33,20 @@ const FILTER_TABS: { label: string; value: string | undefined }[] = [
 // =============================================================================
 
 export default function NotificationsPage() {
-  const [activeFilter, setActiveFilter] = useState<string | undefined>(undefined);
+  const [activeFilter, setActiveFilter] = useState<string | undefined>(
+    undefined,
+  );
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteNotifications(activeFilter);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteNotifications(activeFilter);
 
   const markAllAsRead = useMarkAllAsRead();
   const deleteAll = useDeleteAllNotifications();
 
   // Flatten all pages into a single notification list
-  const notifications = data?.pages.flatMap((page) => page.items) ?? [];
+  const notifications = (
+    data?.pages.flatMap((page) => page.items) ?? []
+  ).filter((notification) => !isUnavailableContentNotification(notification));
   const unreadCount = data?.pages[0]?.unreadCount ?? 0;
   const totalCount = data?.pages[0]?.total ?? 0;
 
@@ -73,7 +68,7 @@ export default function NotificationsPage() {
     if (!sentinel) return;
 
     const observer = new IntersectionObserver(handleIntersect, {
-      rootMargin: '200px',
+      rootMargin: "200px",
     });
     observer.observe(sentinel);
 
@@ -95,7 +90,8 @@ export default function NotificationsPage() {
               </h1>
               {totalCount > 0 && (
                 <p className="text-sm text-mp-text-secondary mt-0.5">
-                  {totalCount} уведомлений{unreadCount > 0 ? `, ${unreadCount} непрочитанных` : ''}
+                  {totalCount} уведомлений
+                  {unreadCount > 0 ? `, ${unreadCount} непрочитанных` : ""}
                 </p>
               )}
             </div>
@@ -142,14 +138,14 @@ export default function NotificationsPage() {
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
         {FILTER_TABS.map((tab) => (
           <button
-            key={tab.value ?? 'all'}
+            key={tab.value ?? "all"}
             type="button"
             onClick={() => setActiveFilter(tab.value)}
             className={cn(
-              'shrink-0 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors',
+              "shrink-0 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
               activeFilter === tab.value
-                ? 'bg-mp-accent-primary text-white'
-                : 'bg-mp-surface text-mp-text-secondary hover:bg-mp-surface-elevated hover:text-mp-text-primary'
+                ? "bg-mp-accent-primary text-white"
+                : "bg-mp-surface text-mp-text-secondary hover:bg-mp-surface-elevated hover:text-mp-text-primary",
             )}
           >
             {tab.label}
@@ -170,8 +166,8 @@ export default function NotificationsPage() {
           <p className="text-mp-text-secondary font-medium">Нет уведомлений</p>
           <p className="text-sm text-mp-text-disabled mt-1">
             {activeFilter
-              ? 'Нет уведомлений в этой категории'
-              : 'Здесь будут появляться ваши уведомления'}
+              ? "Нет уведомлений в этой категории"
+              : "Здесь будут появляться ваши уведомления"}
           </p>
         </div>
       ) : (
@@ -181,10 +177,7 @@ export default function NotificationsPage() {
               key={notification.id}
               className="border-b border-mp-border last:border-b-0"
             >
-              <NotificationItem
-                notification={notification}
-                showDelete
-              />
+              <NotificationItem notification={notification} showDelete />
             </div>
           ))}
 
@@ -195,7 +188,9 @@ export default function NotificationsPage() {
           {isFetchingNextPage && (
             <div className="flex items-center justify-center py-4 border-t border-mp-border">
               <SpinnerGap className="h-5 w-5 animate-spin text-mp-accent-primary" />
-              <span className="ml-2 text-sm text-mp-text-secondary">Загрузка...</span>
+              <span className="ml-2 text-sm text-mp-text-secondary">
+                Загрузка...
+              </span>
             </div>
           )}
         </div>

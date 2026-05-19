@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import {
@@ -28,6 +29,7 @@ import {
   SearchQueryDto,
   UpdateContentDto,
 } from "./dto";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class ContentService {
@@ -45,7 +47,83 @@ export class ContentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
+
+  private async notifyModeratorsAboutPendingContent(content: {
+    id: string;
+    title: string;
+    contentType: string;
+    status: ContentStatus;
+    creatorId?: string | null;
+    creator?: {
+      id: string;
+      email: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      role?: string;
+    } | null;
+  }) {
+    if (!this.notifications || content.status !== ContentStatus.PENDING) return;
+
+    try {
+      const [reviewers, creator] = await Promise.all([
+        this.prisma.user.findMany({
+          where: { role: { in: [UserRole.ADMIN, UserRole.MODERATOR] } },
+          select: { id: true },
+        }),
+        content.creator
+          ? Promise.resolve(content.creator)
+          : content.creatorId
+            ? this.prisma.user.findUnique({
+                where: { id: content.creatorId },
+                select: {
+                  id: true,
+                  email: true,
+                  firstName: true,
+                  lastName: true,
+                  role: true,
+                },
+              })
+            : Promise.resolve(null),
+      ]);
+
+      const creatorName =
+        [creator?.firstName, creator?.lastName].filter(Boolean).join(" ") ||
+        creator?.email ||
+        "Unknown creator";
+
+      await Promise.all(
+        reviewers.map((reviewer) =>
+          this.notifications!.sendNotification({
+            userId: reviewer.id,
+            title: "Новый контент отправлен на модерацию",
+            body: `${content.title} — ${creatorName}`,
+            data: {
+              type: "CONTENT",
+              notificationType: "MODERATION_REQUEST",
+              contentId: content.id,
+              moderationAction: "submitted_for_moderation",
+              creator: creator
+                ? {
+                    id: creator.id,
+                    email: creator.email,
+                    firstName: creator.firstName,
+                    lastName: creator.lastName,
+                    role: creator.role,
+                  }
+                : null,
+              contentType: content.contentType,
+              status: content.status,
+              link: `/admin/content/${content.id}`,
+            },
+          }),
+        ),
+      );
+    } catch {
+      // Moderation workflow must not fail because a side-channel notification failed.
+    }
+  }
 
   private isPrivilegedRole(role?: string): boolean {
     return role === UserRole.ADMIN || role === UserRole.MODERATOR;
@@ -128,7 +206,7 @@ export class ContentService {
     const index = order.indexOf(userAgeCategory);
     const allowed = order.slice(0, index + 1);
 
-    if (verificationStatus !== 'VERIFIED') {
+    if (verificationStatus !== "VERIFIED") {
       return allowed.filter(
         (category) => category !== PrismaAgeCategory.EIGHTEEN_PLUS,
       );
@@ -518,15 +596,19 @@ export class ContentService {
     });
   }
 
-  async createCategoryAdmin(dto: {
-    name: string;
-    slug?: string;
-    parentId?: string | null;
-    iconUrl?: string | null;
-    order?: number;
-    isActive?: boolean;
-  }, adminId?: string) {
-    const slug = dto.slug?.trim().toLowerCase() || this.generateBaseSlug(dto.name);
+  async createCategoryAdmin(
+    dto: {
+      name: string;
+      slug?: string;
+      parentId?: string | null;
+      iconUrl?: string | null;
+      order?: number;
+      isActive?: boolean;
+    },
+    adminId?: string,
+  ) {
+    const slug =
+      dto.slug?.trim().toLowerCase() || this.generateBaseSlug(dto.name);
     const category = await this.prisma.category.create({
       data: {
         name: dto.name,
@@ -552,14 +634,18 @@ export class ContentService {
     return category;
   }
 
-  async updateCategoryAdmin(id: string, dto: {
-    name?: string;
-    slug?: string;
-    parentId?: string | null;
-    iconUrl?: string | null;
-    order?: number;
-    isActive?: boolean;
-  }, adminId?: string) {
+  async updateCategoryAdmin(
+    id: string,
+    dto: {
+      name?: string;
+      slug?: string;
+      parentId?: string | null;
+      iconUrl?: string | null;
+      order?: number;
+      isActive?: boolean;
+    },
+    adminId?: string,
+  ) {
     const existing = await this.prisma.category.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException(`Категория с ID "${id}" не найдена`);
@@ -604,7 +690,9 @@ export class ContentService {
       throw new NotFoundException(`Категория с ID "${id}" не найдена`);
     }
     if (contentCount > 0 || childCount > 0) {
-      throw new BadRequestException("Нельзя удалить категорию с контентом или дочерними категориями");
+      throw new BadRequestException(
+        "Нельзя удалить категорию с контентом или дочерними категориями",
+      );
     }
 
     await this.prisma.category.delete({ where: { id } });
@@ -640,12 +728,16 @@ export class ContentService {
     }
 
     if (name.length < 2 || name.length > 32) {
-      throw new BadRequestException("Tag name must be between 2 and 32 characters");
+      throw new BadRequestException(
+        "Tag name must be between 2 and 32 characters",
+      );
     }
 
     const slug = this.generateBaseSlug(name);
     if (!slug) {
-      throw new BadRequestException("Tag name contains no searchable characters");
+      throw new BadRequestException(
+        "Tag name contains no searchable characters",
+      );
     }
 
     return this.prisma.tag.upsert({
@@ -1193,6 +1285,7 @@ export class ContentService {
     });
 
     await this.cache.invalidatePattern("content:*");
+    await this.notifyModeratorsAboutPendingContent(content);
 
     return {
       ...this.mapContentToDetailDto(content),
@@ -1320,6 +1413,12 @@ export class ContentService {
     });
 
     await this.cache.invalidatePattern("content:*");
+    if (
+      existing.status !== ContentStatus.PENDING &&
+      content.status === ContentStatus.PENDING
+    ) {
+      await this.notifyModeratorsAboutPendingContent(content);
+    }
 
     return {
       ...this.mapContentToDetailDto(content),
@@ -1355,7 +1454,9 @@ export class ContentService {
     reason?: string,
   ) {
     if (!this.canManageAll(actor)) {
-      throw new ForbiddenException("Only admin or moderator can moderate content");
+      throw new ForbiddenException(
+        "Only admin or moderator can moderate content",
+      );
     }
 
     const existing = await this.prisma.content.findUnique({
@@ -1364,7 +1465,9 @@ export class ContentService {
     });
 
     if (!existing) {
-      throw new NotFoundException(`РљРѕРЅС‚РµРЅС‚ СЃ ID "${id}" РЅРµ РЅР°Р№РґРµРЅ`);
+      throw new NotFoundException(
+        `РљРѕРЅС‚РµРЅС‚ СЃ ID "${id}" РЅРµ РЅР°Р№РґРµРЅ`,
+      );
     }
 
     const nextStatus =
@@ -1388,13 +1491,21 @@ export class ContentService {
         include: {
           category: { select: { id: true, name: true, slug: true } },
           creator: {
-            select: { id: true, email: true, firstName: true, lastName: true, role: true },
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
           },
           tags: {
             include: { tag: { select: { id: true, name: true, slug: true } } },
           },
           genres: {
-            include: { genre: { select: { id: true, name: true, slug: true } } },
+            include: {
+              genre: { select: { id: true, name: true, slug: true } },
+            },
           },
           _count: { select: { comments: true, likes: true, ratings: true } },
         },
@@ -1673,7 +1784,9 @@ export class ContentService {
     });
 
     if (count !== uniqueGenreIds.length) {
-      throw new BadRequestException("One or more genres are missing or inactive");
+      throw new BadRequestException(
+        "One or more genres are missing or inactive",
+      );
     }
   }
 
