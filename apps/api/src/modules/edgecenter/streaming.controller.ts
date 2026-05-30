@@ -10,6 +10,7 @@ import {
   ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AgeCategory } from '@prisma/client';
 
 import { StreamingService } from './streaming.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -20,6 +21,8 @@ interface JwtUser {
   id: string;
   email: string;
   role: string;
+  ageCategory?: AgeCategory;
+  verificationStatus?: string;
 }
 
 @ApiTags('content')
@@ -55,6 +58,8 @@ export class StreamingController {
     return this.streamingService.getStreamUrl(contentId, {
       userId: user?.id,
       userRole: user?.role,
+      userAgeCategory: user?.ageCategory,
+      verificationStatus: user?.verificationStatus,
     });
   }
 }

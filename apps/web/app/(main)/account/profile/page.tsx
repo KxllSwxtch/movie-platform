@@ -1,12 +1,14 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Calendar, Key, FloppyDisk, User } from '@phosphor-icons/react';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
+import { AvatarUpload } from '@/components/account/avatar-upload';
+import { EmailChangeSection } from '@/components/account/email-change-section';
 import { AgeBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,11 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AvatarUpload } from '@/components/account/avatar-upload';
-import { EmailChangeSection } from '@/components/account/email-change-section';
 import { useProfile, useUpdateProfile } from '@/hooks/use-account';
-import { useAuthStore } from '@/stores/auth.store';
 import { formatDate } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth.store';
 
 // ==============================
 // Zod schema
@@ -41,6 +41,14 @@ const profileSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+
+const LEGACY_ROLE_LABELS: Record<string, string> = {
+  CLIENT: 'Клиент',
+  BUYER: 'Клиент',
+  MINOR: 'Клиент',
+  GUEST: 'Гость',
+  AUTHOR: 'Автор',
+};
 
 // ==============================
 // Role labels
@@ -290,7 +298,7 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-xs text-mp-text-secondary">Роль</p>
                   <p className="text-sm font-medium text-mp-text-primary">
-                    {ROLE_LABELS[user.role] || user.role}
+                    {ROLE_LABELS[user.role] || LEGACY_ROLE_LABELS[user.role] || user.role}
                   </p>
                 </div>
               </div>

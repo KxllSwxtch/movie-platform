@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { PartnerAuthGuard } from '@/components/partner';
+
 export const metadata: Metadata = {
   title: 'Партнерская программа',
   description: 'Партнерская программа MoviePlatform — приглашайте друзей и зарабатывайте комиссии с 5 уровней.',
@@ -10,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function PartnerLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <PartnerAuthGuard>{children}</PartnerAuthGuard>;
 }

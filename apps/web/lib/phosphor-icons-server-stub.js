@@ -1,6 +1,7 @@
 // Server-side stub for @phosphor-icons/react
 // Returns an SVG with dangerouslySetInnerHTML to prevent React from comparing
 // children during hydration, avoiding React error #418.
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
 'use strict';
 
 const React = require('react');

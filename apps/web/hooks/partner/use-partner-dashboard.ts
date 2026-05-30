@@ -2,13 +2,14 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { api, endpoints } from '@/lib/api-client';
 import {
   normalizePartnerLevels,
   normalizePartnerDashboard,
   normalizePartnerBalance,
 } from '@/lib/api/normalizers';
+import { api, endpoints } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
+import { canUsePartnerDashboard } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
 import type { PartnerDashboard } from '@/types';
 
@@ -92,7 +93,7 @@ export function usePartnerLevels() {
  * Hook to fetch partner dashboard data
  */
 export function usePartnerDashboard() {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.dashboard(),
@@ -100,7 +101,10 @@ export function usePartnerDashboard() {
       const response = await api.get<ApiPartnerDashboardResponse>(endpoints.partners.dashboard);
       return normalizePartnerDashboard(response.data);
     },
-    enabled: isAuthenticated && isHydrated,
+    enabled:
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
     staleTime: 60 * 1000, // 1 minute
   });
 }
@@ -109,7 +113,7 @@ export function usePartnerDashboard() {
  * Hook to fetch available balance
  */
 export function usePartnerBalance() {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.balance(),
@@ -117,7 +121,10 @@ export function usePartnerBalance() {
       const response = await api.get<ApiPartnerBalanceResponse>(endpoints.partners.balance);
       return normalizePartnerBalance(response.data);
     },
-    enabled: isAuthenticated && isHydrated,
+    enabled:
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
     staleTime: 30 * 1000, // 30 seconds - balance changes more frequently
   });
 }

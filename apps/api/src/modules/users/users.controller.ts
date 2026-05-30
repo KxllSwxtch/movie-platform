@@ -24,6 +24,7 @@ import {
 
 import { UsersService } from './users.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import {
   UpdateProfileDto,
   VerificationSubmissionDto,
@@ -41,6 +42,17 @@ import { AddToWatchlistDto } from './dto/watchlist.dto';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('username-available')
+  @Public()
+  @ApiOperation({ summary: 'Check public username availability' })
+  @ApiResponse({
+    status: 200,
+    description: 'Username availability',
+  })
+  async checkUsernameAvailability(@Query('username') username?: string) {
+    return this.usersService.checkUsernameAvailability(username);
+  }
 
   /**
    * Get current user profile.

@@ -30,9 +30,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 
-import { GenreList, AddGenreDialog } from '@/components/sidebar';
 import { CollapsedNavTooltip } from '@/components/layout/collapsed-nav-tooltip';
+import { GenreList, AddGenreDialog } from '@/components/sidebar';
 import { useAuth } from '@/hooks/use-auth';
+import { canUsePartnerDashboard, canUseStudio } from '@/lib/role-permissions';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
@@ -131,14 +132,15 @@ export function AppSidebar({ className }: AppSidebarProps) {
     toggleSidebarCollapsed,
   } = useUIStore();
 
-  const canUseStudio =
-    user?.role === 'ADMIN' ||
-    user?.role === 'MODERATOR' ||
-    user?.role === 'PARTNER';
+  const canAccessStudio = canUseStudio(user?.role, user?.verificationStatus);
   const canModerate = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
+  const canAccessPartnerDashboard = canUsePartnerDashboard(
+    user?.role,
+    user?.verificationStatus,
+  );
   const navGroups = React.useMemo(() => {
     const groups = [...baseNavGroups];
-    if (canUseStudio) {
+    if (canAccessStudio) {
       groups.push({
         ...studioNavGroup,
         items: canModerate
@@ -150,11 +152,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
           : studioNavGroup.items,
       });
     }
-    if (user?.role === 'PARTNER') {
+    if (canAccessPartnerDashboard) {
       groups.push(partnerNavGroup);
     }
     return groups;
-  }, [canModerate, canUseStudio, user?.role]);
+  }, [canAccessPartnerDashboard, canAccessStudio, canModerate]);
 
   // State for add genre dialog
   const [isAddGenreDialogOpen, setAddGenreDialogOpen] = React.useState(false);

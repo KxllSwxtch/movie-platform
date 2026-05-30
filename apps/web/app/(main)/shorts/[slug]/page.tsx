@@ -20,6 +20,25 @@ import { Spinner } from "@/components/ui/spinner";
 import { useContentDetail, useContentList } from "@/hooks/use-content";
 import { formatNumber } from "@/lib/utils";
 
+function getCreatorName(
+  creator:
+    | string
+    | {
+        firstName?: string;
+        lastName?: string;
+        username?: string;
+      }
+    | undefined,
+) {
+  if (!creator) return null;
+  if (typeof creator === "string") return creator;
+  return (
+    creator.username ||
+    [creator.firstName, creator.lastName].filter(Boolean).join(" ") ||
+    null
+  );
+}
+
 export default function ShortDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -29,6 +48,7 @@ export default function ShortDetailPage() {
 
   const relatedShorts =
     relatedData?.data?.items?.filter((item) => item.slug !== slug) ?? [];
+  const creatorName = getCreatorName(short?.creator);
 
   if (isLoading) {
     return (
@@ -102,8 +122,8 @@ export default function ShortDetailPage() {
             {short.title}
           </h1>
 
-          {short.creator && (
-            <p className="text-mp-text-secondary mb-4">@{short.creator}</p>
+          {creatorName && (
+            <p className="text-mp-text-secondary mb-4">@{creatorName}</p>
           )}
 
           {short.description && (
@@ -187,9 +207,9 @@ export default function ShortDetailPage() {
                     <p className="text-white text-sm font-medium line-clamp-2">
                       {item.title}
                     </p>
-                    {item.creator && (
+                    {getCreatorName(item.creator) && (
                       <p className="text-white/60 text-xs mt-1">
-                        @{item.creator}
+                        @{getCreatorName(item.creator)}
                       </p>
                     )}
                   </div>

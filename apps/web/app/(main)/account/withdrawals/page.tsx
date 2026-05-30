@@ -3,9 +3,10 @@
 import { ArrowRight, Clock, Wallet } from '@phosphor-icons/react';
 import Link from 'next/link';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useBonusBalance, useBonusRate, useBonusWithdrawals } from '@/hooks/bonus';
+import { canUsePartnerDashboard } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
 
 function formatRub(amount: number) {
@@ -34,9 +35,12 @@ export default function AccountWithdrawalsPage() {
   const { data: rate } = useBonusRate();
   const { data: withdrawals } = useBonusWithdrawals();
 
-  const isPartner = user?.role === 'PARTNER';
+  const canAccessPartnerDashboard = canUsePartnerDashboard(
+    user?.role,
+    user?.verificationStatus,
+  );
 
-  if (!isPartner) {
+  if (!canAccessPartnerDashboard) {
     return (
       <Card>
         <CardContent className="p-8">

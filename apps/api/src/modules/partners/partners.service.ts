@@ -41,7 +41,7 @@ export class PartnersService {
     // Get current partner level
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, referralCode: true },
+      select: { id: true, referralCode: true, username: true },
     });
 
     if (!user) {
@@ -113,7 +113,9 @@ export class PartnersService {
       currentLevel,
       levelName: levelInfo.name,
       referralCode: user.referralCode,
-      referralUrl: `/register?ref=${user.referralCode}`,
+      referralUrl: user.username
+        ? `/register?ref=${user.referralCode}&partner=${user.username}`
+        : `/register?ref=${user.referralCode}`,
       totalReferrals: directReferrals,
       activeReferrals,
       teamSize,

@@ -8,10 +8,18 @@ import {
   MaxLength,
   IsBoolean,
   Matches,
+  IsIn,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { UserRole } from '@movie-platform/shared';
 
 import { extractReferralCode } from '../../users/utils/referral.util';
+
+const PUBLIC_REGISTRATION_ROLES = [
+  UserRole.CLIENT,
+  UserRole.PARTNER,
+  UserRole.AUTHOR,
+] as const;
 
 export class RegisterDto {
   @ApiProperty({
@@ -74,6 +82,40 @@ export class RegisterDto {
     message: 'Введите реферальный код партнера из ссылки, например ABC12345. Email партнера не подходит.',
   })
   referralCode?: string;
+
+  @ApiPropertyOptional({
+    enum: PUBLIC_REGISTRATION_ROLES,
+    default: UserRole.CLIENT,
+    description: 'Requested account role. Public registration allows CLIENT, PARTNER, or AUTHOR only.',
+  })
+  @IsOptional()
+  @IsIn(PUBLIC_REGISTRATION_ROLES, {
+    message: 'Role must be CLIENT, PARTNER, or AUTHOR',
+  })
+  role?: UserRole.CLIENT | UserRole.PARTNER | UserRole.AUTHOR;
+
+  @ApiPropertyOptional({
+    enum: PUBLIC_REGISTRATION_ROLES,
+    default: UserRole.CLIENT,
+    description: 'Alias for role. Public registration allows CLIENT, PARTNER, or AUTHOR only.',
+  })
+  @IsOptional()
+  @IsIn(PUBLIC_REGISTRATION_ROLES, {
+    message: 'Requested role must be CLIENT, PARTNER, or AUTHOR',
+  })
+  requestedRole?: UserRole.CLIENT | UserRole.PARTNER | UserRole.AUTHOR;
+
+  @ApiPropertyOptional({
+    example: 'testauthor',
+    description: 'Public username. Required for AUTHOR and PARTNER registrations.',
+    minLength: 3,
+    maxLength: 30,
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(3, { message: 'Username must be 3 to 30 characters long' })
+  @MaxLength(30, { message: 'Username must be 3 to 30 characters long' })
+  username?: string;
 
   @ApiPropertyOptional({
     description: 'Cloudflare Turnstile verification token',

@@ -5,7 +5,13 @@ import request from 'supertest';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { CommissionStatus, TaxStatus, WithdrawalStatus } from '@prisma/client';
+import {
+  CommissionStatus,
+  TaxStatus,
+  UserRole,
+  VerificationStatus,
+  WithdrawalStatus,
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 import { PartnersController } from '../src/modules/partners/partners.controller';
@@ -13,7 +19,10 @@ import { PartnersService } from '../src/modules/partners/partners.service';
 import { PrismaService } from '../src/config/prisma.service';
 import { JwtStrategy } from '../src/modules/auth/strategies/jwt.strategy';
 import { JwtAuthGuard } from '../src/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../src/modules/auth/guards/roles.guard';
+import { VerificationGuard } from '../src/modules/auth/guards/verification.guard';
 import { UsersService } from '../src/modules/users/users.service';
+import { NotificationsService } from '../src/modules/notifications/notifications.service';
 import { createPartnerUser, createAdultUser } from './factories/user.factory';
 import {
   createPendingCommission,
@@ -83,10 +92,14 @@ describe('Partners (e2e)', () => {
         PartnersService,
         JwtStrategy,
         JwtAuthGuard,
+        RolesGuard,
+        VerificationGuard,
         Reflector,
         { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: VerificationGuard },
         { provide: UsersService, useValue: mockUsersService },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationsService, useValue: { createNotification: jest.fn() } },
       ],
     }).compile();
 
@@ -155,6 +168,36 @@ describe('Partners (e2e)', () => {
       expect(response.body).toHaveProperty('totalEarnings', 50000);
       expect(response.body).toHaveProperty('pendingEarnings', 5000);
       expect(response.body).toHaveProperty('availableBalance');
+    });
+
+    it('should return 403 for unverified PARTNER users', async () => {
+      const unverifiedPartner = createAdultUser({
+        role: UserRole.PARTNER,
+        verificationStatus: VerificationStatus.UNVERIFIED,
+      });
+      mockUsersService.findById.mockResolvedValue(unverifiedPartner);
+      mockPrisma.user.findUnique.mockResolvedValue(unverifiedPartner);
+      const token = generateToken(unverifiedPartner);
+
+      await request(app.getHttpServer())
+        .get('/partners/dashboard')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
+    });
+
+    it('should return 403 for CLIENT users regardless of verification status', async () => {
+      const client = createAdultUser({
+        role: UserRole.CLIENT,
+        verificationStatus: VerificationStatus.VERIFIED,
+      });
+      mockUsersService.findById.mockResolvedValue(client);
+      mockPrisma.user.findUnique.mockResolvedValue(client);
+      const token = generateToken(client);
+
+      await request(app.getHttpServer())
+        .get('/partners/dashboard')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
     });
 
     it('should return 401 without auth token', async () => {

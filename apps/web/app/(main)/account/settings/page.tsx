@@ -52,6 +52,12 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from '@/hooks/use-notifications';
+import { api, endpoints } from '@/lib/api-client';
+import {
+  getPublicUsernameUrl,
+  normalizeUsername,
+  validatePublicUsername,
+} from '@/lib/username';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
@@ -64,6 +70,20 @@ const resetEmailSchema = z.object({
 });
 
 type ResetEmailFormValues = z.infer<typeof resetEmailSchema>;
+
+const usernameSchema = z.object({
+  username: z.string().superRefine((value, ctx) => {
+    const error = validatePublicUsername(value);
+    if (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: error,
+      });
+    }
+  }),
+});
+
+type UsernameFormValues = z.infer<typeof usernameSchema>;
 
 // ==============================
 // Notification toggle config
@@ -321,6 +341,8 @@ function SecurityTab() {
   }
 
   return (
+    <div className="space-y-6">
+      <PublicUsernameCard />
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
@@ -371,6 +393,177 @@ function SecurityTab() {
             >
               <Envelope className="mr-2 h-4 w-4" />
               Отправить ссылку для сброса
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+    </div>
+  );
+}
+
+function PublicUsernameCard() {
+  const { user, refreshUser } = useAuth();
+  const [origin, setOrigin] = React.useState('http://localhost:3000');
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [availability, setAvailability] = React.useState<{
+    state: 'idle' | 'checking' | 'available' | 'unavailable';
+    reason?: string;
+  }>({ state: 'idle' });
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<UsernameFormValues>({
+    resolver: zodResolver(usernameSchema),
+    defaultValues: { username: user?.username || '' },
+  });
+
+  React.useEffect(() => {
+    reset({ username: user?.username || '' });
+  }, [reset, user?.username]);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
+  const usernameValue = watch('username') || '';
+  const normalizedUsername = normalizeUsername(usernameValue);
+  const isCurrentUsername =
+    Boolean(user?.username) && user?.username?.toLowerCase() === normalizedUsername;
+  const publicUrl =
+    usernameValue.trim() && user
+      ? getPublicUsernameUrl(user.role, usernameValue, origin)
+      : '';
+
+  React.useEffect(() => {
+    if (!usernameValue.trim() || isCurrentUsername) {
+      setAvailability({ state: 'idle' });
+      return;
+    }
+
+    const localError = validatePublicUsername(usernameValue);
+    if (localError) {
+      setAvailability({ state: 'unavailable', reason: localError });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setAvailability({ state: 'checking' });
+      try {
+        const response = await api.get<{
+          available: boolean;
+          normalized: string;
+          reason?: string;
+        }>(endpoints.users.usernameAvailable, {
+          params: { username: normalizedUsername },
+          skipAuth: true,
+          skipRefresh: true,
+          signal: controller.signal,
+        });
+        setAvailability({
+          state: response.data.available ? 'available' : 'unavailable',
+          reason: response.data.reason,
+        });
+      } catch {
+        setAvailability({
+          state: 'unavailable',
+          reason: 'Unable to check username availability',
+        });
+      }
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [isCurrentUsername, normalizedUsername, usernameValue]);
+
+  const onSubmit = async (values: UsernameFormValues) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      await api.patch(endpoints.users.me, {
+        username: normalizeUsername(values.username),
+      });
+      await refreshUser();
+      toast.success('Username updated');
+    } catch (error: any) {
+      toast.error(error?.message || 'Unable to update username');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const isBlocked =
+    isSaving ||
+    (!isCurrentUsername &&
+      (availability.state === 'checking' ||
+        availability.state === 'unavailable' ||
+        availability.state === 'idle'));
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Globe className="h-5 w-5 text-mp-accent-primary" />
+          Public username
+        </CardTitle>
+        <CardDescription>
+          AUTHOR and PARTNER public links use this username.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="publicUsername">Username</Label>
+            <Input
+              id="publicUsername"
+              placeholder="testauthor"
+              autoComplete="username"
+              error={!!errors.username || availability.state === 'unavailable'}
+              {...register('username', {
+                setValueAs: (value) =>
+                  typeof value === 'string' ? normalizeUsername(value) : value,
+              })}
+            />
+            {publicUrl && (
+              <p className="break-all rounded-md border border-mp-border bg-mp-surface/60 px-3 py-2 text-xs text-mp-text-secondary">
+                Public URL: <span className="text-mp-text-primary">{publicUrl}</span>
+              </p>
+            )}
+            {user?.usernameUpdatedAt && (
+              <p className="text-xs text-mp-text-secondary">
+                Last changed: {formatDate(user.usernameUpdatedAt)}
+              </p>
+            )}
+            {availability.state === 'checking' && (
+              <p className="text-sm text-mp-text-secondary">Checking username...</p>
+            )}
+            {availability.state === 'available' && (
+              <p className="text-sm text-mp-success-text">Username is available</p>
+            )}
+            {(errors.username || availability.state === 'unavailable') && (
+              <p className="text-sm text-mp-error-text">
+                {errors.username?.message || availability.reason}
+              </p>
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              variant="gradient"
+              disabled={isBlocked || isCurrentUsername}
+              isLoading={isSaving}
+            >
+              Save username
             </Button>
           </div>
         </form>

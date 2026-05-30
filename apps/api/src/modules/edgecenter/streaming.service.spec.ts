@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ConfigService } from "@nestjs/config";
 import { NotFoundException, ForbiddenException } from "@nestjs/common";
+import { AgeCategory } from "@prisma/client";
 
 import { StreamingService } from "./streaming.service";
 import { EdgeCenterService } from "./edgecenter.service";
@@ -18,6 +19,7 @@ describe("StreamingService", () => {
   };
   let mockStorageService: {
     fileExists: jest.Mock<Promise<boolean>, [string, string]>;
+    getPublicUrl: jest.Mock<string, [string, string]>;
   };
 
   const mockConfig = {
@@ -53,6 +55,7 @@ describe("StreamingService", () => {
         Promise<boolean>,
         [string, string]
       >,
+      getPublicUrl: jest.fn((bucket: string, key: string) => `https://storage.local/${bucket}/${key}`),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -69,7 +72,9 @@ describe("StreamingService", () => {
                 return mockConfig.EDGECENTER_CDN_HOSTNAME;
               throw new Error(`Unknown config key: ${key}`);
             }),
-            get: jest.fn((key: string, defaultValue?: number) => {
+            get: jest.fn((key: string, defaultValue?: any) => {
+              if (key === "EDGECENTER_CDN_HOSTNAME")
+                return mockConfig.EDGECENTER_CDN_HOSTNAME;
               if (key === "SIGNED_URL_EXPIRY_HOURS")
                 return mockConfig.SIGNED_URL_EXPIRY_HOURS;
               return defaultValue;
@@ -94,6 +99,7 @@ describe("StreamingService", () => {
       isFree: true,
       individualPrice: null,
       status: "PUBLISHED",
+      ageCategory: AgeCategory.SIXTEEN_PLUS,
       duration: 120,
       videoFiles: [
         { quality: "Q_480P", encodingStatus: "COMPLETED" },
@@ -152,6 +158,7 @@ describe("StreamingService", () => {
       (mockPrisma.content!.findUnique as jest.Mock).mockResolvedValue({
         ...mockFreeContent,
         edgecenterVideoId: null,
+        videoFiles: [],
       });
 
       await expect(service.getStreamUrl("content-123")).rejects.toThrow(
@@ -162,6 +169,7 @@ describe("StreamingService", () => {
     it("should throw NotFoundException for content with no ready video files", async () => {
       (mockPrisma.content!.findUnique as jest.Mock).mockResolvedValue({
         ...mockFreeContent,
+        edgecenterVideoId: null,
         videoFiles: [],
       });
 
@@ -205,6 +213,55 @@ describe("StreamingService", () => {
 
       await expect(service.getStreamUrl("premium-123")).rejects.toThrow(
         ForbiddenException,
+      );
+    });
+
+    it("should deny anonymous access to 18+ content", async () => {
+      (mockPrisma.content!.findUnique as jest.Mock).mockResolvedValue({
+        ...mockFreeContent,
+        ageCategory: AgeCategory.EIGHTEEN_PLUS,
+      });
+
+      await expect(service.getStreamUrl("content-123")).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockEdgeCenterService.getVideo).not.toHaveBeenCalled();
+    });
+
+    it("should deny unverified 18+ users access to 18+ content", async () => {
+      (mockPrisma.content!.findUnique as jest.Mock).mockResolvedValue({
+        ...mockFreeContent,
+        ageCategory: AgeCategory.EIGHTEEN_PLUS,
+      });
+
+      await expect(
+        service.getStreamUrl("content-123", {
+          userId: "user-123",
+          userAgeCategory: AgeCategory.EIGHTEEN_PLUS,
+          verificationStatus: "UNVERIFIED",
+        }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockEdgeCenterService.getVideo).not.toHaveBeenCalled();
+    });
+
+    it("should allow verified 18+ users access to 18+ content", async () => {
+      (mockPrisma.content!.findUnique as jest.Mock).mockResolvedValue({
+        ...mockFreeContent,
+        ageCategory: AgeCategory.EIGHTEEN_PLUS,
+      });
+      mockEdgeCenterService.getVideo!.mockResolvedValue(
+        mockEdgeCenterVideo as any,
+      );
+      mockEdgeCenterService.getThumbnailUrls!.mockReturnValue([]);
+
+      const result = await service.getStreamUrl("content-123", {
+        userId: "user-123",
+        userAgeCategory: AgeCategory.EIGHTEEN_PLUS,
+        verificationStatus: "VERIFIED",
+      });
+
+      expect(result.streamUrl).toBe(
+        "https://cdn.edgecenter.ru/videos/test/master.m3u8",
       );
     });
 
@@ -332,6 +389,7 @@ describe("StreamingService", () => {
         isFree: true,
         individualPrice: null,
         status: "PUBLISHED",
+        ageCategory: AgeCategory.SIXTEEN_PLUS,
       };
 
       const result = await service.verifyContentAccess(content);
@@ -346,6 +404,7 @@ describe("StreamingService", () => {
         isFree: true,
         individualPrice: null,
         status: "DRAFT",
+        ageCategory: AgeCategory.SIXTEEN_PLUS,
       };
 
       const result = await service.verifyContentAccess(content, {
@@ -362,6 +421,7 @@ describe("StreamingService", () => {
         isFree: true,
         individualPrice: null,
         status: "DRAFT",
+        ageCategory: AgeCategory.EIGHTEEN_PLUS,
       };
 
       const result = await service.verifyContentAccess(content, {
@@ -379,6 +439,7 @@ describe("StreamingService", () => {
         isFree: false,
         individualPrice: 499,
         status: "PUBLISHED",
+        ageCategory: AgeCategory.SIXTEEN_PLUS,
       };
 
       const result = await service.verifyContentAccess(content);
@@ -393,6 +454,7 @@ describe("StreamingService", () => {
         isFree: false,
         individualPrice: 499,
         status: "PUBLISHED",
+        ageCategory: AgeCategory.SIXTEEN_PLUS,
       };
       (mockPrisma.subscriptionAccess!.findFirst as jest.Mock).mockResolvedValue(
         {
@@ -414,6 +476,7 @@ describe("StreamingService", () => {
         isFree: false,
         individualPrice: 499,
         status: "PUBLISHED",
+        ageCategory: AgeCategory.SIXTEEN_PLUS,
       };
       (mockPrisma.subscriptionAccess!.findFirst as jest.Mock).mockResolvedValue(
         null,

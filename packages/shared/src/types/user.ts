@@ -4,6 +4,7 @@ export enum UserRole {
   CLIENT = 'CLIENT',
   BUYER = 'BUYER',
   PARTNER = 'PARTNER',
+  AUTHOR = 'AUTHOR',
   MINOR = 'MINOR',
   MODERATOR = 'MODERATOR',
   ADMIN = 'ADMIN',
@@ -43,6 +44,11 @@ export interface User {
   dateOfBirth: Date;
   ageCategory: AgeCategory;
   avatarUrl?: string;
+  bannerUrl?: string;
+  username?: string;
+  usernameUpdatedAt?: Date;
+  usernameChangeCount?: number;
+  bio?: string;
   verificationStatus: VerificationStatus;
   verificationMethod?: VerificationMethod;
   role: UserRole;

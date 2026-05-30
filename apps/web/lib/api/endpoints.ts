@@ -104,6 +104,7 @@ export const endpoints = {
     verification: "/users/me/verification",
     verificationDocument: "/users/me/verification/document",
     verificationStatus: "/users/me/verification/status",
+    usernameAvailable: "/users/username-available",
     requestEmailChange: "/users/me/email/request-code",
     confirmEmailChange: "/users/me/email/confirm",
   },
@@ -118,6 +119,12 @@ export const endpoints = {
     nextEpisode: (contentId: string) => `/content/${contentId}/next-episode`,
     rating: (contentId: string) => `/content/${contentId}/rating`,
     like: (contentId: string) => `/content/${contentId}/like`,
+  },
+
+  // Authors
+  authors: {
+    detail: (id: string) => `/authors/${id}`,
+    videos: (id: string) => `/authors/${id}/videos`,
   },
 
   // Comments

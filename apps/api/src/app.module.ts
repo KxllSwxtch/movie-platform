@@ -14,6 +14,7 @@ import { VideoProcessingModule } from './modules/video-processing/video-processi
 
 // Feature modules
 import { AdminModule } from './modules/admin/admin.module';
+import { AuthorsModule } from './modules/authors/authors.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { VerificationGuard } from './modules/auth/guards/verification.guard';
@@ -92,6 +93,7 @@ import { UsersModule } from './modules/users/users.module';
 
     // Feature modules
     AuthModule,
+    AuthorsModule,
     UsersModule,
     ContentModule,
     CommentsModule,

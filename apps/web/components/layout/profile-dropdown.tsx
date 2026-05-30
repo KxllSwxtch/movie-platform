@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
+import { canUseAdmin } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
 
 export function ProfileDropdown() {
@@ -23,7 +24,7 @@ export function ProfileDropdown() {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const { logout } = useAuth();
-  const canModerate = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
+  const canModerate = canUseAdmin(user?.role);
 
   // Close dropdown on route change (App Router keeps layout mounted)
   useEffect(() => {

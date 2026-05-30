@@ -1,12 +1,13 @@
 'use client';
 
+import type { Content } from '@movie-platform/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { api, ApiError, endpoints } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
+import { canUseStudio } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
-import type { Content } from '@movie-platform/shared';
 
 // ============ Age Category Mapping ============
 // Frontend uses display values (0+, 6+, etc.) but backend Prisma enum expects ZERO_PLUS, SIX_PLUS, etc.
@@ -81,10 +82,7 @@ export interface UpdateContentInput extends Partial<CreateContentInput> {
  */
 export function useAdminContent(params?: AdminContentQueryParams) {
   const { isAuthenticated, isHydrated, user } = useAuthStore();
-  const canUseStudio =
-    user?.role === 'ADMIN' ||
-    user?.role === 'MODERATOR' ||
-    user?.role === 'PARTNER';
+  const canAccessStudio = canUseStudio(user?.role, user?.verificationStatus);
 
   return useQuery({
     queryKey: queryKeys.adminContent.list(params as Record<string, unknown> | undefined),
@@ -94,7 +92,7 @@ export function useAdminContent(params?: AdminContentQueryParams) {
       });
       return response.data;
     },
-    enabled: isAuthenticated && isHydrated && canUseStudio,
+    enabled: isAuthenticated && isHydrated && canAccessStudio,
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -104,10 +102,7 @@ export function useAdminContent(params?: AdminContentQueryParams) {
  */
 export function useAdminContentDetail(id: string | undefined) {
   const { isAuthenticated, isHydrated, user } = useAuthStore();
-  const canUseStudio =
-    user?.role === 'ADMIN' ||
-    user?.role === 'MODERATOR' ||
-    user?.role === 'PARTNER';
+  const canAccessStudio = canUseStudio(user?.role, user?.verificationStatus);
 
   return useQuery({
     queryKey: queryKeys.adminContent.detail(id || ''),
@@ -116,7 +111,7 @@ export function useAdminContentDetail(id: string | undefined) {
       const response = await api.get<Content>(endpoints.adminContent.detail(id));
       return response.data;
     },
-    enabled: !!id && isAuthenticated && isHydrated && canUseStudio,
+    enabled: !!id && isAuthenticated && isHydrated && canAccessStudio,
   });
 }
 

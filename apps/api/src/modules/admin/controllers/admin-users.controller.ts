@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseEnumPipe,
   Patch,
   Post,
   Query,
@@ -79,7 +80,7 @@ export class AdminUsersController {
   @ApiParam({ name: 'userId', description: 'User ID' })
   async updateRole(
     @Param('userId') userId: string,
-    @Body('role') role: UserRole,
+    @Body('role', new ParseEnumPipe(UserRole)) role: UserRole,
     @CurrentUser('id') adminId: string,
   ): Promise<AdminUserDto> {
     return this.usersService.updateUserRole(userId, role, adminId);

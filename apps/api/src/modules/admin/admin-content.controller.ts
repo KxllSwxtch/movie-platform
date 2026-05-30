@@ -25,6 +25,7 @@ import { UserRole } from '@movie-platform/shared';
 import { ContentService } from '../content/content.service';
 import { SeriesService } from '../content/series.service';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { VerificationGuard } from '../auth/guards/verification.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -42,8 +43,8 @@ import {
 @ApiTags('admin/content')
 @ApiBearerAuth()
 @Controller('admin/content')
-@UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.PARTNER)
+@UseGuards(RolesGuard, VerificationGuard)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.AUTHOR)
 @VerificationRequired()
 export class AdminContentController {
   private readonly logger = new Logger(AdminContentController.name);
@@ -66,8 +67,9 @@ export class AdminContentController {
   async createSeriesContent(
     @Body() dto: CreateSeriesContentDto,
     @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ) {
-    return this.seriesService.createWithStructure(dto, userId);
+    return this.seriesService.createWithStructure(dto, { id: userId, role });
   }
 
   /**

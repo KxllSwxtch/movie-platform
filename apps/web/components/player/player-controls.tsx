@@ -123,11 +123,13 @@ export function PlayerControls({
         case '7':
         case '8':
         case '9':
+        {
           e.preventDefault();
           const percent = parseInt(e.key) / 10;
           const duration = usePlayerStore.getState().duration;
           onSeek(duration * percent);
           break;
+        }
       }
     };
 

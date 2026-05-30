@@ -712,7 +712,7 @@ export class AdminBonusesService {
           select: { id: true },
         });
 
-      case BonusCampaignTargetType.INDIVIDUAL:
+      case BonusCampaignTargetType.INDIVIDUAL: {
         const userIds = criteria.userIds as string[];
         if (!userIds || userIds.length === 0) {
           return [];
@@ -721,8 +721,9 @@ export class AdminBonusesService {
           where: { id: { in: userIds }, isActive: true },
           select: { id: true },
         });
+      }
 
-      case BonusCampaignTargetType.SEGMENT:
+      case BonusCampaignTargetType.SEGMENT: {
         // Build query based on segment criteria
         const segmentWhere: Prisma.UserWhereInput = { isActive: true };
 
@@ -743,6 +744,7 @@ export class AdminBonusesService {
           where: segmentWhere,
           select: { id: true },
         });
+      }
 
       default:
         return [];

@@ -3,6 +3,7 @@ import { ContentStatus, ContentType } from '@prisma/client';
 
 import { PrismaService } from '../../config/prisma.service';
 import { CacheService } from '../../common/cache/cache.service';
+import { isCreatorRole, isModerationRole } from '../../common/auth/role-permissions';
 import {
   CreateSeriesContentDto,
   AddSeasonDto,
@@ -24,7 +25,15 @@ export class SeriesService {
   ) {}
 
   private canManageAll(actor?: { id?: string; role?: string }): boolean {
-    return actor?.role === 'ADMIN' || actor?.role === 'MODERATOR';
+    return isModerationRole(actor?.role);
+  }
+
+  private canCreateContent(actor?: { id?: string; role?: string }): boolean {
+    return isCreatorRole(actor?.role);
+  }
+
+  private canEditContent(actor?: { id?: string; role?: string }): boolean {
+    return actor?.role === 'ADMIN' || actor?.role === 'AUTHOR';
   }
 
   private async assertCanManageContent(
@@ -69,8 +78,12 @@ export class SeriesService {
    */
   async createWithStructure(
     dto: CreateSeriesContentDto,
-    creatorId?: string,
+    actor?: { id?: string; role?: string },
   ): Promise<SeriesStructureResponseDto> {
+    if (!this.canCreateContent(actor)) {
+      throw new ForbiddenException('Insufficient permissions to create content');
+    }
+
     if (dto.contentType !== ContentType.SERIES && dto.contentType !== ContentType.TUTORIAL) {
       throw new BadRequestException('contentType must be SERIES or TUTORIAL');
     }
@@ -95,7 +108,7 @@ export class SeriesService {
           ageCategory: dto.ageCategory,
           thumbnailUrl: dto.thumbnailUrl,
           previewUrl: dto.previewUrl,
-          creatorId,
+          creatorId: actor?.id,
           isFree: dto.isFree ?? false,
           individualPrice: dto.individualPrice,
           status: ContentStatus.DRAFT,
@@ -136,7 +149,7 @@ export class SeriesService {
               contentType: dto.contentType,
               categoryId: dto.categoryId,
               ageCategory: dto.ageCategory,
-              creatorId,
+              creatorId: actor?.id,
               status: ContentStatus.DRAFT,
             },
           });
@@ -288,6 +301,10 @@ export class SeriesService {
     dto: AddSeasonDto,
     actor?: { id?: string; role?: string },
   ): Promise<SeriesSeasonResponseDto> {
+    if (!this.canEditContent(actor)) {
+      throw new ForbiddenException('Only authors and admins can edit content');
+    }
+
     await this.assertCanManageContent(rootContentId, actor);
 
     const rootContent = await this.prisma.content.findUnique({
@@ -328,6 +345,10 @@ export class SeriesService {
     dto: AddEpisodeDto,
     actor?: { id?: string; role?: string },
   ): Promise<SeriesEpisodeResponseDto> {
+    if (!this.canEditContent(actor)) {
+      throw new ForbiddenException('Only authors and admins can edit content');
+    }
+
     await this.assertCanManageContent(rootContentId, actor);
 
     const rootContent = await this.prisma.content.findUnique({
@@ -407,6 +428,10 @@ export class SeriesService {
     dto: UpdateEpisodeDto,
     actor?: { id?: string; role?: string },
   ): Promise<void> {
+    if (!this.canEditContent(actor)) {
+      throw new ForbiddenException('Only authors and admins can edit content');
+    }
+
     await this.assertCanManageContent(episodeContentId, actor);
 
     const content = await this.prisma.content.findUnique({
@@ -438,6 +463,10 @@ export class SeriesService {
     episodeContentId: string,
     actor?: { id?: string; role?: string },
   ): Promise<void> {
+    if (!this.canEditContent(actor)) {
+      throw new ForbiddenException('Only authors and admins can edit content');
+    }
+
     await this.assertCanManageContent(episodeContentId, actor);
 
     const content = await this.prisma.content.findUnique({
@@ -465,6 +494,10 @@ export class SeriesService {
     dto: UpdateStructureDto,
     actor?: { id?: string; role?: string },
   ): Promise<void> {
+    if (!this.canEditContent(actor)) {
+      throw new ForbiddenException('Only authors and admins can edit content');
+    }
+
     await this.assertCanManageContent(rootContentId, actor);
 
     const rootContent = await this.prisma.content.findUnique({

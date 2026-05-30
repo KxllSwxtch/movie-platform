@@ -20,11 +20,12 @@ import { usePathname } from 'next/navigation';
 import type * as React from 'react';
 
 import { CollapsedNavTooltip } from '@/components/layout/collapsed-nav-tooltip';
-import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { useProfile } from '@/hooks/use-account';
 import { useUnreadCount } from '@/hooks/use-notifications';
+import { canUsePartnerDashboard } from '@/lib/role-permissions';
+import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
 
@@ -68,9 +69,11 @@ export function AccountSidebar() {
     .join(' ') || 'Пользователь';
 
   const planName = (profile as any)?.activeSubscription?.plan?.name;
-  const isPartner =
-    user?.role === 'PARTNER';
-  const accountNav = isPartner
+  const canAccessPartnerDashboard = canUsePartnerDashboard(
+    user?.role,
+    user?.verificationStatus,
+  );
+  const accountNav = canAccessPartnerDashboard
     ? [...BASE_ACCOUNT_NAV, ...PARTNER_ACCOUNT_NAV]
     : BASE_ACCOUNT_NAV;
 
@@ -157,9 +160,11 @@ export function AccountSidebar() {
 export function AccountMobileTabs() {
   const pathname = usePathname();
   const { user } = useAuthStore();
-  const isPartner =
-    user?.role === 'PARTNER';
-  const accountNav = isPartner
+  const canAccessPartnerDashboard = canUsePartnerDashboard(
+    user?.role,
+    user?.verificationStatus,
+  );
+  const accountNav = canAccessPartnerDashboard
     ? [...BASE_ACCOUNT_NAV, ...PARTNER_ACCOUNT_NAV]
     : BASE_ACCOUNT_NAV;
 

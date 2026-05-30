@@ -1,15 +1,28 @@
 'use client';
 
+import { UserRole } from '@movie-platform/shared';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { Spinner } from '@/components/ui/spinner';
+import { canUseAdmin } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
-import { UserRole } from '@movie-platform/shared';
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
+}
+
+function hasAllowedAdminRole(role: string | undefined, allowedRoles: UserRole[]): boolean {
+  if (
+    allowedRoles.length === 2 &&
+    allowedRoles.includes(UserRole.ADMIN) &&
+    allowedRoles.includes(UserRole.MODERATOR)
+  ) {
+    return canUseAdmin(role);
+  }
+
+  return !!role && allowedRoles.includes(role as UserRole);
 }
 
 /**
@@ -34,7 +47,7 @@ export function AdminAuthGuard({
     }
 
     // Check if user has admin/moderator role
-    if (!user?.role || !allowedRoles.includes(user.role as UserRole)) {
+    if (!hasAllowedAdminRole(user?.role, allowedRoles)) {
       // User doesn't have required role - redirect to main dashboard
       router.replace('/dashboard');
       return;
@@ -88,8 +101,7 @@ export function useRequireAdmin(allowedRoles: UserRole[] = [UserRole.ADMIN, User
     isAuthorized:
       isHydrated &&
       isAuthenticated &&
-      user?.role &&
-      allowedRoles.includes(user.role as UserRole),
+      hasAllowedAdminRole(user?.role, allowedRoles),
     isLoading: !isHydrated,
     user,
   };

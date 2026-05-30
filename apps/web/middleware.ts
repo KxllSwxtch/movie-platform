@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import {
+  canUseAdmin,
+  canUsePartnerDashboard,
+  canUseStudio,
+  getPartnerRedirectPath,
+  getStudioRedirectPath,
+} from '@/lib/role-permissions';
+
 /**
  * Routes that require authentication — redirect to /login if no token
  */
@@ -33,9 +41,6 @@ const VERIFIED_ONLY_ROUTES = [
   '/store/checkout',
   '/checkout',
 ];
-
-const PARTNER_ALLOWED_ROLES = new Set(['PARTNER']);
-const CREATOR_TOOL_ALLOWED_ROLES = new Set(['PARTNER', 'ADMIN', 'MODERATOR']);
 
 /**
  * Routes only for unauthenticated users — redirect to / if has token
@@ -149,21 +154,14 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if (!role || !PARTNER_ALLOWED_ROLES.has(role)) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+    if (!canUsePartnerDashboard(role, verificationStatus)) {
+      const redirectPath = getPartnerRedirectPath(role, verificationStatus);
+      const redirectUrl = new URL(redirectPath || '/account', request.url);
+      if (redirectPath === '/account/verification') {
+        redirectUrl.searchParams.set('restricted', pathname);
+      }
+      return NextResponse.redirect(redirectUrl);
     }
-  }
-
-  if (
-    matchesRoute(pathname, VERIFIED_ONLY_ROUTES) &&
-    isAuthenticated &&
-    role !== 'ADMIN' &&
-    role !== 'MODERATOR' &&
-    verificationStatus !== 'VERIFIED'
-  ) {
-    const verificationUrl = new URL('/account/verification', request.url);
-    verificationUrl.searchParams.set('restricted', pathname);
-    return NextResponse.redirect(verificationUrl);
   }
 
   if (matchesRoute(pathname, CREATOR_TOOL_ROUTES)) {
@@ -173,9 +171,25 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if (!role || !CREATOR_TOOL_ALLOWED_ROLES.has(role)) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+    if (!canUseStudio(role, verificationStatus)) {
+      const redirectPath = getStudioRedirectPath(role, verificationStatus);
+      const redirectUrl = new URL(redirectPath || '/account', request.url);
+      if (redirectPath === '/account/verification') {
+        redirectUrl.searchParams.set('restricted', pathname);
+      }
+      return NextResponse.redirect(redirectUrl);
     }
+  }
+
+  if (
+    matchesRoute(pathname, VERIFIED_ONLY_ROUTES) &&
+    isAuthenticated &&
+    !canUseAdmin(role) &&
+    verificationStatus !== 'VERIFIED'
+  ) {
+    const verificationUrl = new URL('/account/verification', request.url);
+    verificationUrl.searchParams.set('restricted', pathname);
+    return NextResponse.redirect(verificationUrl);
   }
 
   // Auth routes: redirect to home if already authenticated

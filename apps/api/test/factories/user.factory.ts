@@ -187,6 +187,17 @@ export function createPartnerUser(options: Omit<CreateUserOptions, 'role'> = {})
 }
 
 /**
+ * Create an author user
+ */
+export function createAuthorUser(options: Omit<CreateUserOptions, 'role'> = {}): MockUser {
+  return createAdultUser({
+    ...options,
+    role: UserRole.AUTHOR,
+    verificationStatus: VerificationStatus.VERIFIED,
+  });
+}
+
+/**
  * Create a moderator user
  */
 export function createModeratorUser(options: Omit<CreateUserOptions, 'role'> = {}): MockUser {
@@ -253,6 +264,7 @@ export const userFactory = {
   createMinor: createMinorUser,
   createAdmin: createAdminUser,
   createPartner: createPartnerUser,
+  createAuthor: createAuthorUser,
   createModerator: createModeratorUser,
   createInactive: createInactiveUser,
   createVerified: createVerifiedUser,

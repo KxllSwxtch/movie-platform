@@ -6,10 +6,17 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { VerificationStatus, VerificationMethod } from '@movie-platform/shared';
+import { PaymentMethodType } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 import { UsersController } from '../src/modules/users/users.controller';
 import { UsersService } from '../src/modules/users/users.service';
 import { PrismaService } from '../src/config/prisma.service';
+import { StorageService } from '../src/modules/storage/storage.service';
+import { PaymentsService } from '../src/modules/payments/payments.service';
+import { TokenService } from '../src/modules/auth/token.service';
+import { EmailService } from '../src/modules/email/email.service';
+import { NotificationsService } from '../src/modules/notifications/notifications.service';
 import { JwtStrategy } from '../src/modules/auth/strategies/jwt.strategy';
 import { JwtAuthGuard } from '../src/modules/auth/guards/jwt-auth.guard';
 import {
@@ -23,6 +30,8 @@ const JWT_SECRET = 'test-jwt-secret-key-for-testing-only-minimum-32-chars';
 describe('Users Controller (e2e)', () => {
   let app: INestApplication;
   let mockPrisma: any;
+  let mockStorageService: any;
+  let mockPaymentsService: any;
   let jwtService: JwtService;
   let testUser: MockUser;
   let accessToken: string;
@@ -42,6 +51,7 @@ describe('Users Controller (e2e)', () => {
       user: {
         findUnique: jest.fn(),
         findFirst: jest.fn(),
+        findMany: jest.fn(),
         update: jest.fn(),
         count: jest.fn(),
       },
@@ -68,9 +78,22 @@ describe('Users Controller (e2e)', () => {
         aggregate: jest.fn(),
       },
       partnerRelationship: {
+        findFirst: jest.fn(),
         groupBy: jest.fn(),
         count: jest.fn(),
       },
+      auditLog: {
+        create: jest.fn(),
+      },
+      $transaction: jest.fn((callback) => callback(mockPrisma)),
+    };
+
+    mockStorageService = {
+      fileExists: jest.fn(),
+    };
+
+    mockPaymentsService = {
+      initiatePayment: jest.fn(),
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -99,6 +122,11 @@ describe('Users Controller (e2e)', () => {
         Reflector,
         { provide: APP_GUARD, useClass: JwtAuthGuard },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: StorageService, useValue: mockStorageService },
+        { provide: PaymentsService, useValue: mockPaymentsService },
+        { provide: TokenService, useValue: {} },
+        { provide: EmailService, useValue: {} },
+        { provide: NotificationsService, useValue: {} },
       ],
     }).compile();
 
@@ -128,6 +156,7 @@ describe('Users Controller (e2e)', () => {
       if (where.id === testUser.id) return Promise.resolve(testUser);
       return Promise.resolve(null);
     });
+    mockPrisma.user.findMany.mockResolvedValue([]);
   });
 
   // ============================================
@@ -143,6 +172,50 @@ describe('Users Controller (e2e)', () => {
         .get('/users/me')
         .set('Authorization', 'Bearer invalid.token.here')
         .expect(401);
+    });
+  });
+
+  // ============================================
+  // GET /users/username-available Tests
+  // ============================================
+  describe('GET /users/username-available', () => {
+    it('should return available with normalized username', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .get('/users/username-available?username=testuser')
+        .expect(200);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          available: true,
+          normalized: 'testuser',
+        }),
+      );
+    });
+
+    it('should return unavailable for invalid username', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/users/username-available?username=bad%20name')
+        .expect(200);
+
+      expect(response.body.available).toBe(false);
+      expect(response.body.reason).toEqual(expect.any(String));
+    });
+
+    it('should return unavailable for duplicate username case-insensitively', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({ id: 'other-user' });
+
+      const response = await request(app.getHttpServer())
+        .get('/users/username-available?username=takenname')
+        .expect(200);
+
+      expect(response.body.available).toBe(false);
+      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { username: { equals: 'takenname', mode: 'insensitive' } },
+        }),
+      );
     });
   });
 
@@ -219,6 +292,40 @@ describe('Users Controller (e2e)', () => {
         .expect(400);
     });
 
+    it('should update own username', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockPrisma.user.update.mockResolvedValue({
+        ...testUser,
+        username: 'new_username',
+        usernameUpdatedAt: new Date(),
+        usernameChangeCount: 1,
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch('/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ username: 'new_username' })
+        .expect(200);
+
+      expect(response.body.username).toBe('new_username');
+      expect(mockPrisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: testUser.id },
+          data: expect.objectContaining({ username: 'new_username' }),
+        }),
+      );
+    });
+
+    it('should not allow taking another user username', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({ id: 'other-user' });
+
+      await request(app.getHttpServer())
+        .patch('/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ username: 'taken_name' })
+        .expect(409);
+    });
+
     it('should return 400 for firstName too short', async () => {
       await request(app.getHttpServer())
         .patch('/users/me')
@@ -244,7 +351,6 @@ describe('Users Controller (e2e)', () => {
   describe('POST /users/me/password', () => {
     it('should change password successfully', async () => {
       // Mock bcrypt comparison as truthy
-      const bcrypt = require('bcrypt');
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('new-hash');
       mockPrisma.user.update.mockResolvedValue({});
@@ -262,7 +368,6 @@ describe('Users Controller (e2e)', () => {
     });
 
     it('should return 400 when current password is incorrect', async () => {
-      const bcrypt = require('bcrypt');
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
 
       await request(app.getHttpServer())
@@ -318,17 +423,25 @@ describe('Users Controller (e2e)', () => {
       };
       mockPrisma.userVerification.create.mockResolvedValue(verificationRecord);
       mockPrisma.user.update.mockResolvedValue({});
+      mockPrisma.auditLog.create.mockResolvedValue({});
+      mockPaymentsService.initiatePayment.mockResolvedValue({
+        transactionId: 'tx-1',
+        status: 'PENDING',
+      });
 
       const response = await request(app.getHttpServer())
         .post('/users/me/verification')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ method: VerificationMethod.PAYMENT })
+        .send({
+          method: VerificationMethod.PAYMENT,
+          paymentMethod: PaymentMethodType.TEST,
+        })
         .expect(201);
 
       expect(response.body.status).toBe(VerificationStatus.PENDING);
     });
 
-    it('should submit DOCUMENT with URL', async () => {
+    it('should submit DOCUMENT with uploaded document key', async () => {
       const verificationRecord = {
         id: 'v-1',
         status: VerificationStatus.PENDING,
@@ -336,13 +449,15 @@ describe('Users Controller (e2e)', () => {
       };
       mockPrisma.userVerification.create.mockResolvedValue(verificationRecord);
       mockPrisma.user.update.mockResolvedValue({});
+      mockPrisma.partnerRelationship.findFirst.mockResolvedValue(null);
+      mockStorageService.fileExists.mockResolvedValue(true);
 
       const response = await request(app.getHttpServer())
         .post('/users/me/verification')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           method: VerificationMethod.DOCUMENT,
-          documentUrl: 'https://example.com/doc.jpg',
+          documentKey: `${testUser.id}/doc.jpg`,
         })
         .expect(201);
 

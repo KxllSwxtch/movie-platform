@@ -2,6 +2,7 @@
   "extends": "@movie-platform/typescript-config/nextjs.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "incremental": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {

@@ -9,6 +9,8 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,8 +23,11 @@ import {
 import { UserRole } from '@movie-platform/shared';
 
 import { EdgeCenterService } from './edgecenter.service';
+import { PrismaService } from '../../config/prisma.service';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
 import {
   UploadUrlResponseDto,
   VideoThumbnailsDto,
@@ -35,15 +40,43 @@ import {
 @ApiBearerAuth()
 @Controller('admin/content')
 @UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.AUTHOR)
+@VerificationRequired()
 export class EdgeCenterController {
-  constructor(private readonly edgecenterService: EdgeCenterService) {}
+  constructor(
+    private readonly edgecenterService: EdgeCenterService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  private async assertCanManageContent(
+    contentId: string,
+    userId?: string,
+    role?: string,
+    options: { allowModerator?: boolean } = {},
+  ) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { id: true, creatorId: true },
+    });
+
+    if (!content) {
+      throw new NotFoundException('Content not found');
+    }
+
+    const canManageAll =
+      role === UserRole.ADMIN ||
+      (options.allowModerator === true && role === UserRole.MODERATOR);
+    if (!canManageAll && content.creatorId !== userId) {
+      throw new ForbiddenException('Insufficient permissions to manage content video');
+    }
+  }
 
   /**
    * Get video upload URL for content.
    * Creates a video entry in EdgeCenter CDN and returns TUS upload credentials.
    */
   @Post(':id/video/upload-url')
+  @Roles(UserRole.ADMIN, UserRole.AUTHOR)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Get video upload URL',
@@ -61,7 +94,12 @@ export class EdgeCenterController {
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   @ApiResponse({ status: 404, description: 'Content not found' })
   @ApiResponse({ status: 500, description: 'Failed to create video in CDN' })
-  async getUploadUrl(@Param('id') contentId: string): Promise<UploadUrlResponseDto> {
+  async getUploadUrl(
+    @Param('id') contentId: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ): Promise<UploadUrlResponseDto> {
+    await this.assertCanManageContent(contentId, userId, role);
     return this.edgecenterService.getUploadUrl(contentId);
   }
 
@@ -83,7 +121,14 @@ export class EdgeCenterController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   @ApiResponse({ status: 404, description: 'Content not found' })
-  async getThumbnails(@Param('id') contentId: string): Promise<VideoThumbnailsDto> {
+  async getThumbnails(
+    @Param('id') contentId: string,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
+  ): Promise<VideoThumbnailsDto> {
+    await this.assertCanManageContent(contentId, userId, role, {
+      allowModerator: true,
+    });
     return this.edgecenterService.getThumbnailsForContent(contentId);
   }
 
@@ -91,6 +136,7 @@ export class EdgeCenterController {
    * Set primary thumbnail for content.
    */
   @Patch(':id/video/thumbnail')
+  @Roles(UserRole.ADMIN, UserRole.AUTHOR)
   @ApiOperation({
     summary: 'Set primary thumbnail',
     description:
@@ -109,7 +155,10 @@ export class EdgeCenterController {
   async setThumbnail(
     @Param('id') contentId: string,
     @Body() dto: SetThumbnailDto,
+    @CurrentUser('id') userId?: string,
+    @CurrentUser('role') role?: string,
   ): Promise<ThumbnailUpdateResponseDto> {
+    await this.assertCanManageContent(contentId, userId, role);
     await this.edgecenterService.setThumbnailForContent(contentId, dto.thumbnailUrl);
     return {
       success: true,
@@ -122,6 +171,7 @@ export class EdgeCenterController {
    * Get admin video list with filtering and pagination.
    */
   @Get('videos')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @ApiOperation({
     summary: 'Get admin video list',
     description:

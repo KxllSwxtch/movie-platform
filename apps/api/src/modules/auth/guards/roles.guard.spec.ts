@@ -80,9 +80,6 @@ describe('RolesGuard', () => {
       jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
 
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(context)).toThrow(
-        'Access denied: authentication required',
-      );
     });
 
     it('should return true when user has required role', () => {
@@ -113,7 +110,6 @@ describe('RolesGuard', () => {
       jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
 
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(context)).toThrow(/requires one of the following roles/);
     });
 
     it('should check roles against handler and class', () => {

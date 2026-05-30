@@ -54,6 +54,15 @@ export default function VideoDetailPage() {
       ? (video.category as { name?: string }).name
       : video.category
     : null;
+  const creator =
+    video.creator && typeof video.creator === "object" ? video.creator : null;
+  const creatorName = creator
+    ? creator.username ||
+      [creator.firstName, creator.lastName].filter(Boolean).join(" ")
+    : typeof video.creator === "string"
+      ? video.creator
+      : null;
+  const creatorUrl = creator?.authorUrl || (creator ? `/author/${creator.username || creator.id}` : null);
 
   return (
     <Container size="lg" className="py-6">
@@ -107,6 +116,14 @@ export default function VideoDetailPage() {
       )}
 
       <div className="mb-8 flex flex-wrap items-center gap-4 text-sm text-mp-text-secondary">
+        {creatorName && creatorUrl && (
+          <Link
+            href={creatorUrl}
+            className="font-medium text-mp-text-primary transition-colors hover:text-mp-accent-primary"
+          >
+            {creatorName}
+          </Link>
+        )}
         <span className="flex items-center gap-1.5">
           <Eye className="h-4 w-4" />
           {formatNumber(video.viewCount)} просмотров
@@ -146,14 +163,15 @@ export default function VideoDetailPage() {
                   id: item.id,
                   slug: item.slug,
                   title: item.title,
-                  thumbnailUrl: item.thumbnailUrl,
-                  duration: item.duration,
-                  viewCount: item.viewCount,
+                  thumbnailUrl: item.thumbnailUrl || "/images/movie-placeholder.jpg",
+                  duration: item.duration ?? 0,
+                  viewCount: item.viewCount ?? 0,
                   ageCategory: item.ageCategory as AgeCategory,
                   category:
                     typeof item.category === "object"
                       ? item.category?.name
                       : item.category,
+                  creator: item.creator,
                 }}
               />
             ))}

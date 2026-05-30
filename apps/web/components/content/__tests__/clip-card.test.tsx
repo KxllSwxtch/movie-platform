@@ -5,7 +5,7 @@ import { ClipCard, type ClipContent } from '@/components/content/clip-card';
 vi.mock('next/image', () => ({
   default: (props: Record<string, unknown>) => {
     // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-    const { fill, ...rest } = props;
+    const { fill, unoptimized, ...rest } = props;
     return <img {...rest} />;
   },
 }));
@@ -63,10 +63,28 @@ describe('ClipCard', () => {
       expect(img).toHaveAttribute('src', '/test.jpg');
     });
 
-    it('should render as a link to /watch/{id}', () => {
+    it('should render as a link to the video detail page', () => {
       render(<ClipCard content={mockClip} />);
-      const link = screen.getByRole('link');
-      expect(link).toHaveAttribute('href', '/watch/c1');
+      const links = screen.getAllByRole('link');
+      expect(links[0]).toHaveAttribute('href', '/videos/test-clip');
+    });
+
+    it('should render a clickable author link when creator data exists', () => {
+      render(
+        <ClipCard
+          content={{
+            ...mockClip,
+            creator: {
+              id: 'author-1',
+              username: 'test4852',
+              displayName: 'Test Author',
+            },
+          }}
+        />,
+      );
+
+      const authorLink = screen.getByRole('link', { name: 'Test Author' });
+      expect(authorLink).toHaveAttribute('href', '/author/test4852');
     });
   });
 

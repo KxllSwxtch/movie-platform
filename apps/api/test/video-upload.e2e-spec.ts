@@ -5,18 +5,19 @@ import request from 'supertest';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { UserRole } from '@prisma/client';
+import { UserRole, VerificationStatus } from '@prisma/client';
 
 import { VideoProcessingController } from '../src/modules/video-processing/video-processing.controller';
 import { VideoProcessingService } from '../src/modules/video-processing/video-processing.service';
 import { PrismaService } from '../src/config/prisma.service';
 import { JwtStrategy } from '../src/modules/auth/strategies/jwt.strategy';
 import { JwtAuthGuard } from '../src/modules/auth/guards/jwt-auth.guard';
+import { VerificationGuard } from '../src/modules/auth/guards/verification.guard';
 import { RolesGuard } from '../src/modules/auth/guards/roles.guard';
 import { UsersService } from '../src/modules/users/users.service';
 import { REDIS_CLIENT } from '../src/config/redis.module';
 import { createMockRedis, MockRedis } from './mocks/redis.mock';
-import { createAdultUser, createAdminUser } from './factories/user.factory';
+import { createAdultUser, createAdminUser, createAuthorUser, createPartnerUser } from './factories/user.factory';
 
 describe('Video Upload Endpoints (e2e)', () => {
   let app: INestApplication;
@@ -76,8 +77,10 @@ describe('Video Upload Endpoints (e2e)', () => {
         JwtStrategy,
         JwtAuthGuard,
         RolesGuard,
+        VerificationGuard,
         Reflector,
         { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: VerificationGuard },
         { provide: UsersService, useValue: mockUsersService },
         { provide: PrismaService, useValue: mockPrisma },
         { provide: VideoProcessingService, useValue: mockVideoProcessingService },
@@ -106,6 +109,10 @@ describe('Video Upload Endpoints (e2e)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRedis.reset();
+    mockPrisma.content.findUnique.mockResolvedValue({
+      id: 'content-uuid-1',
+      creatorId: 'content-owner-id',
+    });
   });
 
   // Helper to generate auth token
@@ -131,8 +138,11 @@ describe('Video Upload Endpoints (e2e)', () => {
         .expect(401);
     });
 
-    it('should return 403 for non-admin users', async () => {
-      const regularUser = createAdultUser({ role: UserRole.BUYER });
+    it('should return 403 for CLIENT users', async () => {
+      const regularUser = createAdultUser({
+        role: UserRole.CLIENT,
+        verificationStatus: VerificationStatus.VERIFIED,
+      });
       mockUsersService.findById.mockResolvedValue(regularUser);
 
       const token = generateToken(regularUser);
@@ -140,6 +150,22 @@ describe('Video Upload Endpoints (e2e)', () => {
       await request(app.getHttpServer())
         .post(`/admin/content/${contentId}/video/upload`)
         .set('Authorization', `Bearer ${token}`)
+        .expect(403);
+    });
+
+    it('should return 403 for PARTNER users', async () => {
+      const partnerUser = createPartnerUser();
+      mockUsersService.findById.mockResolvedValue(partnerUser);
+
+      const token = generateToken(partnerUser);
+
+      await request(app.getHttpServer())
+        .post(`/admin/content/${contentId}/video/upload`)
+        .set('Authorization', `Bearer ${token}`)
+        .attach('file', Buffer.from('fake-video-data'), {
+          filename: 'test-video.mp4',
+          contentType: 'video/mp4',
+        })
         .expect(403);
     });
 
@@ -154,7 +180,7 @@ describe('Video Upload Endpoints (e2e)', () => {
         .set('Authorization', `Bearer ${token}`)
         .expect(400);
 
-      expect(response.body.message).toContain('No video file provided');
+      expect(response.body.message).toContain('Видеофайл');
     });
 
     it('should return 201 and start transcoding for valid upload', async () => {
@@ -180,6 +206,76 @@ describe('Video Upload Endpoints (e2e)', () => {
       expect(response.body.data.message).toContain('transcoding started');
     });
 
+    it('should return 201 for AUTHOR uploading own content', async () => {
+      const authorUser = createAuthorUser({ id: 'author-1' });
+      mockUsersService.findById.mockResolvedValue(authorUser);
+      mockPrisma.content.findUnique.mockResolvedValue({
+        id: contentId,
+        creatorId: authorUser.id,
+      });
+      mockVideoProcessingService.enqueueTranscoding.mockResolvedValue({
+        jobId: 'job-author',
+      });
+
+      const token = generateToken(authorUser);
+
+      const response = await request(app.getHttpServer())
+        .post(`/admin/content/${contentId}/video/upload`)
+        .set('Authorization', `Bearer ${token}`)
+        .attach('file', Buffer.from('fake-video-data'), {
+          filename: 'author-video.mp4',
+          contentType: 'video/mp4',
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(mockVideoProcessingService.enqueueTranscoding).toHaveBeenCalled();
+    });
+
+    it('should return 403 for unverified AUTHOR uploading own content', async () => {
+      const authorUser = createAdultUser({
+        id: 'author-1',
+        role: UserRole.AUTHOR,
+        verificationStatus: VerificationStatus.UNVERIFIED,
+      });
+      mockUsersService.findById.mockResolvedValue(authorUser);
+      mockPrisma.content.findUnique.mockResolvedValue({
+        id: contentId,
+        creatorId: authorUser.id,
+      });
+
+      const token = generateToken(authorUser);
+
+      await request(app.getHttpServer())
+        .post(`/admin/content/${contentId}/video/upload`)
+        .set('Authorization', `Bearer ${token}`)
+        .attach('file', Buffer.from('fake-video-data'), {
+          filename: 'author-video.mp4',
+          contentType: 'video/mp4',
+        })
+        .expect(403);
+    });
+
+    it("should return 403 for AUTHOR uploading another author's content", async () => {
+      const authorUser = createAuthorUser({ id: 'author-1' });
+      mockUsersService.findById.mockResolvedValue(authorUser);
+      mockPrisma.content.findUnique.mockResolvedValue({
+        id: contentId,
+        creatorId: 'author-2',
+      });
+
+      const token = generateToken(authorUser);
+
+      await request(app.getHttpServer())
+        .post(`/admin/content/${contentId}/video/upload`)
+        .set('Authorization', `Bearer ${token}`)
+        .attach('file', Buffer.from('fake-video-data'), {
+          filename: 'other-video.mp4',
+          contentType: 'video/mp4',
+        })
+        .expect(403);
+    });
+
     it('should call enqueueTranscoding with correct parameters', async () => {
       const adminUser = createAdminUser();
       mockUsersService.findById.mockResolvedValue(adminUser);
@@ -200,7 +296,7 @@ describe('Video Upload Endpoints (e2e)', () => {
 
       expect(mockVideoProcessingService.enqueueTranscoding).toHaveBeenCalledWith(
         contentId,
-        expect.stringContaining('/tmp/video-uploads/'),
+        expect.stringMatching(/[\\/]tmp[\\/]video-uploads[\\/]/),
         'my-video.mp4',
       );
     });
@@ -208,10 +304,7 @@ describe('Video Upload Endpoints (e2e)', () => {
     it('should return 404 when content does not exist', async () => {
       const adminUser = createAdminUser();
       mockUsersService.findById.mockResolvedValue(adminUser);
-      mockVideoProcessingService.enqueueTranscoding.mockRejectedValue({
-        status: 404,
-        message: 'Content not found',
-      });
+      mockPrisma.content.findUnique.mockResolvedValue(null);
 
       const token = generateToken(adminUser);
 
@@ -397,6 +490,7 @@ describe('Video Upload Endpoints (e2e)', () => {
     it('should return 404 for non-existent content', async () => {
       const adminUser = createAdminUser();
       mockUsersService.findById.mockResolvedValue(adminUser);
+      mockPrisma.content.findUnique.mockResolvedValue(null);
       mockVideoProcessingService.getEncodingStatus.mockRejectedValue({
         status: 404,
         message: 'Content not found',
@@ -490,6 +584,7 @@ describe('Video Upload Endpoints (e2e)', () => {
     it('should return 404 when content does not exist', async () => {
       const adminUser = createAdminUser();
       mockUsersService.findById.mockResolvedValue(adminUser);
+      mockPrisma.content.findUnique.mockResolvedValue(null);
       mockVideoProcessingService.deleteVideoForContent.mockRejectedValue({
         status: 404,
         message: 'Content not found',
@@ -503,19 +598,17 @@ describe('Video Upload Endpoints (e2e)', () => {
         .expect(404);
     });
 
-    it('should allow MODERATOR role to delete video', async () => {
+    it('should return 403 for MODERATOR role deleting video', async () => {
       const moderatorUser = createAdultUser({ role: UserRole.MODERATOR });
       mockUsersService.findById.mockResolvedValue(moderatorUser);
       mockVideoProcessingService.deleteVideoForContent.mockResolvedValue(undefined);
 
       const token = generateToken(moderatorUser);
 
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .delete(`/admin/content/${contentId}/video`)
         .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
+        .expect(403);
     });
 
     it('should handle service errors gracefully', async () => {

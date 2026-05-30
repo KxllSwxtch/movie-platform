@@ -70,6 +70,9 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  role?: 'CLIENT' | 'PARTNER' | 'AUTHOR';
+  requestedRole?: 'CLIENT' | 'PARTNER' | 'AUTHOR';
+  username?: string;
   referralCode?: string;
   acceptTerms: boolean;
 }
@@ -150,6 +153,9 @@ export interface UpdateProfileRequest {
   dateOfBirth?: string;
   avatar?: string;
   phone?: string;
+  username?: string;
+  bio?: string;
+  bannerUrl?: string;
 }
 
 /**

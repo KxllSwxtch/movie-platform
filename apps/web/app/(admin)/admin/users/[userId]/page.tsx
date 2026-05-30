@@ -43,6 +43,10 @@ import {
   useUpdateAdminUser,
 } from '@/hooks/use-admin-users';
 
+const ADMIN_ROLE_FALLBACK_LABELS: Record<string, string> = {
+  AUTHOR: 'Автор',
+};
+
 /**
  * Format currency
  */
@@ -91,7 +95,10 @@ function getRoleBadge(role: string) {
     GUEST: { label: 'Гость', className: 'bg-gray-500/20 text-gray-300 border-transparent' },
     MINOR: { label: 'Несовершеннолетний', className: 'bg-yellow-500/20 text-yellow-400 border-transparent' },
   };
-  const { label, className } = config[role] || { label: role, className: '' };
+  const { label, className } = config[role] || {
+    label: ADMIN_ROLE_FALLBACK_LABELS[role] || role,
+    className: role === 'AUTHOR' ? 'bg-pink-500/20 text-pink-400 border-transparent' : '',
+  };
   return <Badge className={className}>{label}</Badge>;
 }
 
@@ -538,6 +545,7 @@ export default function AdminUserDetailPage() {
                   <SelectContent>
                     <SelectItem value="CLIENT">Клиент</SelectItem>
                     <SelectItem value="PARTNER">Партнёр</SelectItem>
+                    <SelectItem value="AUTHOR">Автор</SelectItem>
                     <SelectItem value="MODERATOR">Модератор</SelectItem>
                     <SelectItem value="ADMIN">Админ</SelectItem>
                   </SelectContent>

@@ -6,13 +6,14 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  ForbiddenException,
   UnauthorizedException,
   RawBodyRequest,
   Req,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac } from "crypto";
 import { Request } from "express";
 
 import { PrismaService } from "../../config/prisma.service";
@@ -20,12 +21,14 @@ import { Public } from "../../common/decorators/public.decorator";
 import { EncodingStatus, VideoQuality } from "@movie-platform/shared";
 import { EdgeCenterWebhookDto, WebhookAckDto } from "./dto";
 import { EdgeCenterVideoStatus, EdgeCenterWebhookEvent } from "./interfaces";
+import { timingSafeHexEqual } from "../../common/security/secure-compare";
 
 @ApiTags("webhooks")
 @Controller("webhooks/edgecenter")
 export class EdgeCenterWebhookController {
   private readonly logger = new Logger(EdgeCenterWebhookController.name);
   private readonly webhookSecret: string;
+  private readonly isProduction: boolean;
 
   constructor(
     private readonly configService: ConfigService,
@@ -35,6 +38,8 @@ export class EdgeCenterWebhookController {
       "EDGECENTER_WEBHOOK_SECRET",
       "",
     );
+    this.isProduction =
+      this.configService.get<string>("NODE_ENV", "development") === "production";
   }
 
   /**
@@ -68,6 +73,16 @@ export class EdgeCenterWebhookController {
     this.logger.log(
       `Received EdgeCenter webhook: event=${payload.event}, video_id=${payload.video_id}, status=${payload.video_status}`,
     );
+
+    if (!this.webhookSecret && this.isProduction) {
+      this.logger.error("EdgeCenter webhook secret is not configured");
+      throw new ForbiddenException("Webhook is not configured");
+    }
+
+    if (this.webhookSecret && !signature) {
+      this.logger.warn("Missing EdgeCenter webhook signature");
+      throw new UnauthorizedException("Invalid webhook signature");
+    }
 
     // Verify webhook signature if secret is configured
     if (this.webhookSecret && signature) {
@@ -118,14 +133,7 @@ export class EdgeCenterWebhookController {
         .update(payload)
         .digest("hex");
 
-      const sigBuffer = Buffer.from(signature, "hex");
-      const expectedBuffer = Buffer.from(expectedSignature, "hex");
-
-      if (sigBuffer.length !== expectedBuffer.length) {
-        return false;
-      }
-
-      return timingSafeEqual(sigBuffer, expectedBuffer);
+      return timingSafeHexEqual(signature, expectedSignature);
     } catch {
       return false;
     }

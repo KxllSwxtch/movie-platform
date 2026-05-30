@@ -4,10 +4,11 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { AgeCategory } from "@prisma/client";
 import { createHash } from "crypto";
 
 import { PrismaService } from "../../config/prisma.service";
-import { VideoQuality } from "@movie-platform/shared";
+import { UserRole, VideoQuality } from "@movie-platform/shared";
 import { StreamUrlResponseDto, ContentAccessResultDto } from "./dto";
 import { EdgeCenterService } from "./edgecenter.service";
 import { StorageService } from "../storage/storage.service";
@@ -15,6 +16,8 @@ import { StorageService } from "../storage/storage.service";
 interface ContentAccessContext {
   userId?: string;
   userRole?: string;
+  userAgeCategory?: AgeCategory;
+  verificationStatus?: string;
   userSubscriptionTier?: string;
 }
 
@@ -53,6 +56,55 @@ export class StreamingService {
         content.contentType === "TUTORIAL") &&
       (!content.series || !content.series.parentSeriesId)
     );
+  }
+
+  private getAllowedAgeCategories(
+    userAgeCategory?: AgeCategory,
+    verificationStatus?: string,
+  ): AgeCategory[] {
+    const order: AgeCategory[] = [
+      AgeCategory.ZERO_PLUS,
+      AgeCategory.SIX_PLUS,
+      AgeCategory.TWELVE_PLUS,
+      AgeCategory.SIXTEEN_PLUS,
+      AgeCategory.EIGHTEEN_PLUS,
+    ];
+
+    if (!userAgeCategory) {
+      return [
+        AgeCategory.ZERO_PLUS,
+        AgeCategory.SIX_PLUS,
+        AgeCategory.TWELVE_PLUS,
+        AgeCategory.SIXTEEN_PLUS,
+      ];
+    }
+
+    const index = order.indexOf(userAgeCategory);
+    const allowed = index >= 0 ? order.slice(0, index + 1) : [AgeCategory.ZERO_PLUS];
+
+    if (verificationStatus !== "VERIFIED") {
+      return allowed.filter((category) => category !== AgeCategory.EIGHTEEN_PLUS);
+    }
+
+    return allowed;
+  }
+
+  private getAllowedAgeCategoriesForRole(
+    userAgeCategory?: AgeCategory,
+    userRole?: string,
+    verificationStatus?: string,
+  ): AgeCategory[] {
+    if (userRole === UserRole.ADMIN || userRole === UserRole.MODERATOR) {
+      return [
+        AgeCategory.ZERO_PLUS,
+        AgeCategory.SIX_PLUS,
+        AgeCategory.TWELVE_PLUS,
+        AgeCategory.SIXTEEN_PLUS,
+        AgeCategory.EIGHTEEN_PLUS,
+      ];
+    }
+
+    return this.getAllowedAgeCategories(userAgeCategory, verificationStatus);
   }
 
   /**
@@ -284,12 +336,25 @@ export class StreamingService {
       isFree: boolean;
       individualPrice: any;
       status: string;
+      ageCategory: AgeCategory;
     },
     context?: ContentAccessContext,
   ): Promise<ContentAccessResultDto> {
     // Admin/moderator always has access
     if (context?.userRole === "ADMIN" || context?.userRole === "MODERATOR") {
       return { hasAccess: true, accessType: "admin" };
+    }
+
+    const allowedAgeCategories = this.getAllowedAgeCategoriesForRole(
+      context?.userAgeCategory,
+      context?.userRole,
+      context?.verificationStatus,
+    );
+    if (!allowedAgeCategories.includes(content.ageCategory)) {
+      return {
+        hasAccess: false,
+        reason: "Content is not available for this age category",
+      };
     }
 
     if (context?.userId && content.creatorId === context.userId) {

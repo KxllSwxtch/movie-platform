@@ -1,5 +1,6 @@
 // Partner components barrel export
 export * from './partner-level-badge';
+export * from './partner-auth-guard';
 export * from './partner-stats-grid';
 export * from './partner-level-card';
 export * from './partner-quick-actions';

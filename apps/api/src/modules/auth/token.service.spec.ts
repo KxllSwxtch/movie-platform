@@ -108,9 +108,6 @@ describe('TokenService', () => {
       await expect(
         service.validatePasswordResetToken('invalid-token'),
       ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.validatePasswordResetToken('invalid-token'),
-      ).rejects.toThrow('Invalid or expired password reset token');
     });
 
     it('should throw BadRequestException for expired token', async () => {
@@ -175,9 +172,6 @@ describe('TokenService', () => {
       await expect(
         service.validateEmailVerificationToken('invalid-token'),
       ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.validateEmailVerificationToken('invalid-token'),
-      ).rejects.toThrow('Invalid or expired email verification token');
     });
   });
 

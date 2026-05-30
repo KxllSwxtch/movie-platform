@@ -523,6 +523,15 @@ async function seedUsers() {
       verificationStatus: VerificationStatus.VERIFIED,
     },
     {
+      email: 'author@movieplatform.local',
+      password: 'author123',
+      firstName: 'РђРІС‚РѕСЂ',
+      lastName: 'РљРѕРЅС‚РµРЅС‚Р°',
+      dateOfBirth: new Date('1992-02-12'),
+      role: UserRole.AUTHOR,
+      verificationStatus: VerificationStatus.VERIFIED,
+    },
+    {
       email: 'user@movieplatform.local',
       password: 'user123',
       firstName: 'Иван',
@@ -933,7 +942,7 @@ async function main() {
     console.log('   - 1 Bonus Rate');
     console.log('   - 4 Legal Documents');
     console.log('   - 6 Notification Templates');
-    console.log('   - 5 Test Users');
+    console.log('   - 6 Test Users');
     console.log('   - 10 Sample Content Items');
     console.log('   - 5 Sample Products');
     console.log('   - 1 Partner Relationship');
@@ -942,6 +951,7 @@ async function main() {
     console.log('   - admin@movieplatform.local / admin123 (ADMIN)');
     console.log('   - moderator@movieplatform.local / mod123 (MODERATOR)');
     console.log('   - partner@movieplatform.local / partner123 (PARTNER)');
+    console.log('   - author@movieplatform.local / author123 (AUTHOR)');
     console.log('   - user@movieplatform.local / user123 (CLIENT)');
     console.log('   - minor@movieplatform.local / minor123 (CLIENT, age-restricted by ageCategory)');
     console.log('');

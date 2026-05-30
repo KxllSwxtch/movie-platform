@@ -1,3 +1,5 @@
+import { canUseAdmin } from './role-permissions';
+
 export type ContentPublicationStatus =
   | 'DRAFT'
   | 'PENDING'
@@ -6,7 +8,7 @@ export type ContentPublicationStatus =
   | 'ARCHIVED';
 
 export function canManageContentPublication(role?: string | null): boolean {
-  return role === 'ADMIN' || role === 'MODERATOR';
+  return canUseAdmin(role);
 }
 
 export function normalizeCreatorContentStatus(

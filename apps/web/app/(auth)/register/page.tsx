@@ -1,7 +1,19 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeSlash, Envelope, Lock, User, Calendar, Gift } from '@phosphor-icons/react';
+import {
+  Eye,
+  EyeSlash,
+  Envelope,
+  Lock,
+  User,
+  Calendar,
+  Gift,
+  Users,
+  VideoCamera,
+  PlayCircle,
+  CheckCircle,
+} from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -12,9 +24,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
+import { api, endpoints } from '@/lib/api-client';
+import {
+  getPublicUsernameUrl,
+  normalizeUsername,
+  validatePublicUsername,
+} from '@/lib/username';
+import { cn } from '@/lib/utils';
 
 const REFERRAL_STORAGE_KEY = 'mp-referral-code';
 const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{6,12}$/;
+const REGISTRATION_ROLES = ['CLIENT', 'PARTNER', 'AUTHOR'] as const;
+
+const ROLE_OPTIONS = [
+  { value: 'CLIENT', title: 'Клиент', description: 'Смотреть контент', icon: PlayCircle },
+  { value: 'PARTNER', title: 'Партнёр', description: 'Зарабатывать с нами', icon: Users },
+  { value: 'AUTHOR', title: 'Автор', description: 'Публиковать контент', icon: VideoCamera },
+] as const;
 
 /**
  * Registration form validation schema
@@ -36,6 +62,8 @@ const registerSchema = z
     dateOfBirth: z
       .string()
       .min(1, 'Дата рождения обязательна'),
+    role: z.enum(REGISTRATION_ROLES),
+    username: z.string().optional(),
     password: z
       .string()
       .min(1, 'Пароль обязателен')
@@ -56,6 +84,18 @@ const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Пароли не совпадают',
     path: ['confirmPassword'],
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === 'AUTHOR' || data.role === 'PARTNER' || data.username?.trim()) {
+      const error = validatePublicUsername(data.username ?? '');
+      if (error) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['username'],
+          message: error,
+        });
+      }
+    }
   });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -112,6 +152,12 @@ function storeReferralCode(code: string) {
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [origin, setOrigin] = useState('http://localhost:3000');
+  const [usernameStatus, setUsernameStatus] = useState<{
+    state: 'idle' | 'checking' | 'available' | 'unavailable';
+    reason?: string;
+    normalized?: string;
+  }>({ state: 'idle' });
   const searchParams = useSearchParams();
   const referralParam =
     searchParams.get('ref') ||
@@ -136,6 +182,7 @@ export default function RegisterPage() {
     setValue,
     setError,
     clearErrors,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -144,12 +191,79 @@ export default function RegisterPage() {
       lastName: '',
       email: '',
       dateOfBirth: '',
+      role: 'CLIENT',
+      username: '',
       password: '',
       confirmPassword: '',
       referralCode,
       acceptTerms: undefined,
     },
   });
+  const selectedRole = watch('role');
+  const usernameValue = watch('username') || '';
+  const normalizedUsername = normalizeUsername(usernameValue);
+  const requiresUsername = selectedRole === 'AUTHOR' || selectedRole === 'PARTNER';
+  const showUsernameField = requiresUsername || Boolean(usernameValue.trim());
+  const usernamePreview = usernameValue.trim()
+    ? getPublicUsernameUrl(selectedRole, usernameValue, origin)
+    : '';
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!usernameValue.trim()) {
+      setUsernameStatus({ state: 'idle' });
+      return;
+    }
+
+    const localError = validatePublicUsername(usernameValue);
+    if (localError) {
+      setUsernameStatus({
+        state: 'unavailable',
+        reason: localError,
+        normalized: normalizedUsername,
+      });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setUsernameStatus({ state: 'checking', normalized: normalizedUsername });
+      try {
+        const response = await api.get<{
+          available: boolean;
+          normalized: string;
+          reason?: string;
+        }>(endpoints.users.usernameAvailable, {
+          params: { username: normalizedUsername },
+          skipAuth: true,
+          skipRefresh: true,
+          signal: controller.signal,
+        });
+
+        setUsernameStatus({
+          state: response.data.available ? 'available' : 'unavailable',
+          reason: response.data.reason,
+          normalized: response.data.normalized,
+        });
+      } catch {
+        setUsernameStatus({
+          state: 'unavailable',
+          reason: 'Unable to check username availability',
+          normalized: normalizedUsername,
+        });
+      }
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [normalizedUsername, usernameValue]);
 
   useEffect(() => {
     const codeFromUrl = extractReferralCode(referralParam);
@@ -176,11 +290,19 @@ export default function RegisterPage() {
       lastName: data.lastName,
       email: data.email,
       dateOfBirth: data.dateOfBirth,
+      role: data.role,
+      username: data.username?.trim() ? normalizeUsername(data.username) : undefined,
       password: data.password,
       referralCode: extractReferralCode(data.referralCode),
       acceptTerms: data.acceptTerms,
     });
   };
+  const disableSubmitForUsername =
+    requiresUsername &&
+    (!usernameValue.trim() ||
+      usernameStatus.state === 'checking' ||
+      usernameStatus.state === 'unavailable' ||
+      usernameStatus.state === 'idle');
 
   return (
     <Card className="border-mp-border bg-mp-surface/50 backdrop-blur-sm">
@@ -262,6 +384,87 @@ export default function RegisterPage() {
               <p className="text-sm text-mp-error-text">{errors.email.message}</p>
             )}
           </div>
+
+          <div className="space-y-2">
+            <span className="text-sm font-medium text-mp-text-primary">Роль</span>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {ROLE_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                const isSelected = selectedRole === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setValue('role', option.value, { shouldValidate: true })}
+                    className={cn(
+                      'relative flex min-h-[112px] flex-col items-start gap-2 rounded-lg border p-3 text-left transition-colors',
+                      isSelected
+                        ? 'border-mp-accent-primary bg-mp-accent-primary/12 text-mp-text-primary'
+                        : 'border-mp-border bg-mp-surface/70 text-mp-text-secondary hover:border-mp-accent-primary/60 hover:text-mp-text-primary',
+                    )}
+                    aria-pressed={isSelected}
+                  >
+                    <span className="flex w-full items-center justify-between gap-2">
+                      <Icon className="h-5 w-5 shrink-0" />
+                      {isSelected && (
+                        <CheckCircle className="h-4 w-4 shrink-0 text-mp-accent-primary" weight="fill" />
+                      )}
+                    </span>
+                    <span className="text-sm font-semibold">{option.title}</span>
+                    <span className="text-xs leading-5 text-mp-text-secondary">
+                      {option.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {errors.role && (
+              <p className="text-sm text-mp-error-text">{errors.role.message}</p>
+            )}
+          </div>
+
+          {showUsernameField && (
+            <div className="space-y-2">
+              <label
+                htmlFor="username"
+                className="text-sm font-medium text-mp-text-primary"
+              >
+                Username {requiresUsername && <span className="text-mp-accent-tertiary">*</span>}
+              </label>
+              <Input
+                id="username"
+                placeholder="testauthor"
+                autoComplete="username"
+                error={!!errors.username || usernameStatus.state === 'unavailable'}
+                leftIcon={<User className="w-4 h-4" />}
+                {...register('username', {
+                  setValueAs: (value) =>
+                    typeof value === 'string' ? normalizeUsername(value) : value,
+                })}
+              />
+              <p className="text-xs text-mp-text-secondary">
+                Your public profile will be available at /author/username or /partner/username.
+              </p>
+              {usernamePreview && (
+                <p className="break-all rounded-md border border-mp-border bg-mp-surface/60 px-3 py-2 text-xs text-mp-text-secondary">
+                  {selectedRole === 'PARTNER' ? 'Public page/referral link' : 'Public page'}:{' '}
+                  <span className="text-mp-text-primary">{usernamePreview}</span>
+                </p>
+              )}
+              {usernameStatus.state === 'checking' && (
+                <p className="text-sm text-mp-text-secondary">Checking username...</p>
+              )}
+              {usernameStatus.state === 'available' && (
+                <p className="text-sm text-mp-success-text">Username is available</p>
+              )}
+              {(errors.username || usernameStatus.state === 'unavailable') && (
+                <p className="text-sm text-mp-error-text">
+                  {errors.username?.message || usernameStatus.reason}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Date of birth */}
           <div className="space-y-2">
@@ -432,6 +635,7 @@ export default function RegisterPage() {
             type="submit"
             variant="gradient"
             className="w-full"
+            disabled={disableSubmitForUsername}
             isLoading={isRegistering}
           >
             Зарегистрироваться

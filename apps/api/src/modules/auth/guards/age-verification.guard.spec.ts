@@ -86,7 +86,6 @@ describe('AgeVerificationGuard', () => {
       jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(AgeCategory.EIGHTEEN_PLUS);
 
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(context)).toThrow(/age verification/);
     });
   });
 

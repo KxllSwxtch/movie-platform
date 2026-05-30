@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { api, ApiError, endpoints } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
+import { canUsePartnerDashboard } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
 import type {
   TaxCalculation,
@@ -22,7 +23,7 @@ import type {
  * Hook to fetch withdrawals list
  */
 export function useWithdrawals(params?: WithdrawalQueryParams) {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.withdrawals(params as Record<string, unknown> | undefined),
@@ -32,7 +33,10 @@ export function useWithdrawals(params?: WithdrawalQueryParams) {
       });
       return response.data;
     },
-    enabled: isAuthenticated && isHydrated,
+    enabled:
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
     staleTime: 60 * 1000, // 1 minute
   });
 }
@@ -41,7 +45,7 @@ export function useWithdrawals(params?: WithdrawalQueryParams) {
  * Hook to fetch a single withdrawal
  */
 export function useWithdrawal(id: string | undefined) {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.withdrawal(id || ''),
@@ -50,7 +54,11 @@ export function useWithdrawal(id: string | undefined) {
       const response = await api.get<Withdrawal>(endpoints.partners.withdrawal(id));
       return response.data;
     },
-    enabled: !!id && isAuthenticated && isHydrated,
+    enabled:
+      !!id &&
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
   });
 }
 
@@ -58,7 +66,7 @@ export function useWithdrawal(id: string | undefined) {
  * Hook to preview tax calculation
  */
 export function useTaxPreview(amount: number, taxStatus: TaxStatus) {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.taxPreview(amount, taxStatus),
@@ -68,7 +76,11 @@ export function useTaxPreview(amount: number, taxStatus: TaxStatus) {
       });
       return response.data;
     },
-    enabled: isAuthenticated && isHydrated && amount > 0,
+    enabled:
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus) &&
+      amount > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes - tax rates don't change often
   });
 }
@@ -77,7 +89,7 @@ export function useTaxPreview(amount: number, taxStatus: TaxStatus) {
  * Hook to fetch saved payment methods
  */
 export function usePaymentMethods() {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.paymentMethods(),
@@ -85,7 +97,10 @@ export function usePaymentMethods() {
       const response = await api.get<SavedPaymentMethod[]>(endpoints.partners.paymentMethods);
       return response.data;
     },
-    enabled: isAuthenticated && isHydrated,
+    enabled:
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

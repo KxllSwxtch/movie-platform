@@ -20,6 +20,7 @@ import { UserRole } from '@movie-platform/shared';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { VerificationGuard } from '../auth/guards/verification.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
@@ -40,7 +41,7 @@ import {
 
 @ApiTags('Partners')
 @Controller('partners')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, VerificationGuard)
 @Roles(UserRole.PARTNER, UserRole.ADMIN, UserRole.MODERATOR)
 export class PartnersController {
   constructor(private readonly partnersService: PartnersService) {}

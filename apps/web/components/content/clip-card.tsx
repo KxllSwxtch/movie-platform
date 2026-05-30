@@ -18,6 +18,16 @@ export interface ClipContent {
   ageCategory: AgeCategory;
   category?: string;
   rating?: number;
+  creator?:
+    | string
+    | {
+        id: string;
+        firstName?: string;
+        lastName?: string;
+        username?: string;
+        displayName?: string;
+        authorUrl?: string;
+      };
 }
 
 interface ClipCardProps {
@@ -29,12 +39,24 @@ interface ClipCardProps {
  * Clip card with duration badge, view count, and hover play button
  */
 export function ClipCard({ content, className }: ClipCardProps) {
+  const creator =
+    content.creator && typeof content.creator === "object"
+      ? content.creator
+      : null;
+  const creatorName = creator
+    ? creator.displayName ||
+      creator.username ||
+      [creator.firstName, creator.lastName].filter(Boolean).join(" ")
+    : typeof content.creator === "string"
+      ? content.creator
+      : null;
+  const creatorUrl =
+    creator?.authorUrl || (creator ? `/author/${creator.username || creator.id}` : null);
+
   return (
-    <Link
-      href={`/videos/${content.slug}`}
-      className={cn("group block shrink-0 content-card w-full", className)}
-    >
+    <article className={cn("group block shrink-0 content-card w-full", className)}>
       {/* Thumbnail */}
+      <Link href={`/videos/${content.slug}`} className="block">
       <div className="relative aspect-video rounded-xl overflow-hidden bg-mp-surface-2 mb-3">
         <ContentImage
           src={content.thumbnailUrl}
@@ -82,12 +104,23 @@ export function ClipCard({ content, className }: ClipCardProps) {
           </div>
         </div>
       </div>
+      </Link>
 
       {/* Content info */}
       <div>
-        <h3 className="font-medium text-mp-text-primary truncate group-hover:text-mp-accent-tertiary transition-colors duration-200">
-          {content.title}
-        </h3>
+        <Link href={`/videos/${content.slug}`} className="block">
+          <h3 className="font-medium text-mp-text-primary truncate group-hover:text-mp-accent-tertiary transition-colors duration-200">
+            {content.title}
+          </h3>
+        </Link>
+        {creatorName && creatorUrl && (
+          <Link
+            href={creatorUrl}
+            className="mt-1 block truncate text-sm text-mp-text-secondary transition-colors hover:text-mp-accent-primary"
+          >
+            {creatorName}
+          </Link>
+        )}
         <div className="flex items-center gap-2 mt-1 text-sm text-mp-text-secondary">
           <span className="flex items-center gap-1">
             <Eye className="w-3.5 h-3.5" />
@@ -97,6 +130,6 @@ export function ClipCard({ content, className }: ClipCardProps) {
           <span>{formatDuration(content.duration)}</span>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

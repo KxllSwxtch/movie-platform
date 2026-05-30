@@ -30,14 +30,14 @@ interface ContentListItem {
   slug: string;
   title: string;
   description?: string;
-  thumbnailUrl: string;
+  thumbnailUrl?: string | null;
   coverUrl?: string;
   bannerUrl?: string;
   heroImageUrl?: string;
   contentType: string;
   ageCategory: string;
-  duration: number;
-  viewCount: number;
+  duration?: number | null;
+  viewCount?: number | null;
   category?: string | { id: string; name: string; slug: string };
   rating?: number;
   averageRating?: number;
@@ -49,7 +49,16 @@ interface ContentListItem {
   lessonCount?: number;
   completedLessons?: number;
   instructor?: string;
-  creator?: string;
+  creator?:
+    | string
+    | {
+        id: string;
+        firstName?: string;
+        lastName?: string;
+        username?: string;
+        avatarUrl?: string;
+        authorUrl?: string;
+      };
   likeCount?: number;
   commentCount?: number;
   shareCount?: number;
@@ -303,7 +312,16 @@ interface ContentDetail {
   duration: number;
   viewCount: number;
   category?: string | { id: string; name: string; slug: string };
-  creator?: string;
+  creator?:
+    | string
+    | {
+        id: string;
+        firstName?: string;
+        lastName?: string;
+        username?: string;
+        avatarUrl?: string;
+        authorUrl?: string;
+      };
   instructor?: string;
   likeCount?: number;
   commentCount?: number;

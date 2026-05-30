@@ -4,10 +4,13 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
   Logger,
   Post,
   RawBody,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiExcludeController, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PaymentsService } from './payments.service';
@@ -18,18 +21,28 @@ import {
   WebhookResponseDto,
   YooKassaWebhookDto,
 } from './dto';
+import { timingSafeStringEqual } from '../../common/security/secure-compare';
 
 @ApiTags('Webhooks')
 @ApiExcludeController() // Hide from Swagger as these are internal
 @Controller('webhooks')
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
+  private readonly bankWebhookSecret: string;
+  private readonly isProduction: boolean;
 
   constructor(
     private readonly paymentsService: PaymentsService,
     private readonly yooKassaService: YooKassaService,
     private readonly sbpService: SbpService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.bankWebhookSecret =
+      this.configService.get<string>('BANK_TRANSFER_WEBHOOK_SECRET', '') ||
+      this.configService.get<string>('ADMIN_SECRET', '');
+    this.isProduction =
+      this.configService.get<string>('NODE_ENV', 'development') === 'production';
+  }
 
   /**
    * YooKassa payment webhook handler.
@@ -124,13 +137,13 @@ export class WebhooksController {
   @ApiOperation({ summary: 'Bank transfer confirmation webhook' })
   async handleBankTransferWebhook(
     @Body() body: { invoiceNumber: string; amount: number; transactionId?: string },
-    @Headers('x-admin-secret') _adminSecret: string,
+    @Headers('x-admin-secret') adminSecret: string,
   ): Promise<WebhookResponseDto> {
+    this.assertValidBankWebhookSecret(adminSecret);
+
     try {
       this.logger.log(`Bank transfer webhook received for invoice: ${body.invoiceNumber}`);
 
-      // This endpoint should only be called by admin or banking API
-      // In production, implement proper authentication
       if (!body.transactionId) {
         return { success: false, error: 'Transaction ID required' };
       }
@@ -141,6 +154,27 @@ export class WebhooksController {
     } catch (error) {
       this.logger.error('Error processing bank transfer webhook', error);
       return { success: false, error: 'Internal error' };
+    }
+  }
+
+  private assertValidBankWebhookSecret(providedSecret?: string): void {
+    if (!this.bankWebhookSecret) {
+      if (this.isProduction) {
+        this.logger.error('Bank transfer webhook secret is not configured');
+        throw new ForbiddenException('Webhook is not configured');
+      }
+
+      return;
+    }
+
+    if (!providedSecret) {
+      this.logger.warn('Missing bank transfer webhook secret header');
+      throw new UnauthorizedException('Invalid webhook secret');
+    }
+
+    if (!timingSafeStringEqual(providedSecret, this.bankWebhookSecret)) {
+      this.logger.warn('Invalid bank transfer webhook secret');
+      throw new UnauthorizedException('Invalid webhook secret');
     }
   }
 

@@ -2,15 +2,16 @@
 
 import { Check, Copy, GitBranch, ShoppingBag, Star, Users } from '@phosphor-icons/react';
 import * as React from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBonusHistory } from '@/hooks/bonus';
 import { useCommissions, usePartnerDashboard, useReferralTree } from '@/hooks/use-partner';
+import { canUsePartnerDashboard } from '@/lib/role-permissions';
 import { buildAbsoluteAppUrl, copyTextToClipboard } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
-import { toast } from 'sonner';
 
 function formatNumber(value?: number) {
   return new Intl.NumberFormat('ru-RU').format(value ?? 0);
@@ -28,9 +29,12 @@ export default function AccountReferralsPage() {
     limit: 8,
   });
 
-  const isPartner = user?.role === 'PARTNER';
+  const canAccessPartnerDashboard = canUsePartnerDashboard(
+    user?.role,
+    user?.verificationStatus,
+  );
 
-  if (!isPartner) {
+  if (!canAccessPartnerDashboard) {
     return (
       <Card>
         <CardContent className="p-8">

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { api, endpoints } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
+import { canUsePartnerDashboard } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
 import type {
   ReferralTree,
@@ -71,7 +72,7 @@ export interface PartnerVerificationRequest {
  * Hook to fetch referral tree
  */
 export function useReferralTree(depth: number = 3) {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.referrals(depth),
@@ -122,7 +123,10 @@ export function useReferralTree(depth: number = 3) {
         },
       } as ReferralTree;
     },
-    enabled: isAuthenticated && isHydrated,
+    enabled:
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
@@ -131,7 +135,7 @@ export function useReferralTree(depth: number = 3) {
  * Hook to fetch commissions list
  */
 export function useCommissions(params?: CommissionQueryParams) {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.commissions(params as Record<string, unknown> | undefined),
@@ -141,7 +145,10 @@ export function useCommissions(params?: CommissionQueryParams) {
       });
       return response.data;
     },
-    enabled: isAuthenticated && isHydrated,
+    enabled:
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
     staleTime: 60 * 1000, // 1 minute
   });
 }
@@ -150,7 +157,7 @@ export function useCommissions(params?: CommissionQueryParams) {
  * Hook to fetch a single commission
  */
 export function useCommission(id: string | undefined) {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   return useQuery({
     queryKey: queryKeys.partners.commission(id || ''),
@@ -159,7 +166,11 @@ export function useCommission(id: string | undefined) {
       const response = await api.get<Commission>(endpoints.partners.commission(id));
       return response.data;
     },
-    enabled: !!id && isAuthenticated && isHydrated,
+    enabled:
+      !!id &&
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
   });
 }
 
@@ -174,7 +185,10 @@ export function usePartnerVerificationRequests() {
       );
       return response.data;
     },
-    enabled: isAuthenticated && isHydrated && user?.role === 'PARTNER',
+    enabled:
+      isAuthenticated &&
+      isHydrated &&
+      canUsePartnerDashboard(user?.role, user?.verificationStatus),
   });
 }
 

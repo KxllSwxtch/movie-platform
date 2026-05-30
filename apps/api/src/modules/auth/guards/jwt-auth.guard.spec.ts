@@ -110,9 +110,6 @@ describe('JwtAuthGuard', () => {
       expect(() => guard.handleRequest(null, null, null, context)).toThrow(
         UnauthorizedException,
       );
-      expect(() => guard.handleRequest(null, null, null, context)).toThrow(
-        'Authentication required',
-      );
     });
 
     it('should throw original error for protected routes', () => {

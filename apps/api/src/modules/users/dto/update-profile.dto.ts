@@ -6,6 +6,7 @@ import {
   MaxLength,
   IsPhoneNumber,
   IsUrl,
+  Matches,
 } from 'class-validator';
 
 export class UpdateProfileDto {
@@ -48,4 +49,33 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsUrl({}, { message: 'Укажите корректный URL аватара' })
   avatarUrl?: string;
+  @ApiPropertyOptional({
+    example: 'ivan_ivanov',
+    description: 'Public profile username',
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(/^[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])$/, {
+    message: 'Username may contain lowercase letters, numbers, underscores, and hyphens, and must start and end with a letter or number',
+  })
+  username?: string;
+
+  @ApiPropertyOptional({
+    example: 'Author channel description',
+    description: 'Public author bio',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  bio?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://example.com/banner.jpg',
+    description: 'Public author banner image URL',
+  })
+  @IsOptional()
+  @IsUrl({}, { message: 'Invalid banner URL' })
+  bannerUrl?: string;
 }

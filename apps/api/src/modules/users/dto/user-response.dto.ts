@@ -26,6 +26,19 @@ export class UserProfileDto {
   @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
   avatarUrl?: string;
 
+  @ApiPropertyOptional({ example: 'https://example.com/banner.jpg' })
+  bannerUrl?: string;
+
+  @ApiPropertyOptional({ example: 'ivan_ivanov' })
+  username?: string;
+
+  usernameUpdatedAt?: Date;
+
+  usernameChangeCount?: number;
+
+  @ApiPropertyOptional({ example: 'Public author bio' })
+  bio?: string;
+
   @ApiProperty({ enum: VerificationStatus, example: VerificationStatus.UNVERIFIED })
   verificationStatus!: VerificationStatus;
 

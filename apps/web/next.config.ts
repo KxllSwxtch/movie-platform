@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const withBundleAnalyzer =
   process.env.ANALYZE === 'true'
@@ -25,21 +26,17 @@ const nextConfig: NextConfig = {
   // Standalone output for Docker deployment
   output: 'standalone',
 
-  // Skip type/lint checks in production build (pre-existing issues in codebase)
-  typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
-
   // Transpile monorepo packages
   transpilePackages: ['@movie-platform/shared'],
 
-  // Replace @phosphor-icons/react with a noop stub in server bundles to prevent
-  // createContext from being called in react-server context (standalone build issue).
-  // Icons render as null during SSR and hydrate properly on the client.
+  // Use Phosphor's SSR entrypoint in server bundles. The CSR entrypoint uses
+  // client-only context, while the local noop stub rendered different SVG
+  // markup and caused React hydration errors.
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.resolve.alias['@phosphor-icons/react'] = require('path').resolve(
-        __dirname,
-        'lib/phosphor-icons-server-stub.js',
+      config.resolve.alias['@phosphor-icons/react'] = path.join(
+        path.dirname(require.resolve('@phosphor-icons/react/package.json')),
+        'dist/ssr/index.es.js',
       );
     }
     return config;

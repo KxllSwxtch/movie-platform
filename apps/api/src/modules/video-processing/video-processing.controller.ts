@@ -29,7 +29,9 @@ import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { VerificationGuard } from '../auth/guards/verification.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { VerificationRequired } from '../../common/decorators/verification-required.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PrismaService } from '../../config/prisma.service';
 import { VideoProcessingService } from './video-processing.service';
@@ -44,8 +46,9 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 @ApiTags('admin/video')
 @ApiBearerAuth()
 @Controller('admin/content')
-@UseGuards(RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.PARTNER)
+@UseGuards(RolesGuard, VerificationGuard)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.AUTHOR)
+@VerificationRequired()
 export class VideoProcessingController {
   constructor(
     private readonly videoProcessingService: VideoProcessingService,
@@ -56,6 +59,7 @@ export class VideoProcessingController {
     contentId: string,
     userId?: string,
     role?: string,
+    options: { allowModerator?: boolean } = {},
   ) {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
@@ -66,13 +70,16 @@ export class VideoProcessingController {
       throw new NotFoundException('Content not found');
     }
 
-    const canManageAll = role === UserRole.ADMIN || role === UserRole.MODERATOR;
+    const canManageAll =
+      role === UserRole.ADMIN ||
+      (options.allowModerator === true && role === UserRole.MODERATOR);
     if (!canManageAll && content.creatorId !== userId) {
       throw new ForbiddenException('Недостаточно прав для управления видео');
     }
   }
 
   @Post(':id/video/upload')
+  @Roles(UserRole.ADMIN, UserRole.AUTHOR)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Upload video file and start transcoding',
@@ -153,11 +160,14 @@ export class VideoProcessingController {
     @CurrentUser('id') userId?: string,
     @CurrentUser('role') role?: string,
   ): Promise<EncodingStatusDto> {
-    await this.assertCanManageContent(contentId, userId, role);
+    await this.assertCanManageContent(contentId, userId, role, {
+      allowModerator: true,
+    });
     return this.videoProcessingService.getEncodingStatus(contentId);
   }
 
   @Delete(':id/video')
+  @Roles(UserRole.ADMIN, UserRole.AUTHOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete video for content',

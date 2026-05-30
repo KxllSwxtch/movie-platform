@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { VerificationStatus, VerificationMethod } from '@movie-platform/shared';
+import { UserRole, VerificationStatus, VerificationMethod } from '@movie-platform/shared';
 import { v4 as uuidv4 } from 'uuid';
 import {
   PaymentMethodType,
@@ -27,6 +27,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerificationSubmissionDto } from './dto/verification-submission.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { validateUsername } from './utils/username.util';
 
 const AVATAR_BUCKET = 'avatars';
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -39,6 +40,7 @@ const ALLOWED_VERIFICATION_DOCUMENT_TYPES = [
   'application/pdf',
 ];
 const MAX_VERIFICATION_DOCUMENT_SIZE = 10 * 1024 * 1024;
+const USERNAME_CHANGE_COOLDOWN_DAYS = 30;
 
 @Injectable()
 export class UsersService {
@@ -82,6 +84,29 @@ export class UsersService {
     });
   }
 
+  async checkUsernameAvailability(username?: string | null) {
+    const validation = validateUsername(username);
+
+    if (!validation.valid) {
+      return {
+        available: false,
+        normalized: validation.normalized,
+        reason: validation.reason,
+      };
+    }
+
+    const existing = await this.prisma.user.findFirst({
+      where: { username: { equals: validation.normalized, mode: 'insensitive' } },
+      select: { id: true },
+    });
+
+    return {
+      available: !existing,
+      normalized: validation.normalized,
+      reason: existing ? 'Username is already taken' : undefined,
+    };
+  }
+
   /**
    * Get user profile (sanitized, without sensitive data).
    */
@@ -115,6 +140,11 @@ export class UsersService {
     if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.avatarUrl !== undefined) updateData.avatarUrl = dto.avatarUrl;
+    if (dto.bannerUrl !== undefined) updateData.bannerUrl = dto.bannerUrl;
+    if (dto.bio !== undefined) updateData.bio = dto.bio;
+    if (dto.username !== undefined) {
+      Object.assign(updateData, await this.buildUsernameUpdate(userId, user, dto.username));
+    }
 
     if (Object.keys(updateData).length === 0) {
       return this.sanitizeUser(user);
@@ -126,6 +156,56 @@ export class UsersService {
     });
 
     return this.sanitizeUser(updatedUser);
+  }
+
+  private async buildUsernameUpdate(
+    userId: string,
+    user: {
+      username?: string | null;
+      usernameUpdatedAt?: Date | null;
+      usernameChangeCount?: number | null;
+      role: string;
+    },
+    requestedUsername: string,
+  ) {
+    const validation = validateUsername(requestedUsername);
+    if (!validation.valid) {
+      throw new BadRequestException(validation.reason);
+    }
+
+    if (user.username?.toLowerCase() === validation.normalized) {
+      return {};
+    }
+
+    if (
+      user.username &&
+      user.usernameUpdatedAt &&
+      (user.role === UserRole.AUTHOR || user.role === UserRole.PARTNER)
+    ) {
+      const nextAllowedAt = new Date(user.usernameUpdatedAt);
+      nextAllowedAt.setDate(nextAllowedAt.getDate() + USERNAME_CHANGE_COOLDOWN_DAYS);
+
+      if (nextAllowedAt > new Date()) {
+        throw new BadRequestException(
+          `Username can be changed once every ${USERNAME_CHANGE_COOLDOWN_DAYS} days`,
+        );
+      }
+    }
+
+    const existingUsernameOwner = await this.prisma.user.findFirst({
+      where: { username: { equals: validation.normalized, mode: 'insensitive' } },
+      select: { id: true },
+    });
+
+    if (existingUsernameOwner && existingUsernameOwner.id !== userId) {
+      throw new ConflictException('Username is already taken');
+    }
+
+    return {
+      username: validation.normalized,
+      usernameUpdatedAt: new Date(),
+      usernameChangeCount: (user.usernameChangeCount ?? 0) + 1,
+    };
   }
 
   /**

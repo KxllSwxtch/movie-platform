@@ -5,17 +5,11 @@ import * as React from 'react';
 
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/hooks/use-auth';
-import { UserRole } from '@movie-platform/shared';
+import { canUseStudio, canUseStudioRole } from '@/lib/role-permissions';
 
 interface StudioAuthGuardProps {
   children: React.ReactNode;
 }
-
-const STUDIO_ALLOWED_ROLES = [
-  UserRole.ADMIN,
-  UserRole.MODERATOR,
-  UserRole.PARTNER,
-];
 
 /**
  * Studio authentication guard.
@@ -43,14 +37,28 @@ export function StudioAuthGuard({ children }: StudioAuthGuardProps) {
       return;
     }
 
-    if (!STUDIO_ALLOWED_ROLES.includes(user.role as UserRole)) {
+    if (!canUseStudioRole(user.role)) {
       setIsAuthorized(false);
       router.replace('/dashboard');
       return;
     }
 
+    if (!canUseStudio(user.role, user.verificationStatus)) {
+      setIsAuthorized(false);
+      router.replace(`/account/verification?restricted=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
     setIsAuthorized(true);
-  }, [isHydrated, isAuthenticated, isLoadingUser, pathname, user?.role, router]);
+  }, [
+    isHydrated,
+    isAuthenticated,
+    isLoadingUser,
+    pathname,
+    user?.role,
+    user?.verificationStatus,
+    router,
+  ]);
 
   if (!isHydrated || (isAuthenticated && isLoadingUser) || isAuthorized === null) {
     return (

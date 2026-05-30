@@ -1,0 +1,30 @@
+{
+  "moduleFileExtensions": ["ts", "js", "json"],
+  "rootDir": "src",
+  "testEnvironment": "node",
+  "testMatch": [
+    "<rootDir>/common/security/secure-compare.spec.ts",
+    "<rootDir>/modules/auth/auth.service.spec.ts",
+    "<rootDir>/modules/auth/token.service.spec.ts",
+    "<rootDir>/modules/auth/session.service.spec.ts",
+    "<rootDir>/modules/auth/guards/age-verification.guard.spec.ts",
+    "<rootDir>/modules/auth/guards/jwt-auth.guard.spec.ts",
+    "<rootDir>/modules/auth/guards/roles.guard.spec.ts",
+    "<rootDir>/modules/auth/guards/turnstile.guard.spec.ts",
+    "<rootDir>/modules/admin/services/admin-verifications.service.spec.ts",
+    "<rootDir>/modules/authors/authors.service.spec.ts",
+    "<rootDir>/modules/edgecenter/edgecenter-webhook.controller.spec.ts",
+    "<rootDir>/modules/edgecenter/streaming.service.spec.ts",
+    "<rootDir>/modules/payments/webhooks.controller.spec.ts"
+  ],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "collectCoverageFrom": ["**/*.(t|j)s"],
+  "coverageDirectory": "../coverage",
+  "testEnvironmentOptions": {},
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/$1"
+  },
+  "modulePathIgnorePatterns": ["<rootDir>/../dist/"]
+}

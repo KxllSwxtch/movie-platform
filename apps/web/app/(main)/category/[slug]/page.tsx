@@ -69,14 +69,15 @@ export default function CategoryPage() {
       slug: item.slug,
       title: item.title,
       thumbnailUrl: item.thumbnailUrl || "/images/movie-placeholder.jpg",
-      duration: item.duration,
-      viewCount: item.viewCount,
+      duration: item.duration ?? 0,
+      viewCount: item.viewCount ?? 0,
       rating: item.averageRating ?? item.rating,
       ageCategory: (item.ageCategory || "0+") as AgeCategory,
       category:
         typeof item.category === "object" && item.category !== null
           ? item.category.name
           : item.category,
+      creator: item.creator,
     }));
 
   const tutorialItems = items

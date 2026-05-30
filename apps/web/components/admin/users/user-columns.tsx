@@ -1,13 +1,17 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
 import { Eye, PencilSimple } from '@phosphor-icons/react';
+import { ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
 
 import { DataTableColumnHeader } from '@/components/admin/data-table/data-table-column-header';
 import { DataTableRowActions } from '@/components/admin/data-table/data-table-row-actions';
 import { Badge } from '@/components/ui/badge';
 import type { AdminUser } from '@/hooks/use-admin-users';
+
+const ADMIN_ROLE_FALLBACK_LABELS: Record<string, string> = {
+  AUTHOR: 'Автор',
+};
 
 /**
  * User role badge color mapping
@@ -23,7 +27,10 @@ function getRoleBadge(role: string) {
     MINOR: { label: 'Несовершеннолетний', className: 'bg-yellow-500/20 text-yellow-400 border-transparent' },
   };
 
-  const { label, className } = config[role] || { label: role, className: '' };
+  const { label, className } = config[role] || {
+    label: ADMIN_ROLE_FALLBACK_LABELS[role] || role,
+    className: role === 'AUTHOR' ? 'bg-pink-500/20 text-pink-400 border-transparent' : '',
+  };
   return <Badge className={className}>{label}</Badge>;
 }
 

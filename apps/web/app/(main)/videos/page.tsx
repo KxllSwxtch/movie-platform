@@ -79,14 +79,15 @@ export default function VideosPage() {
       slug: item.slug,
       title: item.title,
       thumbnailUrl: item.thumbnailUrl || "/images/movie-placeholder.jpg",
-      duration: item.duration,
-      viewCount: item.viewCount,
+      duration: item.duration ?? 0,
+      viewCount: item.viewCount ?? 0,
       rating: item.averageRating ?? item.rating,
       ageCategory: normalizeAgeCategory(item.ageCategory || "0+"),
       category:
         typeof item.category === "object" && item.category !== null
           ? item.category.name
           : item.category,
+      creator: item.creator,
     }));
   }, [data]);
 

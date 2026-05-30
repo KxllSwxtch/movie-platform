@@ -7,6 +7,7 @@ import { ShortCard, type ShortContent } from '@/components/content';
 import { useContentInfinite } from '@/hooks/use-content';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { mapContentItemToShort } from './shorts.utils';
 
 export default function ShortsPage() {
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -25,15 +26,7 @@ export default function ShortsPage() {
   const shorts: ShortContent[] = React.useMemo(() => {
     if (!data?.pages) return [];
     return data.pages.flatMap((page) =>
-      (page?.items ?? []).map((item) => ({
-        id: item.id,
-        title: item.title,
-        thumbnailUrl: item.thumbnailUrl || '/images/movie-placeholder.jpg',
-        creator: item.creator || 'movieplatform',
-        likeCount: item.likeCount || 0,
-        commentCount: item.commentCount || 0,
-        shareCount: item.shareCount || 0,
-      }))
+      (page?.items ?? []).map(mapContentItemToShort)
     );
   }, [data]);
 

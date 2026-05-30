@@ -24,6 +24,10 @@ import {
   CACHE_TTL,
 } from "../../common/cache/cache.service";
 import {
+  isCreatorRole,
+  isModerationRole,
+} from "../../common/auth/role-permissions";
+import {
   ContentQueryDto,
   CreateContentDto,
   SearchQueryDto,
@@ -126,11 +130,19 @@ export class ContentService {
   }
 
   private isPrivilegedRole(role?: string): boolean {
-    return role === UserRole.ADMIN || role === UserRole.MODERATOR;
+    return isModerationRole(role);
   }
 
   private canManageAll(actor?: { id?: string; role?: string }): boolean {
     return this.isPrivilegedRole(actor?.role);
+  }
+
+  private canCreateContent(actor?: { id?: string; role?: string }): boolean {
+    return isCreatorRole(actor?.role);
+  }
+
+  private canEditContent(actor?: { id?: string; role?: string }): boolean {
+    return actor?.role === UserRole.ADMIN || actor?.role === UserRole.AUTHOR;
   }
 
   private assertAllowedStatusChange(
@@ -311,6 +323,16 @@ export class ContentService {
             orderBy,
             include: {
               category: { select: { id: true, name: true, slug: true } },
+              creator: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                  avatarUrl: true,
+                  role: true,
+                },
+              },
               series: {
                 select: {
                   id: true,
@@ -400,6 +422,16 @@ export class ContentService {
           },
           include: {
             category: { select: { id: true, name: true, slug: true } },
+            creator: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true,
+                avatarUrl: true,
+                role: true,
+              },
+            },
             series: {
               include: {
                 episodes: {
@@ -526,6 +558,16 @@ export class ContentService {
         orderBy: [{ viewCount: "desc" }, { publishedAt: "desc" }],
         include: {
           category: { select: { id: true, name: true, slug: true } },
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true,
+              avatarUrl: true,
+              role: true,
+            },
+          },
           tags: {
             include: { tag: { select: { id: true, name: true, slug: true } } },
           },
@@ -1115,6 +1157,8 @@ export class ContentService {
               email: true,
               firstName: true,
               lastName: true,
+              username: true,
+              avatarUrl: true,
               role: true,
             },
           },
@@ -1174,6 +1218,8 @@ export class ContentService {
             email: true,
             firstName: true,
             lastName: true,
+            username: true,
+            avatarUrl: true,
             role: true,
           },
         },
@@ -1200,6 +1246,10 @@ export class ContentService {
   }
 
   async create(dto: CreateContentDto, actor?: { id?: string; role?: string }) {
+    if (!this.canCreateContent(actor)) {
+      throw new ForbiddenException("Insufficient permissions to create content");
+    }
+
     let categoryId = dto.categoryId;
 
     if (categoryId) {
@@ -1298,6 +1348,10 @@ export class ContentService {
     dto: UpdateContentDto,
     actor?: { id?: string; role?: string },
   ) {
+    if (!this.canEditContent(actor)) {
+      throw new ForbiddenException("Only authors and admins can edit content");
+    }
+
     await this.assertCanManageContent(id, actor);
 
     const existing = await this.prisma.content.findUnique({
@@ -1427,6 +1481,10 @@ export class ContentService {
   }
 
   async delete(id: string, actor?: { id?: string; role?: string }) {
+    if (!this.canEditContent(actor)) {
+      throw new ForbiddenException("Only authors and admins can archive content");
+    }
+
     await this.assertCanManageContent(id, actor);
 
     const existing = await this.prisma.content.findUnique({
@@ -1573,10 +1631,17 @@ export class ContentService {
             firstName: content.creator.firstName,
             lastName: content.creator.lastName,
             role: content.creator.role,
+            avatarUrl: content.creator.avatarUrl,
             username:
+              content.creator.username ||
               [content.creator.firstName, content.creator.lastName]
                 .filter(Boolean)
-                .join(" ") || content.creator.email,
+                .join(" ") ||
+              content.creator.email,
+            authorUrl:
+              content.creator.role === UserRole.AUTHOR
+                ? `/author/${content.creator.username || content.creator.id}`
+                : undefined,
           }
         : null,
       tags: Array.isArray(content.tags)

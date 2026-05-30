@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { VerificationStatus } from '@prisma/client';
+import { UserRole } from '@movie-platform/shared';
 
 import { PrismaService } from '../../config/prisma.service';
 import { UsersService } from '../users/users.service';
@@ -17,6 +18,16 @@ import { EmailService } from '../email/email.service';
 import { RegisterDto, LoginResponseDto, RefreshResponseDto } from './dto';
 import { getAgeCategory } from '../users/utils/age.util';
 import { generateReferralCode, extractReferralCode, isValidReferralCodeFormat } from '../users/utils/referral.util';
+import {
+  normalizeUsernameCandidate,
+  validateUsername,
+} from '../users/utils/username.util';
+
+const PUBLIC_REGISTRATION_ROLES = new Set<string>([
+  UserRole.CLIENT,
+  UserRole.PARTNER,
+  UserRole.AUTHOR,
+]);
 
 export interface JwtPayload {
   sub: string;
@@ -88,8 +99,10 @@ export class AuthService {
     const dateOfBirth = new Date(dto.dateOfBirth);
     const ageCategory = getAgeCategory(dateOfBirth);
 
-    // Age restrictions are handled by ageCategory; account access is CLIENT by default.
-    const role = 'CLIENT';
+    const role = dto.requestedRole ?? dto.role ?? UserRole.CLIENT;
+    if (!PUBLIC_REGISTRATION_ROLES.has(role)) {
+      throw new BadRequestException('Role must be CLIENT, PARTNER, or AUTHOR');
+    }
 
     // Handle referral code
     let referredById: string | undefined;
@@ -133,6 +146,8 @@ export class AuthService {
       throw new BadRequestException('Не удалось сгенерировать реферальный код. Попробуйте снова.');
     }
 
+    const username = await this.resolveRegistrationUsername(dto, role);
+
     // Hash password
     const passwordHash = await this.hashPassword(dto.password);
 
@@ -146,7 +161,9 @@ export class AuthService {
           lastName: dto.lastName,
           dateOfBirth,
           ageCategory,
-          role: role as any,
+          role,
+          username,
+          usernameUpdatedAt: username ? new Date() : undefined,
           referralCode,
           referredById,
           verificationStatus: VerificationStatus.UNVERIFIED,
@@ -498,6 +515,63 @@ export class AuthService {
         });
       }
     }
+  }
+
+  private async generateUniqueUsername(
+    email: string,
+    firstName: string,
+    lastName: string,
+  ): Promise<string> {
+    const emailLocalPart = email.split('@')[0] ?? '';
+    const rawBase =
+      normalizeUsernameCandidate(`${firstName}_${lastName}`) ||
+      normalizeUsernameCandidate(emailLocalPart) ||
+      'user';
+    const base = rawBase.length >= 3 ? rawBase : `user_${rawBase}`;
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const suffix = attempt === 0 ? '' : `_${attempt + 1}`;
+      const candidate = `${base.slice(0, 24 - suffix.length)}${suffix}`;
+      const existing = await this.prisma.user.findFirst({
+        where: { username: { equals: candidate, mode: 'insensitive' } },
+        select: { id: true },
+      });
+
+      if (!existing) return candidate;
+    }
+
+    return `${base.slice(0, 15)}_${Date.now().toString(36)}`;
+  }
+
+  private async resolveRegistrationUsername(
+    dto: RegisterDto,
+    role: UserRole.CLIENT | UserRole.PARTNER | UserRole.AUTHOR,
+  ): Promise<string> {
+    const requiresUsername = role === UserRole.AUTHOR || role === UserRole.PARTNER;
+
+    if (!dto.username && requiresUsername) {
+      throw new BadRequestException('Username is required for AUTHOR and PARTNER accounts');
+    }
+
+    if (!dto.username) {
+      return this.generateUniqueUsername(dto.email, dto.firstName, dto.lastName);
+    }
+
+    const validation = validateUsername(dto.username);
+    if (!validation.valid) {
+      throw new BadRequestException(validation.reason);
+    }
+
+    const existing = await this.prisma.user.findFirst({
+      where: { username: { equals: validation.normalized, mode: 'insensitive' } },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException('Username is already taken');
+    }
+
+    return validation.normalized;
   }
 
   /**

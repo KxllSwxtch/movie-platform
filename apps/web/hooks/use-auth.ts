@@ -1,12 +1,14 @@
 'use client';
 
-import * as React from 'react';
+import type { User } from '@movie-platform/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import * as React from 'react';
 import { toast } from 'sonner';
 
 import { api, ApiError, endpoints } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
+import { canUsePartnerRole, isVerified, normalizeLegacyRole } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
 import type {
   LoginRequest,
@@ -16,7 +18,13 @@ import type {
   ForgotPasswordRequest,
   ResetPasswordRequest,
 } from '@/types';
-import type { User } from '@movie-platform/shared';
+
+function requiresVerificationRedirect(user: User): boolean {
+  return (
+    (canUsePartnerRole(user.role) || normalizeLegacyRole(user.role) === 'AUTHOR') &&
+    !isVerified(user.verificationStatus)
+  );
+}
 
 /**
  * Authentication hook providing login, register, logout, and session management
@@ -51,11 +59,7 @@ export function useAuth() {
       setAuth(data.user, data.accessToken, data.refreshToken, data.sessionId);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success('Добро пожаловать!');
-      router.push(
-        data.user.verificationStatus === 'UNVERIFIED'
-          ? '/account/verification'
-          : '/dashboard',
-      );
+      router.push(requiresVerificationRedirect(data.user) ? '/account/verification' : '/dashboard');
     },
     onError: (error: ApiError) => {
       toast.error(error.message || 'Ошибка входа. Проверьте данные и попробуйте снова.');
@@ -77,11 +81,7 @@ export function useAuth() {
       setAuth(data.user, data.accessToken, data.refreshToken, data.sessionId);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success('Регистрация успешна! Добро пожаловать!');
-      router.push(
-        data.user.verificationStatus === 'UNVERIFIED'
-          ? '/account/verification'
-          : '/dashboard',
-      );
+      router.push(requiresVerificationRedirect(data.user) ? '/account/verification' : '/dashboard');
     },
     onError: (error: ApiError) => {
       if (error.details) {

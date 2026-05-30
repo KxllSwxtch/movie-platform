@@ -5,18 +5,21 @@ import request from 'supertest';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { AgeCategory, ContentStatus, ContentType, UserRole } from '@prisma/client';
+import { AgeCategory, ContentStatus, ContentType, UserRole, VerificationStatus } from '@prisma/client';
 
 import { AdminContentController } from '../src/modules/admin/admin-content.controller';
 import { ContentService } from '../src/modules/content/content.service';
+import { SeriesService } from '../src/modules/content/series.service';
 import { PrismaService } from '../src/config/prisma.service';
+import { CacheService } from '../src/common/cache/cache.service';
 import { JwtStrategy } from '../src/modules/auth/strategies/jwt.strategy';
 import { JwtAuthGuard } from '../src/modules/auth/guards/jwt-auth.guard';
+import { VerificationGuard } from '../src/modules/auth/guards/verification.guard';
 import { RolesGuard } from '../src/modules/auth/guards/roles.guard';
 import { UsersService } from '../src/modules/users/users.service';
 import { REDIS_CLIENT } from '../src/config/redis.module';
 import { createMockRedis, MockRedis } from './mocks/redis.mock';
-import { createAdultUser, createAdminUser } from './factories/user.factory';
+import { createAdultUser, createAdminUser, createAuthorUser, createPartnerUser } from './factories/user.factory';
 import {
   contentFactory,
   categoryFactory,
@@ -44,6 +47,19 @@ describe('Admin Content Endpoints (e2e)', () => {
       },
       category: {
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
+      },
+      genre: {
+        count: jest.fn(),
+      },
+      tag: {
+        count: jest.fn(),
+      },
+      series: {
+        create: jest.fn(),
+      },
+      contentRating: {
+        groupBy: jest.fn(),
       },
       contentTag: {
         deleteMany: jest.fn(),
@@ -83,13 +99,17 @@ describe('Admin Content Endpoints (e2e)', () => {
       controllers: [AdminContentController],
       providers: [
         ContentService,
+        SeriesService,
         JwtStrategy,
         JwtAuthGuard,
         RolesGuard,
+        VerificationGuard,
         Reflector,
         { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: VerificationGuard },
         { provide: UsersService, useValue: mockUsersService },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: CacheService, useValue: { invalidatePattern: jest.fn(), get: jest.fn(), set: jest.fn() } },
         { provide: REDIS_CLIENT, useValue: mockRedis },
       ],
     }).compile();
@@ -115,6 +135,11 @@ describe('Admin Content Endpoints (e2e)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRedis.reset();
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(mockPrisma));
+    mockPrisma.genre.count.mockImplementation((args: any) => args?.where?.id?.in?.length ?? 0);
+    mockPrisma.tag.count.mockImplementation((args: any) => args?.where?.id?.in?.length ?? 0);
+    mockPrisma.series.create.mockResolvedValue({});
+    mockPrisma.contentRating.groupBy.mockResolvedValue([]);
   });
 
   // Helper to generate auth token
@@ -184,7 +209,7 @@ describe('Admin Content Endpoints (e2e)', () => {
 
       expect(mockPrisma.content.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { status: 'DRAFT' },
+          where: expect.objectContaining({ status: 'DRAFT' }),
         }),
       );
     });
@@ -292,11 +317,72 @@ describe('Admin Content Endpoints (e2e)', () => {
         .expect(401);
     });
 
-    it('should return 403 for non-admin users', async () => {
-      const regularUser = createAdultUser({ role: UserRole.BUYER });
-      mockUsersService.findById.mockResolvedValue(regularUser);
+    it('should return 403 for CLIENT users', async () => {
+      const clientUser = createAdultUser({ role: UserRole.CLIENT });
+      mockUsersService.findById.mockResolvedValue(clientUser);
 
-      const token = generateToken(regularUser);
+      const token = generateToken(clientUser);
+
+      await request(app.getHttpServer())
+        .post('/admin/content')
+        .set('Authorization', `Bearer ${token}`)
+        .send(validCreateDto)
+        .expect(403);
+    });
+
+    it('should return 403 for PARTNER users', async () => {
+      const partnerUser = createPartnerUser();
+      mockUsersService.findById.mockResolvedValue(partnerUser);
+
+      const token = generateToken(partnerUser);
+
+      await request(app.getHttpServer())
+        .post('/admin/content')
+        .set('Authorization', `Bearer ${token}`)
+        .send(validCreateDto)
+        .expect(403);
+    });
+
+    it('should return 201 for AUTHOR users and assign ownership', async () => {
+      const authorUser = createAuthorUser();
+      const category = categoryFactory.create({ id: validCategoryId });
+      const createdContent = createContentWithRelations({
+        ...validCreateDto,
+        creatorId: authorUser.id,
+        status: ContentStatus.DRAFT,
+      });
+
+      mockUsersService.findById.mockResolvedValue(authorUser);
+      mockPrisma.category.findUnique.mockResolvedValue(category);
+      mockPrisma.content.create.mockResolvedValue(createdContent);
+
+      const token = generateToken(authorUser);
+
+      const response = await request(app.getHttpServer())
+        .post('/admin/content')
+        .set('Authorization', `Bearer ${token}`)
+        .send(validCreateDto)
+        .expect(201);
+
+      expect(response.body.title).toBe('New Content');
+      expect(mockPrisma.content.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            creatorId: authorUser.id,
+            status: ContentStatus.DRAFT,
+          }),
+        }),
+      );
+    });
+
+    it('should return 403 for unverified AUTHOR users', async () => {
+      const authorUser = createAdultUser({
+        role: UserRole.AUTHOR,
+        verificationStatus: VerificationStatus.UNVERIFIED,
+      });
+      mockUsersService.findById.mockResolvedValue(authorUser);
+
+      const token = generateToken(authorUser);
 
       await request(app.getHttpServer())
         .post('/admin/content')
@@ -500,6 +586,57 @@ describe('Admin Content Endpoints (e2e)', () => {
         .expect(200);
 
       expect(response.body.title).toBe('Updated Title');
+    });
+
+    it("should return 403 when AUTHOR edits another author's content", async () => {
+      const authorUser = createAuthorUser({ id: 'author-1' });
+      const otherContent = createContentWithRelations({
+        id: 'content-id',
+        creatorId: 'author-2',
+      });
+
+      mockUsersService.findById.mockResolvedValue(authorUser);
+      mockPrisma.content.findUnique.mockResolvedValue(otherContent);
+
+      const token = generateToken(authorUser);
+
+      await request(app.getHttpServer())
+        .patch('/admin/content/content-id')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'Updated Title' })
+        .expect(403);
+    });
+
+    it('should return 403 when AUTHOR tries to publish directly', async () => {
+      const authorUser = createAuthorUser({ id: 'author-1' });
+      const ownContent = createContentWithRelations({
+        id: 'content-id',
+        creatorId: authorUser.id,
+        status: ContentStatus.DRAFT,
+      });
+
+      mockUsersService.findById.mockResolvedValue(authorUser);
+      mockPrisma.content.findUnique.mockResolvedValue(ownContent);
+
+      const token = generateToken(authorUser);
+
+      await request(app.getHttpServer())
+        .patch('/admin/content/content-id')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: ContentStatus.PUBLISHED })
+        .expect(403);
+    });
+
+    it('should return 403 when AUTHOR tries to approve content', async () => {
+      const authorUser = createAuthorUser({ id: 'author-1' });
+      mockUsersService.findById.mockResolvedValue(authorUser);
+
+      const token = generateToken(authorUser);
+
+      await request(app.getHttpServer())
+        .post('/admin/content/content-id/approve')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
     });
 
     it('should set publishedAt when publishing', async () => {

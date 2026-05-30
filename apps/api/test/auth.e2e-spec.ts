@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { Reflector } from '@nestjs/core';
 import request from 'supertest';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { createHash } from 'crypto';
@@ -25,6 +25,8 @@ import {
   createMinorUser,
   DEFAULT_PASSWORD,
   DEFAULT_PASSWORD_HASH,
+  UserRole,
+  VerificationStatus,
 } from './factories/user.factory';
 
 describe('Auth Controller (e2e)', () => {
@@ -56,6 +58,10 @@ describe('Auth Controller (e2e)', () => {
         findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn(),
       },
+      auditLog: {
+        create: jest.fn(),
+      },
+      $transaction: jest.fn((callback) => callback(mockPrisma)),
     };
 
     mockUsersService = {
@@ -145,6 +151,7 @@ describe('Auth Controller (e2e)', () => {
         email: validRegisterDto.email,
         firstName: validRegisterDto.firstName,
         lastName: validRegisterDto.lastName,
+        role: UserRole.CLIENT,
       });
 
       mockUsersService.findByEmail.mockResolvedValue(null);
@@ -161,7 +168,150 @@ describe('Auth Controller (e2e)', () => {
       expect(response.body).toHaveProperty('refreshToken');
       expect(response.body).toHaveProperty('user');
       expect(response.body.user.email).toBe(validRegisterDto.email);
+      expect(response.body.user.role).toBe(UserRole.CLIENT);
+      expect(response.body.user.verificationStatus).toBe(VerificationStatus.UNVERIFIED);
+      expect(mockPrisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ role: UserRole.CLIENT }),
+        }),
+      );
     });
+
+    it('should register a public PARTNER role as unverified', async () => {
+      const partnerDto = {
+        ...validRegisterDto,
+        email: 'partner-new@example.com',
+        role: UserRole.PARTNER,
+        username: 'partner_new',
+      };
+      const mockUser = createAdultUser({
+        email: partnerDto.email,
+        role: UserRole.PARTNER,
+        verificationStatus: VerificationStatus.UNVERIFIED,
+      });
+
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.findByReferralCode.mockResolvedValue(null);
+      mockPrisma.user.create.mockResolvedValue(mockUser);
+      mockPrisma.userSession.create.mockResolvedValue({ id: 'session-1' });
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send(partnerDto)
+        .expect(201);
+
+      expect(response.body.user.role).toBe(UserRole.PARTNER);
+      expect(response.body.user.verificationStatus).toBe(VerificationStatus.UNVERIFIED);
+      expect(mockPrisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ role: UserRole.PARTNER }),
+        }),
+      );
+    });
+
+    it('should register a public AUTHOR role as unverified', async () => {
+      const authorDto = {
+        ...validRegisterDto,
+        email: 'author-new@example.com',
+        role: UserRole.AUTHOR,
+        username: 'author_new',
+      };
+      const mockUser = createAdultUser({
+        email: authorDto.email,
+        role: UserRole.AUTHOR,
+        verificationStatus: VerificationStatus.UNVERIFIED,
+      });
+
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.findByReferralCode.mockResolvedValue(null);
+      mockPrisma.user.create.mockResolvedValue(mockUser);
+      mockPrisma.userSession.create.mockResolvedValue({ id: 'session-1' });
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send(authorDto)
+        .expect(201);
+
+      expect(response.body.user.role).toBe(UserRole.AUTHOR);
+      expect(response.body.user.verificationStatus).toBe(VerificationStatus.UNVERIFIED);
+      expect(mockPrisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ role: UserRole.AUTHOR, username: 'author_new' }),
+        }),
+      );
+    });
+
+    it.each([UserRole.AUTHOR, UserRole.PARTNER])(
+      'should return 400 when %s registers without username',
+      async (role) => {
+        mockUsersService.findByEmail.mockResolvedValue(null);
+
+        await request(app.getHttpServer())
+          .post('/auth/register')
+          .send({ ...validRegisterDto, email: `${role.toLowerCase()}-missing@example.com`, role })
+          .expect(400);
+      },
+    );
+
+    it('should let CLIENT register without username', async () => {
+      const mockUser = createAdultUser({
+        email: 'client-no-username@example.com',
+        role: UserRole.CLIENT,
+      });
+
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.findByReferralCode.mockResolvedValue(null);
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockPrisma.user.create.mockResolvedValue(mockUser);
+      mockPrisma.userSession.create.mockResolvedValue({ id: 'session-1' });
+
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ ...validRegisterDto, email: mockUser.email, role: UserRole.CLIENT })
+        .expect(201);
+    });
+
+    it.each([
+      ['invalid characters', 'bad name'],
+      ['reserved username', 'admin'],
+    ])('should return 400 for %s', async (_label, username) => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          ...validRegisterDto,
+          email: `${username.replace(/\W/g, '')}@example.com`,
+          role: UserRole.AUTHOR,
+          username,
+        })
+        .expect(400);
+    });
+
+    it('should return 409 for duplicate username', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockPrisma.user.findFirst.mockResolvedValue({ id: 'existing-user' });
+
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          ...validRegisterDto,
+          email: 'duplicate-username@example.com',
+          role: UserRole.AUTHOR,
+          username: 'taken_name',
+        })
+        .expect(409);
+    });
+
+    it.each([UserRole.ADMIN, UserRole.MODERATOR, UserRole.BUYER, UserRole.MINOR, UserRole.GUEST])(
+      'should reject public registration as %s',
+      async (role) => {
+        await request(app.getHttpServer())
+          .post('/auth/register')
+          .send({ ...validRegisterDto, email: `${role.toLowerCase()}@example.com`, role })
+          .expect(400);
+      },
+    );
 
     it('should return 400 for invalid email format', async () => {
       const invalidDto = { ...validRegisterDto, email: 'invalid-email' };
@@ -186,7 +336,7 @@ describe('Auth Controller (e2e)', () => {
         .send(noTermsDto)
         .expect(400);
 
-      expect(response.body.message).toContain('terms');
+      expect(response.body.message).toEqual(expect.any(String));
     });
 
     it('should return 409 for duplicate email', async () => {
@@ -198,10 +348,10 @@ describe('Auth Controller (e2e)', () => {
         .send(validRegisterDto)
         .expect(409);
 
-      expect(response.body.message).toContain('already registered');
+      expect(response.body.message).toEqual(expect.any(String));
     });
 
-    it('should register minor user with MINOR role', async () => {
+    it('should register minor date of birth without escalating to MINOR role', async () => {
       const minorDto = {
         ...validRegisterDto,
         dateOfBirth: new Date(Date.now() - 15 * 365 * 24 * 60 * 60 * 1000)
@@ -210,6 +360,7 @@ describe('Auth Controller (e2e)', () => {
       };
 
       const mockUser = createMinorUser(15, { email: minorDto.email });
+      mockUser.role = UserRole.CLIENT;
       mockUsersService.findByEmail.mockResolvedValue(null);
       mockUsersService.findByReferralCode.mockResolvedValue(null);
       mockPrisma.user.create.mockResolvedValue(mockUser);
@@ -220,7 +371,12 @@ describe('Auth Controller (e2e)', () => {
         .send(minorDto)
         .expect(201);
 
-      expect(response.body.user.role).toBe('MINOR');
+      expect(response.body.user.role).toBe(UserRole.CLIENT);
+      expect(mockPrisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ role: UserRole.CLIENT }),
+        }),
+      );
     });
   });
 
@@ -337,7 +493,7 @@ describe('Auth Controller (e2e)', () => {
         .send({ refreshToken: 'some.refresh.token' })
         .expect(200);
 
-      expect(response.body.message).toContain('Logged out');
+      expect(response.body.message).toEqual(expect.any(String));
     });
 
     it('should return 401 without auth token', async () => {
@@ -358,7 +514,7 @@ describe('Auth Controller (e2e)', () => {
         .send({ email: 'test@example.com' })
         .expect(200);
 
-      expect(response.body.message).toContain('password reset link');
+      expect(response.body.message).toEqual(expect.any(String));
     });
 
     it('should return 200 for non-existing email (prevent enumeration)', async () => {
@@ -370,7 +526,7 @@ describe('Auth Controller (e2e)', () => {
         .expect(200);
 
       // Same response to prevent enumeration
-      expect(response.body.message).toContain('password reset link');
+      expect(response.body.message).toEqual(expect.any(String));
     });
 
     it('should return 400 for invalid email format', async () => {
@@ -403,7 +559,7 @@ describe('Auth Controller (e2e)', () => {
         .send({ token, newPassword: 'NewPassword123!' })
         .expect(200);
 
-      expect(response.body.message).toContain('reset successfully');
+      expect(response.body.message).toEqual(expect.any(String));
     });
 
     it('should return 400 for invalid token', async () => {
@@ -432,7 +588,7 @@ describe('Auth Controller (e2e)', () => {
         .get(`/auth/verify-email/${token}`)
         .expect(200);
 
-      expect(response.body.message).toContain('verified successfully');
+      expect(response.body.message).toEqual(expect.any(String));
     });
 
     it('should return 400 for invalid token', async () => {

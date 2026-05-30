@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import bcrypt from 'bcrypt';
 
 import { UsersController } from '../../src/modules/users/users.controller';
 import { UsersService } from '../../src/modules/users/users.service';
@@ -105,7 +106,6 @@ describe('Security: Rate Limiting', () => {
   });
 
   it('should rate limit password change attempts', async () => {
-    const bcrypt = require('bcrypt');
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
 
     const requests = Array.from({ length: 10 }, () =>

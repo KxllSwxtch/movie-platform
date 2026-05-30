@@ -128,7 +128,7 @@ export class ContentController {
    */
   @Post("tags")
   @UseGuards(RolesGuard)
-  @Roles(UserRole.PARTNER, UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.AUTHOR, UserRole.ADMIN, UserRole.MODERATOR)
   @VerificationRequired()
   @ApiOperation({ summary: "Create or reuse a normalized tag" })
   @ApiResponse({

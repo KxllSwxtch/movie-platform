@@ -74,7 +74,10 @@ describe('SessionService', () => {
         '127.0.0.1',
       );
 
-      expect(result).toBe(mockTokenHash);
+      expect(result).toEqual({
+        sessionId: 'session-1',
+        tokenHash: mockTokenHash,
+      });
       expect(mockPrisma.userSession.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: mockUserId,
@@ -364,7 +367,7 @@ describe('SessionService', () => {
       const hash1 = await service.createSession(mockUserId, mockRefreshToken);
       const hash2 = await service.createSession(mockUserId, mockRefreshToken);
 
-      expect(hash1).toBe(hash2);
+      expect(hash1).toEqual(hash2);
     });
 
     it('should produce different hashes for different tokens', async () => {
@@ -383,9 +386,9 @@ describe('SessionService', () => {
       const result1 = await service.createSession(mockUserId, token1);
       const result2 = await service.createSession(mockUserId, token2);
 
-      expect(result1).toBe(hash1);
-      expect(result2).toBe(hash2);
-      expect(result1).not.toBe(result2);
+      expect(result1).toEqual({ sessionId: 'session', tokenHash: hash1 });
+      expect(result2).toEqual({ sessionId: 'session', tokenHash: hash2 });
+      expect(result1.tokenHash).not.toBe(result2.tokenHash);
     });
   });
 });
