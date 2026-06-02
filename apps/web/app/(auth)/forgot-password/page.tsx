@@ -1,5 +1,8 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Envelope, ArrowLeft, CheckCircle } from '@phosphor-icons/react';
 import Link from 'next/link';

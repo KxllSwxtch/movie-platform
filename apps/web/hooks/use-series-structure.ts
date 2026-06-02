@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { api, ApiError, endpoints } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
+import { canUseStudio } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
 
 // ============ Age Category Mapping ============
@@ -109,7 +110,7 @@ export interface ReorderStructureInput {
  */
 export function useSeriesStructure(contentId: string | undefined) {
   const { isAuthenticated, isHydrated, user } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
+  const canAccessStructure = canUseStudio(user?.role, user?.verificationStatus);
 
   return useQuery({
     queryKey: queryKeys.adminContent.structure(contentId || ''),
@@ -120,7 +121,7 @@ export function useSeriesStructure(contentId: string | undefined) {
       );
       return response.data;
     },
-    enabled: !!contentId && isAuthenticated && isHydrated && isAdmin,
+    enabled: !!contentId && isAuthenticated && isHydrated && canAccessStructure,
   });
 }
 
@@ -168,7 +169,41 @@ export function useAddSeason(rootContentId: string) {
       );
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (season) => {
+      queryClient.setQueryData<SeriesStructure>(
+        queryKeys.adminContent.structure(rootContentId),
+        (current) => {
+          if (!current) return current;
+
+          const normalizedSeason: SeriesSeason = {
+            ...season,
+            episodes: season.episodes ?? [],
+          };
+          const existingIndex = current.seasons.findIndex(
+            (item) =>
+              (season.id && item.id === season.id) ||
+              item.seasonNumber === season.seasonNumber,
+          );
+          const nextSeasons = [...current.seasons];
+
+          if (existingIndex >= 0) {
+            nextSeasons[existingIndex] = {
+              ...nextSeasons[existingIndex],
+              ...normalizedSeason,
+              episodes: normalizedSeason.episodes,
+            };
+          } else {
+            nextSeasons.push(normalizedSeason);
+          }
+
+          nextSeasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
+
+          return {
+            ...current,
+            seasons: nextSeasons,
+          };
+        },
+      );
       queryClient.invalidateQueries({
         queryKey: queryKeys.adminContent.structure(rootContentId),
       });
