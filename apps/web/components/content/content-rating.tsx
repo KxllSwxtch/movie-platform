@@ -121,19 +121,22 @@ export function ContentRating({
           {(summary?.reviews?.length ?? 0) > 0 && (
             <div className="space-y-3 border-t border-mp-border pt-4">
               {summary!.reviews!.map((review) => {
+                const author = review.author;
                 const name =
-                  `${review.author.firstName} ${review.author.lastName}`.trim();
+                  `${author?.firstName ?? ""} ${author?.lastName ?? ""}`.trim() ||
+                  author?.username ||
+                  "Пользователь";
                 return (
                   <div key={review.id} className="flex gap-3">
                     <UserAvatar
                       size="sm"
-                      src={review.author.avatarUrl ?? null}
-                      name={name || "Пользователь"}
+                      src={author?.avatarUrl ?? null}
+                      name={name}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium text-mp-text-primary">
-                          {name || "Пользователь"}
+                          {name}
                         </span>
                         <span className="text-xs text-mp-accent-primary">
                           {review.rating}/5

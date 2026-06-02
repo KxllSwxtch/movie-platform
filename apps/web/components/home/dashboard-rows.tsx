@@ -13,6 +13,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import {
+  AuthorInlineLink,
   ContentRow,
   VideoCardProgress,
   type VideoProgressContent,
@@ -20,6 +21,7 @@ import {
 import { ContentImage } from "@/components/content/content-image";
 import { RatingBadge } from "@/components/ui/rating-badge";
 import type { useDashboardHome } from "@/hooks/use-home";
+import type { CreatorInput } from "@/lib/author-identity";
 import { cn, formatDuration, formatNumber } from "@/lib/utils";
 
 type DashboardData = ReturnType<typeof useDashboardHome>;
@@ -42,6 +44,7 @@ interface DashboardCardContent {
   seasonCount?: number;
   episodeCount?: number;
   lessonCount?: number;
+  creator?: CreatorInput;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -284,16 +287,16 @@ function MediaGridCard({
   priority?: boolean;
 }) {
   return (
-    <Link
-      href={getContentHref(content)}
+    <article
       className={cn(
         "group content-card block min-w-[270px] md:min-w-0",
         priority && "md:col-span-2 md:row-span-2",
       )}
     >
-      <div
+      <Link
+        href={getContentHref(content)}
         className={cn(
-          "relative overflow-hidden rounded-2xl bg-mp-surface-2",
+          "relative block overflow-hidden rounded-2xl bg-mp-surface-2",
           priority
             ? "aspect-[16/10] md:aspect-auto md:h-full"
             : "aspect-video md:aspect-auto md:h-full",
@@ -333,8 +336,13 @@ function MediaGridCard({
             </p>
           )}
         </div>
-      </div>
-    </Link>
+      </Link>
+      <AuthorInlineLink
+        creator={content.creator}
+        className="mt-2 max-w-full"
+        showUsername
+      />
+    </article>
   );
 }
 
@@ -344,12 +352,14 @@ function VideoGrid({ items }: { items: DashboardCardContent[] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
-        <Link
+        <article
           key={item.id}
-          href={getContentHref(item)}
           className="group content-card grid grid-cols-[120px_1fr] gap-4 rounded-2xl border border-white/[0.06] bg-black/20 p-3 md:block md:border-0 md:bg-transparent md:p-0"
         >
-          <div className="relative aspect-video overflow-hidden rounded-xl bg-mp-surface-2 md:mb-3">
+          <Link
+            href={getContentHref(item)}
+            className="relative block aspect-video overflow-hidden rounded-xl bg-mp-surface-2 md:mb-3"
+          >
             <ContentImage
               src={item.thumbnailUrl}
               alt={item.title}
@@ -365,11 +375,14 @@ function VideoGrid({ items }: { items: DashboardCardContent[] }) {
                 {formatDuration(item.duration)}
               </span>
             ) : null}
-          </div>
+          </Link>
           <div className="min-w-0 self-center md:self-auto">
-            <h3 className="line-clamp-2 font-medium text-mp-text-primary transition-colors group-hover:text-mp-accent-primary">
-              {item.title}
-            </h3>
+            <Link href={getContentHref(item)} className="block">
+              <h3 className="line-clamp-2 font-medium text-mp-text-primary transition-colors group-hover:text-mp-accent-primary">
+                {item.title}
+              </h3>
+            </Link>
+            <AuthorInlineLink creator={item.creator} className="mt-1 max-w-full" />
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-mp-text-secondary">
               {item.viewCount !== undefined && (
                 <span className="inline-flex items-center gap-1">
@@ -385,7 +398,7 @@ function VideoGrid({ items }: { items: DashboardCardContent[] }) {
               )}
             </div>
           </div>
-        </Link>
+        </article>
       ))}
     </div>
   );
@@ -397,12 +410,14 @@ function ShortsGrid({ items }: { items: DashboardCardContent[] }) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar md:grid md:grid-cols-3 md:overflow-visible md:pb-0 lg:grid-cols-6">
       {items.map((item) => (
-        <Link
+        <article
           key={item.id}
-          href={getContentHref(item)}
           className="group content-card block min-w-[170px] md:min-w-0"
         >
-          <div className="relative aspect-[9/16] overflow-hidden rounded-2xl bg-mp-surface-2">
+          <Link
+            href={getContentHref(item)}
+            className="relative block aspect-[9/16] overflow-hidden rounded-2xl bg-mp-surface-2"
+          >
             <ContentImage
               src={item.thumbnailUrl}
               alt={item.title}
@@ -423,8 +438,9 @@ function ShortsGrid({ items }: { items: DashboardCardContent[] }) {
                 </p>
               )}
             </div>
-          </div>
-        </Link>
+          </Link>
+          <AuthorInlineLink creator={item.creator} className="mt-2 max-w-full" />
+        </article>
       ))}
     </div>
   );
@@ -436,12 +452,14 @@ function TutorialGrid({ items }: { items: DashboardCardContent[] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
-        <Link
+        <article
           key={item.id}
-          href={getContentHref(item)}
           className="group content-card block rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3 transition-colors hover:bg-white/[0.055]"
         >
-          <div className="relative mb-4 aspect-video overflow-hidden rounded-xl bg-mp-surface-2">
+          <Link
+            href={getContentHref(item)}
+            className="relative mb-4 block aspect-video overflow-hidden rounded-xl bg-mp-surface-2"
+          >
             <ContentImage
               src={item.thumbnailUrl}
               alt={item.title}
@@ -452,11 +470,14 @@ function TutorialGrid({ items }: { items: DashboardCardContent[] }) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-transparent to-transparent opacity-80" />
             <HoverPlayButton compact />
-          </div>
+          </Link>
           <div className="space-y-2">
-            <h3 className="line-clamp-2 font-semibold text-mp-text-primary transition-colors group-hover:text-mp-accent-secondary">
-              {item.title}
-            </h3>
+            <Link href={getContentHref(item)} className="block">
+              <h3 className="line-clamp-2 font-semibold text-mp-text-primary transition-colors group-hover:text-mp-accent-secondary">
+                {item.title}
+              </h3>
+            </Link>
+            <AuthorInlineLink creator={item.creator} className="max-w-full" />
             <div className="flex flex-wrap items-center gap-3 text-sm text-mp-text-secondary">
               <span className="inline-flex items-center gap-1">
                 <BookOpen className="h-3.5 w-3.5" />
@@ -476,7 +497,7 @@ function TutorialGrid({ items }: { items: DashboardCardContent[] }) {
               </span>
             )}
           </div>
-        </Link>
+        </article>
       ))}
     </div>
   );
@@ -574,5 +595,6 @@ function mapToDashboardCard(item: any): DashboardCardContent {
     seasonCount: item.seasonCount ?? undefined,
     episodeCount: item.episodeCount ?? undefined,
     lessonCount: item.lessonCount ?? undefined,
+    creator: item.creator ?? item.author,
   };
 }

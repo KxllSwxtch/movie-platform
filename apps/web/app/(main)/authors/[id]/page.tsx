@@ -217,11 +217,13 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         <VideoSection
           title="Последние"
           emptyText="У автора пока нет опубликованных видео."
+          author={author}
           videos={latestVideos.items}
         />
         <VideoSection
           title="Популярные"
           emptyText="Популярные видео появятся после первых просмотров."
+          author={author}
           videos={popularVideos.items}
         />
 
@@ -241,10 +243,12 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
 function VideoSection({
   title,
   emptyText,
+  author,
   videos,
 }: {
   title: string;
   emptyText: string;
+  author: PublicAuthor;
   videos: PublicAuthorVideo[];
 }) {
   return (
@@ -270,6 +274,16 @@ function VideoSection({
                     ? video.category?.name
                     : undefined,
                 rating: video.averageRating ?? video.rating,
+                creator: {
+                  id: author.id,
+                  username: author.username,
+                  displayName: author.displayName,
+                  avatarUrl: author.avatarUrl,
+                  authorUrl: author.authorUrl,
+                  totalVideos: author.totalVideos ?? author.totalPublishedVideos,
+                  totalViews: author.totalViews,
+                  subscriberCount: author.subscriberCount,
+                },
               }}
             />
           ))}

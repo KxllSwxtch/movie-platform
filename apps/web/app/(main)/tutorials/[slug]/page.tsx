@@ -15,6 +15,7 @@ import { useParams } from "next/navigation";
 import { AgeBadge } from "@/components/content/age-badge";
 import { ContentRating } from "@/components/content/content-rating";
 import { ContentImage } from "@/components/content/content-image";
+import { CreatorChannelBlock } from "@/components/content/creator-channel-block";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
@@ -156,6 +157,8 @@ export default function TutorialDetailPage() {
           )}
         </div>
       </div>
+
+      <CreatorChannelBlock creator={tutorial.creator} />
 
       {/* CTA */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
@@ -356,8 +359,11 @@ export default function TutorialDetailPage() {
           ) : (
             <div className="space-y-3">
               {(reviewsQuery.data?.items ?? []).map((c) => {
+                const author = c.author;
                 const name =
-                  `${c.author.firstName} ${c.author.lastName}`.trim();
+                  `${author?.firstName ?? ""} ${author?.lastName ?? ""}`.trim() ||
+                  author?.username ||
+                  'Пользователь';
                 return (
                   <Card
                     key={c.id}
@@ -367,13 +373,13 @@ export default function TutorialDetailPage() {
                       <div className="flex items-start gap-3">
                         <UserAvatar
                           size="sm"
-                          src={c.author.avatarUrl ?? null}
-                          name={name || "Пользователь"}
+                          src={author?.avatarUrl ?? null}
+                          name={name}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-medium text-mp-text-primary truncate">
-                              {name || "Пользователь"}
+                              {name}
                             </p>
                             <span className="text-xs text-mp-text-disabled">
                               {formatRelativeTime(c.createdAt)}

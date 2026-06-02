@@ -1,12 +1,14 @@
 "use client";
 
-import { BookOpen, Play, CheckCircle } from "@phosphor-icons/react";
+import { BookOpen, CheckCircle, Play } from "@phosphor-icons/react";
 import Link from "next/link";
 
+import { AuthorInlineLink } from "@/components/content/author-inline-link";
 import { AgeBadge, type AgeCategory } from "@/components/content/age-badge";
 import { ContentImage } from "@/components/content/content-image";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { RatingBadge } from "@/components/ui/rating-badge";
+import type { CreatorInput } from "@/lib/author-identity";
 import { cn } from "@/lib/utils";
 
 export interface TutorialContent {
@@ -18,8 +20,9 @@ export interface TutorialContent {
   completedLessons: number;
   ageCategory: AgeCategory;
   category?: string;
-  duration?: string; // e.g., "4h 30m"
+  duration?: string;
   instructor?: string;
+  creator?: CreatorInput;
   rating?: number;
 }
 
@@ -28,18 +31,11 @@ interface TutorialCardProps {
   className?: string;
 }
 
-/**
- * Calculate progress percentage
- */
 function getProgressPercent(completed: number, total: number): number {
   if (total === 0) return 0;
   return Math.round((completed / total) * 100);
 }
 
-/**
- * Tutorial card with lesson progress
- * Features: progress bar, lesson count, category badge
- */
 export function TutorialCard({ content, className }: TutorialCardProps) {
   const progress = getProgressPercent(
     content.completedLessons,
@@ -48,13 +44,11 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
   const isComplete = progress === 100;
 
   return (
-    <Link
-      href={`/tutorials/${content.slug}`}
-      className={cn("group block shrink-0 content-card w-full", className)}
-    >
-      {/* Thumbnail container */}
-      <div className="relative aspect-video rounded-xl overflow-hidden bg-mp-surface-2 mb-3">
-        {/* Image with smooth zoom */}
+    <article className={cn("group block shrink-0 content-card w-full", className)}>
+      <Link
+        href={`/tutorials/${content.slug}`}
+        className="relative mb-3 block aspect-video overflow-hidden rounded-xl bg-mp-surface-2"
+      >
         <ContentImage
           src={content.thumbnailUrl}
           alt={content.title}
@@ -66,11 +60,10 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
           }
         />
 
-        {/* Top badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between z-10">
+        <div className="absolute top-3 left-3 right-3 z-10 flex items-start justify-between">
           <AgeBadge age={content.ageCategory} size="sm" />
           {content.category && (
-            <span className="text-xs bg-mp-surface/80 backdrop-blur-sm text-mp-text-secondary px-2 py-1 rounded">
+            <span className="rounded bg-mp-surface/80 px-2 py-1 text-xs text-mp-text-secondary backdrop-blur-sm">
               {content.category}
             </span>
           )}
@@ -85,7 +78,7 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
 
           {isComplete && (
             <div className="shrink-0">
-              <div className="flex items-center gap-1 bg-mp-success-bg/90 backdrop-blur-sm text-mp-success-text px-2 py-1 rounded text-xs font-medium">
+              <div className="flex items-center gap-1 rounded bg-mp-success-bg/90 px-2 py-1 text-xs font-medium text-mp-success-text backdrop-blur-sm">
                 <CheckCircle className="w-3.5 h-3.5" />
                 Завершено
               </div>
@@ -93,20 +86,17 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
           )}
         </div>
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent touch:opacity-60 opacity-0 hover-hover:group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 touch:opacity-60 hover-hover:group-hover:opacity-100" />
 
-        {/* Play button */}
-        <div className="absolute inset-0 flex items-center justify-center touch:opacity-80 opacity-0 hover-hover:group-hover:opacity-100 transition-all duration-300 touch:scale-100 scale-90 hover-hover:group-hover:scale-100">
-          <div className="w-14 h-14 touch:w-11 touch:h-11 rounded-full bg-mp-accent-secondary/90 backdrop-blur-sm flex items-center justify-center shadow-glow-secondary">
+        <div className="absolute inset-0 flex scale-90 items-center justify-center opacity-0 transition-all duration-300 touch:scale-100 touch:opacity-80 hover-hover:group-hover:scale-100 hover-hover:group-hover:opacity-100">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-mp-accent-secondary/90 shadow-glow-secondary backdrop-blur-sm touch:h-11 touch:w-11">
             <Play
-              className="w-6 h-6 touch:w-5 touch:h-5 text-white ml-0.5"
+              className="ml-0.5 h-6 w-6 text-white touch:h-5 touch:w-5"
               weight="fill"
             />
           </div>
         </div>
 
-        {/* Progress bar at bottom */}
         {progress > 0 && (
           <div className="absolute bottom-0 left-0 right-0">
             <ProgressBar
@@ -117,36 +107,41 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
             />
           </div>
         )}
-      </div>
+      </Link>
 
-      {/* Content info */}
       <div>
-        <h3 className="font-medium text-mp-text-primary line-clamp-2 group-hover:text-mp-accent-secondary transition-colors duration-200">
-          {content.title}
-        </h3>
-        <div className="flex items-center gap-2 mt-2 text-sm text-mp-text-secondary">
+        <Link href={`/tutorials/${content.slug}`} className="block">
+          <h3 className="line-clamp-2 font-medium text-mp-text-primary transition-colors duration-200 group-hover:text-mp-accent-secondary">
+            {content.title}
+          </h3>
+        </Link>
+        <AuthorInlineLink
+          creator={content.creator}
+          className="mt-1 max-w-full"
+          showUsername
+        />
+        <div className="mt-2 flex items-center gap-2 text-sm text-mp-text-secondary">
           <span className="flex items-center gap-1">
             <BookOpen className="w-3.5 h-3.5" />
             {content.completedLessons}/{content.lessonCount} уроков
           </span>
           {content.duration && (
             <>
-              <span>•</span>
+              <span>&middot;</span>
               <span>{content.duration}</span>
             </>
           )}
         </div>
         {content.instructor && (
-          <p className="text-sm text-mp-text-tertiary mt-1">
+          <p className="mt-1 text-sm text-mp-text-tertiary">
             {content.instructor}
           </p>
         )}
       </div>
-    </Link>
+    </article>
   );
 }
 
-// In-progress tutorial card for dashboard
 export function TutorialCardProgress({
   content,
   className,
@@ -157,15 +152,16 @@ export function TutorialCardProgress({
   );
 
   return (
-    <Link
-      href={`/tutorials/${content.slug}`}
+    <article
       className={cn(
-        "group flex gap-4 p-3 rounded-xl bg-mp-surface hover:bg-mp-surface-2 transition-colors",
+        "group flex gap-4 rounded-xl bg-mp-surface p-3 transition-colors hover:bg-mp-surface-2",
         className,
       )}
     >
-      {/* Thumbnail */}
-      <div className="relative w-32 aspect-video rounded-lg overflow-hidden bg-mp-surface-2 shrink-0">
+      <Link
+        href={`/tutorials/${content.slug}`}
+        className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-lg bg-mp-surface-2"
+      >
         <ContentImage
           src={content.thumbnailUrl}
           alt={content.title}
@@ -175,24 +171,25 @@ export function TutorialCardProgress({
           fallbackIcon={<BookOpen className="w-6 h-6 text-mp-text-disabled" />}
         />
 
-        {/* Hover play */}
-        <div className="absolute inset-0 bg-black/40 touch:opacity-60 opacity-0 hover-hover:group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity touch:opacity-60 hover-hover:group-hover:opacity-100">
           <Play className="w-6 h-6 text-white" weight="fill" />
         </div>
-      </div>
+      </Link>
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-mp-text-primary truncate group-hover:text-mp-accent-secondary transition-colors">
-          {content.title}
-        </h4>
-        <p className="text-sm text-mp-text-secondary mt-1">
+      <div className="min-w-0 flex-1">
+        <Link href={`/tutorials/${content.slug}`} className="block">
+          <h4 className="truncate font-medium text-mp-text-primary transition-colors group-hover:text-mp-accent-secondary">
+            {content.title}
+          </h4>
+        </Link>
+        <AuthorInlineLink creator={content.creator} className="mt-1 max-w-full" />
+        <p className="mt-1 text-sm text-mp-text-secondary">
           {content.completedLessons} из {content.lessonCount} уроков
         </p>
         <div className="mt-2">
           <ProgressBar value={progress} size="sm" />
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

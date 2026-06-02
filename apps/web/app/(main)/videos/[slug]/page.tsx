@@ -9,6 +9,7 @@ import { ClipCard } from "@/components/content/clip-card";
 import { ContentComments } from "@/components/content/content-comments";
 import { ContentImage } from "@/components/content/content-image";
 import { ContentRating } from "@/components/content/content-rating";
+import { CreatorChannelBlock } from "@/components/content/creator-channel-block";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { ContentGrid } from "@/components/ui/grid";
@@ -54,16 +55,6 @@ export default function VideoDetailPage() {
       ? (video.category as { name?: string }).name
       : video.category
     : null;
-  const creator =
-    video.creator && typeof video.creator === "object" ? video.creator : null;
-  const creatorName = creator
-    ? creator.username ||
-      [creator.firstName, creator.lastName].filter(Boolean).join(" ")
-    : typeof video.creator === "string"
-      ? video.creator
-      : null;
-  const creatorUrl = creator?.authorUrl || (creator ? `/author/${creator.username || creator.id}` : null);
-
   return (
     <Container size="lg" className="py-6">
       <div className="relative mb-8 overflow-hidden rounded-2xl bg-mp-surface-2">
@@ -115,15 +106,9 @@ export default function VideoDetailPage() {
         </p>
       )}
 
+      <CreatorChannelBlock creator={video.creator} />
+
       <div className="mb-8 flex flex-wrap items-center gap-4 text-sm text-mp-text-secondary">
-        {creatorName && creatorUrl && (
-          <Link
-            href={creatorUrl}
-            className="font-medium text-mp-text-primary transition-colors hover:text-mp-accent-primary"
-          >
-            {creatorName}
-          </Link>
-        )}
         <span className="flex items-center gap-1.5">
           <Eye className="h-4 w-4" />
           {formatNumber(video.viewCount)} просмотров

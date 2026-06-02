@@ -584,6 +584,11 @@ async function seedUsers() {
 }
 
 async function seedContent() {
+  const defaultAuthor = await prisma.user.findUnique({
+    where: { email: 'author@movieplatform.local' },
+    select: { id: true },
+  });
+
   console.log('🎯 Seeding Content...');
 
   const dramaCategory = await prisma.category.findUnique({ where: { slug: 'drama' } });
@@ -734,7 +739,10 @@ async function seedContent() {
 
     if (!existing) {
       const created = await prisma.content.create({
-        data: content,
+        data: {
+          ...content,
+          creatorId: (content as { creatorId?: string | null }).creatorId ?? defaultAuthor?.id,
+        },
       });
 
       // Set placeholder thumbnail from picsum.photos

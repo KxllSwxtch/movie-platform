@@ -313,7 +313,7 @@ export class SeriesService {
     });
 
     if (!rootContent || !rootContent.series || rootContent.series.parentSeriesId) {
-      throw new NotFoundException('РЎРµСЂРёР°Р»/РєСѓСЂСЃ РЅРµ РЅР°Р№РґРµРЅ');
+      throw new NotFoundException('Сериал/курс не найден');
     }
 
     const seasonNumber = dto.seasonNumber ?? await this.getNextSeasonNumber(rootContentId);

@@ -10,34 +10,17 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+import { AuthorInlineLink } from "@/components/content/author-inline-link";
 import { AgeBadge, type AgeCategory } from "@/components/content/age-badge";
 import { ContentComments } from "@/components/content/content-comments";
 import { ContentImage } from "@/components/content/content-image";
 import { ContentRating } from "@/components/content/content-rating";
+import { CreatorChannelBlock } from "@/components/content/creator-channel-block";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Spinner } from "@/components/ui/spinner";
 import { useContentDetail, useContentList } from "@/hooks/use-content";
 import { formatNumber } from "@/lib/utils";
-
-function getCreatorName(
-  creator:
-    | string
-    | {
-        firstName?: string;
-        lastName?: string;
-        username?: string;
-      }
-    | undefined,
-) {
-  if (!creator) return null;
-  if (typeof creator === "string") return creator;
-  return (
-    creator.username ||
-    [creator.firstName, creator.lastName].filter(Boolean).join(" ") ||
-    null
-  );
-}
 
 export default function ShortDetailPage() {
   const params = useParams();
@@ -48,7 +31,6 @@ export default function ShortDetailPage() {
 
   const relatedShorts =
     relatedData?.data?.items?.filter((item) => item.slug !== slug) ?? [];
-  const creatorName = getCreatorName(short?.creator);
 
   if (isLoading) {
     return (
@@ -122,9 +104,7 @@ export default function ShortDetailPage() {
             {short.title}
           </h1>
 
-          {creatorName && (
-            <p className="text-mp-text-secondary mb-4">@{creatorName}</p>
-          )}
+          <CreatorChannelBlock creator={short.creator} />
 
           {short.description && (
             <p className="text-mp-text-secondary mb-6 leading-relaxed">
@@ -185,12 +165,14 @@ export default function ShortDetailPage() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {relatedShorts.slice(0, 8).map((item) => (
-              <Link
+              <article
                 key={item.id}
-                href={`/shorts/${item.slug}`}
                 className="group block"
               >
-                <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-mp-surface-2">
+                <Link
+                  href={`/shorts/${item.slug}`}
+                  className="relative block aspect-[9/16] overflow-hidden rounded-xl bg-mp-surface-2"
+                >
                   {item.thumbnailUrl ? (
                     <ContentImage
                       src={item.thumbnailUrl}
@@ -207,14 +189,14 @@ export default function ShortDetailPage() {
                     <p className="text-white text-sm font-medium line-clamp-2">
                       {item.title}
                     </p>
-                    {getCreatorName(item.creator) && (
-                      <p className="text-white/60 text-xs mt-1">
-                        @{getCreatorName(item.creator)}
-                      </p>
-                    )}
                   </div>
-                </div>
-              </Link>
+                </Link>
+                <AuthorInlineLink
+                  creator={item.creator}
+                  className="mt-2 max-w-full"
+                  showUsername
+                />
+              </article>
             ))}
           </div>
         </section>

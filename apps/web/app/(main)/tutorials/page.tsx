@@ -84,6 +84,7 @@ export default function TutorialsPage() {
         ? `${Math.floor(item.duration / 3600)}ч ${Math.floor((item.duration % 3600) / 60)}мин`
         : undefined,
       instructor: item.instructor,
+      creator: item.creator,
     }));
   }, [data]);
 

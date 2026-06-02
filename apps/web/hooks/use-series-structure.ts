@@ -175,10 +175,10 @@ export function useAddSeason(rootContentId: string) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.adminContent.detail(rootContentId),
       });
-      toast.success('РЎРµР·РѕРЅ РґРѕР±Р°РІР»РµРЅ');
+      toast.success('Сезон добавлен');
     },
     onError: (error: ApiError) => {
-      toast.error(error.message || 'РќРµ СѓРґР°Р»РѕСЃСЊ РґРѕР±Р°РІРёС‚СЊ СЃРµР·РѕРЅ');
+      toast.error(error.message || 'Не удалось добавить сезон');
     },
   });
 }

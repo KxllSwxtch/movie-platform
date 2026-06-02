@@ -99,9 +99,12 @@ export function ContentComments({
           </p>
         ) : (
           commentsQuery.data!.items.map((comment) => {
+            const author = comment.author;
             const authorName =
-              `${comment.author.firstName} ${comment.author.lastName}`.trim();
-            const canDelete = canModerate || comment.author.id === user?.id;
+              `${author?.firstName ?? ""} ${author?.lastName ?? ""}`.trim() ||
+              author?.username ||
+              'Пользователь';
+            const canDelete = canModerate || author?.id === user?.id;
 
             return (
               <div
@@ -111,17 +114,17 @@ export function ContentComments({
                 <UserAvatar
                   size="sm"
                   src={
-                    comment.author.avatarUrl
-                      ? normalizeMediaUrl(comment.author.avatarUrl)
+                    author?.avatarUrl
+                      ? normalizeMediaUrl(author.avatarUrl)
                       : null
                   }
-                  name={authorName || "Пользователь"}
+                  name={authorName}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-mp-text-primary">
-                        {authorName || "Пользователь"}
+                        {authorName}
                       </p>
                       <p className="text-xs text-mp-text-secondary">
                         {formatRelativeTime(comment.createdAt)}

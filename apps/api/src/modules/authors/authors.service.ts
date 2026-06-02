@@ -63,7 +63,9 @@ export class AuthorsService {
       totalVideos: totalPublishedVideos,
       totalViews: viewsAggregate._sum.viewCount ?? 0,
       subscriberCount: 0,
-      authorUrl: `/author/${author.username ?? author.id}`,
+      authorUrl: author.username
+        ? `/author/${author.username}`
+        : `/authors/${author.id}`,
       verificationStatus: "VERIFIED" as const,
     };
   }
@@ -129,7 +131,7 @@ export class AuthorsService {
     const author = await this.prisma.user.findFirst({
       where: {
         OR: [{ id: authorIdOrUsername }, { username: authorIdOrUsername }],
-        role: UserRole.AUTHOR,
+        role: { in: [UserRole.AUTHOR, UserRole.ADMIN, UserRole.MODERATOR] },
         verificationStatus: VerificationStatus.VERIFIED,
         isActive: true,
       },

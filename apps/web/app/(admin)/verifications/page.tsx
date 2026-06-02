@@ -33,6 +33,17 @@ interface Verification {
   rejectionReason?: string | null;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Ожидает проверки',
+  VERIFIED: 'Подтверждено',
+  REJECTED: 'Отклонено',
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  DOCUMENT: 'Документ',
+  PAYMENT: 'Платёжный метод',
+};
+
 /**
  * Status badge component
  */
@@ -45,7 +56,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <Badge className={cn('capitalize', styles[status] || 'bg-mp-surface')}>
-      {status.toLowerCase()}
+      {STATUS_LABELS[status] || status}
     </Badge>
   );
 }
@@ -76,8 +87,8 @@ const columns: ColumnDef<Verification>[] = [
       <DataTableColumnHeader column={column} title="Метод" />
     ),
     cell: ({ row }) => (
-      <span className="capitalize text-mp-text-primary">
-        {row.original.method.toLowerCase().replace('_', ' ')}
+      <span className="text-mp-text-primary">
+        {METHOD_LABELS[row.original.method] || row.original.method}
       </span>
     ),
     filterFn: (row, id, value) => {

@@ -3,9 +3,11 @@
 import { Play, FilmStrip, Eye } from "@phosphor-icons/react";
 import Link from "next/link";
 
+import { AuthorInlineLink } from "@/components/content/author-inline-link";
 import { AgeBadge, type AgeCategory } from "@/components/content/age-badge";
 import { ContentImage } from "@/components/content/content-image";
 import { RatingBadge } from "@/components/ui/rating-badge";
+import type { CreatorInput } from "@/lib/author-identity";
 import { cn, formatDuration, formatNumber } from "@/lib/utils";
 
 export interface ClipContent {
@@ -18,16 +20,7 @@ export interface ClipContent {
   ageCategory: AgeCategory;
   category?: string;
   rating?: number;
-  creator?:
-    | string
-    | {
-        id: string;
-        firstName?: string;
-        lastName?: string;
-        username?: string;
-        displayName?: string;
-        authorUrl?: string;
-      };
+  creator?: CreatorInput;
 }
 
 interface ClipCardProps {
@@ -39,20 +32,6 @@ interface ClipCardProps {
  * Clip card with duration badge, view count, and hover play button
  */
 export function ClipCard({ content, className }: ClipCardProps) {
-  const creator =
-    content.creator && typeof content.creator === "object"
-      ? content.creator
-      : null;
-  const creatorName = creator
-    ? creator.displayName ||
-      creator.username ||
-      [creator.firstName, creator.lastName].filter(Boolean).join(" ")
-    : typeof content.creator === "string"
-      ? content.creator
-      : null;
-  const creatorUrl =
-    creator?.authorUrl || (creator ? `/author/${creator.username || creator.id}` : null);
-
   return (
     <article className={cn("group block shrink-0 content-card w-full", className)}>
       {/* Thumbnail */}
@@ -113,14 +92,11 @@ export function ClipCard({ content, className }: ClipCardProps) {
             {content.title}
           </h3>
         </Link>
-        {creatorName && creatorUrl && (
-          <Link
-            href={creatorUrl}
-            className="mt-1 block truncate text-sm text-mp-text-secondary transition-colors hover:text-mp-accent-primary"
-          >
-            {creatorName}
-          </Link>
-        )}
+        <AuthorInlineLink
+          creator={content.creator}
+          className="mt-1 max-w-full"
+          showUsername
+        />
         <div className="flex items-center gap-2 mt-1 text-sm text-mp-text-secondary">
           <span className="flex items-center gap-1">
             <Eye className="w-3.5 h-3.5" />

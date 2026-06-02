@@ -23,10 +23,11 @@ export interface RatingSummary {
     updatedAt: string;
     author: {
       id: string;
-      firstName: string;
-      lastName: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      username?: string | null;
       avatarUrl?: string | null;
-    };
+    } | null;
   }>;
 }
 

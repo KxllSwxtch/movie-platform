@@ -76,6 +76,7 @@ export default function SeriesPage() {
       ageCategory: normalizeAgeCategory(item.ageCategory || "0+"),
       rating: item.averageRating ?? item.rating,
       year: item.year,
+      creator: item.creator,
       category:
         typeof item.category === "object" && item.category !== null
           ? item.category.name

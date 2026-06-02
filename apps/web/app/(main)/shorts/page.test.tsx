@@ -21,7 +21,12 @@ describe('ShortsPage data mapping', () => {
       id: 'short-1',
       title: 'Untitled short',
       thumbnailUrl: '/images/movie-placeholder.jpg',
-      creator: 'test4852',
+      creator: {
+        id: 'author-1',
+        username: 'test4852',
+        firstName: 'Test',
+        lastName: 'Author',
+      },
       likeCount: 0,
       commentCount: 0,
       shareCount: 0,
@@ -35,6 +40,9 @@ describe('ShortsPage data mapping', () => {
         title: 'No author',
         creator: null,
       }).creator,
-    ).toBe('movieplatform');
+    ).toEqual({
+      displayName: 'MoviePlatform',
+      username: 'movieplatform',
+    });
   });
 });

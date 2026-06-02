@@ -53,6 +53,7 @@ function SearchResultCard({ item }: { item: SearchResultItem }) {
             rating: item.averageRating ?? item.rating,
             ageCategory: item.ageCategory,
             category: categoryName,
+            creator: item.creator,
           }}
         />
       );
@@ -69,6 +70,7 @@ function SearchResultCard({ item }: { item: SearchResultItem }) {
             ageCategory: item.ageCategory,
             category: categoryName,
             rating: item.averageRating ?? item.rating,
+            creator: item.creator,
           }}
         />
       );
@@ -86,6 +88,7 @@ function SearchResultCard({ item }: { item: SearchResultItem }) {
             ageCategory: item.ageCategory,
             rating: item.averageRating ?? item.rating,
             year: item.year,
+            creator: item.creator,
           }}
         />
       );

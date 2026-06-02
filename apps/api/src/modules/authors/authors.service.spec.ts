@@ -87,7 +87,7 @@ describe("AuthorsService", () => {
     expect(prisma.user.findFirst).toHaveBeenCalledWith({
       where: {
         OR: [{ id: "author-1" }, { username: "author-1" }],
-        role: UserRole.AUTHOR,
+        role: { in: [UserRole.AUTHOR, UserRole.ADMIN, UserRole.MODERATOR] },
         verificationStatus: VerificationStatus.VERIFIED,
         isActive: true,
       },
@@ -102,6 +102,22 @@ describe("AuthorsService", () => {
         createdAt: true,
       },
     });
+  });
+
+  it("allows verified admin creators to have public profiles", async () => {
+    prisma.user.findFirst.mockResolvedValue({
+      ...author,
+      role: UserRole.ADMIN,
+      username: null,
+    });
+    prisma.content.count.mockResolvedValue(2);
+    prisma.content.aggregate.mockResolvedValue({ _sum: { viewCount: 12 } });
+
+    const result = await service.getPublicProfile("author-1");
+
+    expect(result.authorUrl).toBe("/authors/author-1");
+    expect(result.totalVideos).toBe(2);
+    expect(result.totalViews).toBe(12);
   });
 
   it("does not return private user fields", async () => {

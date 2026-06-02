@@ -7,16 +7,17 @@ import { queryKeys } from "@/lib/query-client";
 
 export interface CommentAuthor {
   id: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  username?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface CommentItem {
   id: string;
   text: string;
   createdAt: string;
-  author: CommentAuthor;
+  author?: CommentAuthor | null;
 }
 
 export interface CommentListResponse {

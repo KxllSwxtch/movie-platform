@@ -14,6 +14,7 @@ import {
   ContentComments,
   ContentImage,
   ContentRating,
+  CreatorChannelBlock,
   EpisodeCard,
   VideoCardSkeletonGrid,
   type AgeCategory,
@@ -86,6 +87,7 @@ export default function SeriesDetailPage() {
           episodes: (s.episodes ?? []) as EpisodeContent[],
         }),
       ) as SeriesSeason[],
+      creator: d.creator,
     };
   }, [apiData]);
 
@@ -272,6 +274,10 @@ export default function SeriesDetailPage() {
       </div>
 
       <div className="relative z-20 bg-mp-bg-primary">
+        <Container size="xl" className="pt-6">
+          <CreatorChannelBlock creator={series.creator} />
+        </Container>
+
         {/* Seasons and episodes */}
         {series.seasons.length > 0 && (
           <Container size="xl" className="py-8">

@@ -7,6 +7,13 @@ import {
 } from "@tanstack/react-query";
 
 import { api, endpoints } from "@/lib/api-client";
+import {
+  normalizeContentDetail,
+  normalizeContentListResponse,
+  normalizeSeriesDetail,
+  normalizeTutorialDetail,
+} from "@/lib/api/normalizers";
+import type { CreatorInput } from "@/lib/author-identity";
 import { queryKeys } from "@/lib/query-client";
 import { formatDuration } from "@/lib/utils";
 import type { PaginatedList } from "@/types";
@@ -49,20 +56,16 @@ interface ContentListItem {
   lessonCount?: number;
   completedLessons?: number;
   instructor?: string;
-  creator?:
-    | string
-    | {
-        id: string;
-        firstName?: string;
-        lastName?: string;
-        username?: string;
-        avatarUrl?: string;
-        authorUrl?: string;
-      };
+  creator?: CreatorInput;
   likeCount?: number;
   commentCount?: number;
   shareCount?: number;
   videoUrl?: string;
+  tags?: string[];
+  genre?: string[];
+  genres?: string[];
+  videoFiles?: Record<string, unknown>[];
+  author?: CreatorInput;
 }
 
 interface CategoryDetail {
@@ -83,6 +86,7 @@ interface TutorialDetail {
   thumbnailUrl: string;
   ageCategory: string;
   category: string | { id: string; name: string; slug: string };
+  creator?: CreatorInput;
   instructor?: string;
   duration?: string | number;
   lessons?: TutorialLesson[];
@@ -151,16 +155,10 @@ export function useContentList(params: ContentListParams) {
           },
         },
       );
-      // Normalize: API returns { items, meta: { total, page, limit } }
-      // Frontend expects { items, total, page, limit } at data level
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawData = response.data as any;
-      if (rawData && rawData.meta && rawData.total === undefined) {
-        rawData.total = rawData.meta.total;
-        rawData.page = rawData.meta.page;
-        rawData.limit = rawData.meta.limit;
-      }
-      return response;
+      return {
+        ...response,
+        data: normalizeContentListResponse(response.data),
+      };
     },
     staleTime: 60_000,
     placeholderData: keepPreviousData,
@@ -204,15 +202,7 @@ export function useContentInfinite(params: Omit<ContentListParams, "page">) {
           },
         },
       );
-      // Normalize meta fields to root level
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawData = response.data as any;
-      if (rawData && rawData.meta && rawData.total === undefined) {
-        rawData.total = rawData.meta.total;
-        rawData.page = rawData.meta.page;
-        rawData.limit = rawData.meta.limit;
-      }
-      return response.data;
+      return normalizeContentListResponse(response.data);
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
@@ -263,37 +253,18 @@ export function useTutorialDetail(slug: string) {
         endpoints.content.detail(slug),
       );
 
-      // Backend returns tutorials with SERIES-like structure: { seasons: [{ episodes: [...] }] }
-      // UI expects a flat lessons list for CTA/progress.
-      const raw = response.data as TutorialDetail;
+      const raw = normalizeTutorialDetail(
+        response.data as unknown as Record<string, unknown>,
+      ) as TutorialDetail;
 
       const duration =
         typeof raw.duration === "number"
           ? formatDuration(raw.duration)
           : raw.duration;
 
-      const lessonsFromSeasons: TutorialLesson[] =
-        raw.seasons?.flatMap((season) =>
-          season.episodes
-            .slice()
-            .sort((a, b) => a.episodeNumber - b.episodeNumber)
-            .map((episode) => ({
-              id: episode.id,
-              number: 0, // filled below
-              title: episode.title,
-              duration: episode.duration,
-              isCompleted: false,
-            })),
-        ) ?? [];
-
-      for (let i = 0; i < lessonsFromSeasons.length; i += 1) {
-        lessonsFromSeasons[i]!.number = i + 1;
-      }
-
       return {
         ...raw,
         duration,
-        lessons: raw.lessons?.length ? raw.lessons : lessonsFromSeasons,
       };
     },
     enabled: !!slug,
@@ -312,16 +283,7 @@ interface ContentDetail {
   duration: number;
   viewCount: number;
   category?: string | { id: string; name: string; slug: string };
-  creator?:
-    | string
-    | {
-        id: string;
-        firstName?: string;
-        lastName?: string;
-        username?: string;
-        avatarUrl?: string;
-        authorUrl?: string;
-      };
+  creator?: CreatorInput;
   instructor?: string;
   likeCount?: number;
   commentCount?: number;
@@ -340,7 +302,9 @@ export function useContentDetail(slug: string) {
       const response = await api.get<ContentDetail>(
         endpoints.content.detail(slug),
       );
-      return response.data;
+      return normalizeContentDetail(
+        response.data as unknown as Record<string, unknown>,
+      ) as ContentDetail;
     },
     enabled: !!slug,
     staleTime: 60_000,
@@ -391,6 +355,7 @@ export interface SeriesDetail {
   director?: string;
   cast?: string[];
   category?: string | { id: string; name: string; slug: string };
+  creator?: CreatorInput;
   isFree?: boolean;
   publishedAt?: string;
   seasons?: SeriesSeason[];
@@ -406,7 +371,9 @@ export function useSeriesDetail(slug: string) {
       const response = await api.get<SeriesDetail>(
         endpoints.content.detail(slug),
       );
-      return response.data;
+      return normalizeSeriesDetail(
+        response.data as unknown as Record<string, unknown>,
+      ) as SeriesDetail;
     },
     enabled: !!slug,
     staleTime: 60_000,

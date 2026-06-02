@@ -83,7 +83,7 @@ describe('ClipCard', () => {
         />,
       );
 
-      const authorLink = screen.getByRole('link', { name: 'Test Author' });
+      const authorLink = screen.getByRole('link', { name: /Test Author/ });
       expect(authorLink).toHaveAttribute('href', '/author/test4852');
     });
   });

@@ -5,8 +5,10 @@ import Hls from 'hls.js';
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { AuthorInlineLink } from '@/components/content/author-inline-link';
 import { cn, copyTextToClipboard, formatNumber, formatRelativeTime } from '@/lib/utils';
 import { normalizeMediaUrl } from '@/lib/media-url';
+import type { CreatorInput } from '@/lib/author-identity';
 import { useStreamUrl } from '@/hooks/use-streaming';
 import { useContentComments, useCreateContentComment } from '@/hooks/use-comments';
 import {
@@ -29,7 +31,7 @@ export interface ShortContent {
   id: string;
   title: string;
   thumbnailUrl?: string;
-  creator: string;
+  creator: CreatorInput;
   likeCount?: number;
   commentCount?: number;
   shareCount?: number;
@@ -256,7 +258,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           onClick={(e) => {
             if (!isActive) return;
             const target = e.target as HTMLElement | null;
-            if (target?.closest('button')) return;
+            if (target?.closest('button,a')) return;
             handleToggleMute();
           }}
         >
@@ -279,9 +281,12 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           <h3 className="text-white font-semibold text-lg leading-tight mb-1 line-clamp-2">
             {content.title}
           </h3>
-          <p className="text-white/70 text-sm">
-            @{content.creator}
-          </p>
+          <AuthorInlineLink
+            creator={content.creator}
+            avatarSize="sm"
+            showUsername
+            className="max-w-full text-white/80 hover:text-white [&_.text-mp-text-tertiary]:text-white/55"
+          />
         </div>
 
         {/* Side action bar */}
@@ -362,18 +367,22 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
                 <div className="text-sm text-mp-text-secondary">Пока нет комментариев</div>
               ) : (
                 commentsQuery.data!.items.map((c) => {
-                  const name = `${c.author.firstName} ${c.author.lastName}`.trim();
-                  const avatarSrc = c.author.avatarUrl
-                    ? normalizeMediaUrl(c.author.avatarUrl)
+                  const author = c.author;
+                  const name =
+                    `${author?.firstName ?? ""} ${author?.lastName ?? ""}`.trim() ||
+                    author?.username ||
+                    'Пользователь';
+                  const avatarSrc = author?.avatarUrl
+                    ? normalizeMediaUrl(author.avatarUrl)
                     : undefined;
 
                   return (
                     <div key={c.id} className="flex gap-3">
-                      <UserAvatar size="sm" name={name || 'Пользователь'} src={avatarSrc} />
+                      <UserAvatar size="sm" name={name} src={avatarSrc} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2">
                           <div className="text-sm font-medium text-mp-text-primary truncate">
-                            {name || 'Пользователь'}
+                            {name}
                           </div>
                           <div className="text-xs text-mp-text-secondary">
                             {formatRelativeTime(c.createdAt)}

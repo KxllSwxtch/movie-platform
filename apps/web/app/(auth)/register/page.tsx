@@ -430,7 +430,7 @@ export default function RegisterPage() {
                 htmlFor="username"
                 className="text-sm font-medium text-mp-text-primary"
               >
-                Username {requiresUsername && <span className="text-mp-accent-tertiary">*</span>}
+                Имя пользователя {requiresUsername && <span className="text-mp-accent-tertiary">*</span>}
               </label>
               <Input
                 id="username"
@@ -444,7 +444,7 @@ export default function RegisterPage() {
                 })}
               />
               <p className="text-xs text-mp-text-secondary">
-                Your public profile will be available at /author/username or /partner/username.
+                Ваш публичный профиль будет доступен по адресу /author/username или /partner/username.
               </p>
               {usernamePreview && (
                 <p className="break-all rounded-md border border-mp-border bg-mp-surface/60 px-3 py-2 text-xs text-mp-text-secondary">

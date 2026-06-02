@@ -6,6 +6,7 @@ import { api, endpoints } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-client";
 import type { PaginatedList } from "@/types";
 import type { AgeCategory } from "@/components/content";
+import type { CreatorInput } from "@/lib/author-identity";
 
 /**
  * Unified search result item returned by the content list API
@@ -31,6 +32,7 @@ export interface SearchResultItem {
   lessonCount?: number;
   completedLessons?: number;
   category?: string | { id: string; name: string; slug: string };
+  creator?: CreatorInput;
 }
 
 interface SearchSuggestion {

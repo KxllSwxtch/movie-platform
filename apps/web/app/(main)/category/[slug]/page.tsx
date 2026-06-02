@@ -60,6 +60,7 @@ export default function CategoryPage() {
       ageCategory: (item.ageCategory || "0+") as AgeCategory,
       rating: item.averageRating ?? item.rating,
       year: item.year,
+      creator: item.creator,
     }));
 
   const videoItems = items
@@ -96,6 +97,7 @@ export default function CategoryPage() {
           : item.category,
       instructor: item.instructor,
       rating: item.averageRating ?? item.rating,
+      creator: item.creator,
     }));
 
   const tabs: { value: ContentTab; label: string }[] = [

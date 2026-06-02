@@ -1630,18 +1630,19 @@ export class ContentService {
             email: content.creator.email,
             firstName: content.creator.firstName,
             lastName: content.creator.lastName,
-            role: content.creator.role,
-            avatarUrl: content.creator.avatarUrl,
-            username:
-              content.creator.username ||
+            displayName:
               [content.creator.firstName, content.creator.lastName]
                 .filter(Boolean)
                 .join(" ") ||
+              content.creator.username ||
               content.creator.email,
+            role: content.creator.role,
+            avatarUrl: content.creator.avatarUrl,
+            username: content.creator.username,
             authorUrl:
-              content.creator.role === UserRole.AUTHOR
-                ? `/author/${content.creator.username || content.creator.id}`
-                : undefined,
+              content.creator.username
+                ? `/author/${content.creator.username}`
+                : `/authors/${content.creator.id}`,
           }
         : null,
       tags: Array.isArray(content.tags)
