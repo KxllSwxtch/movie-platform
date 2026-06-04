@@ -11,6 +11,8 @@ export interface AdminUserDto {
   lastName: string;
   role: UserRole;
   verificationStatus: VerificationStatus;
+  latestVerificationId?: string | null;
+  latestVerificationStatus?: VerificationStatus | null;
   isActive: boolean;
   bonusBalance: number;
   createdAt: Date;
@@ -61,6 +63,16 @@ export class AdminUsersService {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          verifications: {
+            select: {
+              id: true,
+              status: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
       }),
     ]);
 
@@ -78,6 +90,16 @@ export class AdminUsersService {
   async getUserById(userId: string): Promise<AdminUserDto> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        verifications: {
+          select: {
+            id: true,
+            status: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
     });
 
     if (!user) {
@@ -177,6 +199,8 @@ export class AdminUsersService {
    * Map user to DTO.
    */
   private mapToDto(user: any): AdminUserDto {
+    const latestVerification = user.verifications?.[0];
+
     return {
       id: user.id,
       email: user.email,
@@ -184,6 +208,8 @@ export class AdminUsersService {
       lastName: user.lastName,
       role: user.role,
       verificationStatus: user.verificationStatus,
+      latestVerificationId: latestVerification?.id ?? null,
+      latestVerificationStatus: latestVerification?.status ?? null,
       isActive: user.isActive,
       bonusBalance: Number(user.bonusBalance),
       createdAt: user.createdAt,

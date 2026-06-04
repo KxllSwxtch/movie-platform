@@ -29,6 +29,8 @@ export interface AdminUserList {
 
 export interface AdminUser extends User {
   isActive: boolean;
+  latestVerificationId?: string | null;
+  latestVerificationStatus?: string | null;
   subscriptionsCount?: number;
   transactionsCount?: number;
   lastLoginAt?: string;

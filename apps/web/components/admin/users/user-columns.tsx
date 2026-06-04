@@ -1,12 +1,14 @@
 'use client';
 
-import { Eye, PencilSimple } from '@phosphor-icons/react';
+import { Eye, PencilSimple, ShieldCheck } from '@phosphor-icons/react';
 import { ColumnDef } from '@tanstack/react-table';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { DataTableColumnHeader } from '@/components/admin/data-table/data-table-column-header';
 import { DataTableRowActions } from '@/components/admin/data-table/data-table-row-actions';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { AdminUser } from '@/hooks/use-admin-users';
 
 const ADMIN_ROLE_FALLBACK_LABELS: Record<string, string> = {
@@ -47,6 +49,16 @@ function getVerificationBadge(status: string) {
 
   const { label, className } = config[status] || { label: status, className: '' };
   return <Badge className={className}>{label}</Badge>;
+}
+
+function canShowVerificationAction(user: AdminUser) {
+  const reviewableRoles = ['CLIENT', 'PARTNER', 'AUTHOR', 'BUYER'];
+  const reviewableStatuses = ['PENDING', 'REJECTED'];
+
+  return (
+    reviewableRoles.includes(user.role) &&
+    (reviewableStatuses.includes(user.verificationStatus) || !!user.latestVerificationId)
+  );
 }
 
 /**
@@ -129,7 +141,33 @@ export const userColumns: ColumnDef<AdminUser>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Верификация" />
     ),
-    cell: ({ row }) => getVerificationBadge(row.getValue('verificationStatus') as string),
+    cell: ({ row }) => {
+      const user = row.original;
+      const shouldShowAction = canShowVerificationAction(user);
+      const verificationHref = user.latestVerificationId
+        ? `/admin/verifications?verificationId=${user.latestVerificationId}`
+        : null;
+
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          {getVerificationBadge(row.getValue('verificationStatus') as string)}
+          {shouldShowAction && verificationHref && (
+            <Button asChild size="sm" variant="outline">
+              <Link href={verificationHref}>
+                <ShieldCheck className="h-4 w-4" />
+                Верифицировать
+              </Link>
+            </Button>
+          )}
+          {shouldShowAction && !verificationHref && (
+            <Button type="button" size="sm" variant="outline" disabled>
+              <ShieldCheck className="h-4 w-4" />
+              Верифицировать
+            </Button>
+          )}
+        </div>
+      );
+    },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
     },

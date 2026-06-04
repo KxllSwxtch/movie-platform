@@ -11,6 +11,7 @@ import {
   UserCircle,
   XCircle,
 } from '@phosphor-icons/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as React from 'react';
 
 import { AdminPageHeader } from '@/components/admin/layout/admin-page-header';
@@ -49,6 +50,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   AdminVerification,
   openVerificationDocument,
+  useAdminVerification,
   useAdminVerificationStats,
   useAdminVerifications,
   useApproveVerification,
@@ -258,6 +260,9 @@ function VerificationDetails({
 }
 
 export default function AdminVerificationsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const verificationId = searchParams.get('verificationId');
   const [status, setStatus] = React.useState('ALL');
   const [method, setMethod] = React.useState('ALL');
   const [search, setSearch] = React.useState('');
@@ -276,12 +281,31 @@ export default function AdminVerificationsPage() {
   );
 
   const { data, isLoading } = useAdminVerifications(params);
+  const { data: linkedVerification } = useAdminVerification(verificationId);
   const { data: stats } = useAdminVerificationStats();
   const approve = useApproveVerification();
   const reject = useRejectVerification();
 
+  React.useEffect(() => {
+    if (linkedVerification) {
+      setSelected(linkedVerification);
+    }
+  }, [linkedVerification]);
+
+  const openDetails = (item: AdminVerification) => {
+    setSelected(item);
+    router.replace(`/admin/verifications?verificationId=${item.id}`, { scroll: false });
+  };
+
+  const closeDetails = () => {
+    setSelected(null);
+    if (verificationId) {
+      router.replace('/admin/verifications', { scroll: false });
+    }
+  };
+
   const approveItem = (item: AdminVerification) => {
-    approve.mutate(item.id, { onSuccess: () => setSelected(null) });
+    approve.mutate(item.id, { onSuccess: closeDetails });
   };
 
   const submitReject = () => {
@@ -291,7 +315,7 @@ export default function AdminVerificationsPage() {
       {
         onSuccess: () => {
           setRejectTarget(null);
-          setSelected(null);
+          closeDetails();
           setReason('');
         },
       },
@@ -377,7 +401,7 @@ export default function AdminVerificationsPage() {
                   <TableRow
                     key={item.id}
                     className="cursor-pointer"
-                    onClick={() => setSelected(item)}
+                    onClick={() => openDetails(item)}
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -432,7 +456,7 @@ export default function AdminVerificationsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2" onClick={(event) => event.stopPropagation()}>
-                        <Button type="button" variant="outline" size="sm" onClick={() => setSelected(item)}>
+                        <Button type="button" variant="outline" size="sm" onClick={() => openDetails(item)}>
                           Подробнее
                         </Button>
                         {item.status === 'PENDING' && (
@@ -467,7 +491,7 @@ export default function AdminVerificationsPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+      <Dialog open={!!selected} onOpenChange={(open) => !open && closeDetails()}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-mp-border bg-[#0b0f18] text-mp-text-primary shadow-2xl shadow-black">
           <DialogHeader>
             <DialogTitle>Детали заявки</DialogTitle>
