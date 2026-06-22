@@ -142,7 +142,7 @@ export function TitleDescriptionFields({
               {slugPrefix && (
                 <p className="text-xs text-[#5a6072] font-mono">
                   {slugPrefix}
-                  <span className="text-[#c94bff]">{slug || '...'}</span>
+                  <span className="text-[#ff6a78]">{slug || '...'}</span>
                 </p>
               )}
               <Input

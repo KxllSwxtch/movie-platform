@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Главная — MoviePlatform',
-  description: 'Смотрите сериалы, обучающие курсы и эксклюзивный контент на MoviePlatform',
+  title: 'Главная — SESH',
+  description: 'Смотрите сериалы, обучающие курсы и эксклюзивный контент на SESH',
 };
 
 export default function DashboardLayout({

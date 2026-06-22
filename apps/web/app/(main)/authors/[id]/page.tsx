@@ -8,7 +8,7 @@ import type { AgeCategory } from "@/components/content/age-badge";
 import { Container } from "@/components/ui/container";
 import { API_BASE_URL } from "@/lib/api";
 import { normalizeMediaUrl } from "@/lib/media-url";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, formatViewCount } from "@/lib/utils";
 
 import { CopyAuthorLinkButton } from "./copy-author-link-button";
 
@@ -113,7 +113,7 @@ export async function generateMetadata({
 
   const description =
     author.bio ||
-    `${author.totalVideos ?? author.totalPublishedVideos} видео, ${formatNumber(author.totalViews)} просмотров на SESH-TV`;
+    `${author.totalVideos ?? author.totalPublishedVideos} видео, ${formatViewCount(author.totalViews)} на SESH-TV`;
 
   return {
     title: `${author.displayName} — SESH-TV`,
@@ -144,8 +144,8 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   const bannerUrl = author.bannerUrl ? normalizeMediaUrl(author.bannerUrl) : null;
 
   return (
-    <div className="min-h-screen bg-mp-bg-primary">
-      <div className="relative border-b border-mp-border bg-mp-bg-secondary">
+    <div className="sesh-author-page min-h-screen">
+      <div className="relative border-b border-white/[0.08]">
         <div className="relative h-44 overflow-hidden bg-mp-surface md:h-56">
           {bannerUrl ? (
             <ContentImage
@@ -157,12 +157,13 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
               sizes="100vw"
             />
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-mp-surface via-mp-bg-secondary to-mp-bg-primary" />
+            <div className="h-full w-full bg-[linear-gradient(135deg,rgba(35,8,48,.92),rgba(8,6,20,.88))]" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-mp-bg-secondary via-mp-bg-secondary/45 to-transparent" />
         </div>
 
-        <Container size="xl" className="-mt-12 pb-8">
+      <Container size="xl" className="-mt-12 pb-8">
+        <div className="author-hero p-8">
           <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-mp-bg-secondary bg-mp-surface shadow-xl">
@@ -180,6 +181,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
                   </div>
                 )}
               </div>
+            </div>
 
               <div className="min-w-0 pb-1">
                 <h1 className="text-3xl font-bold text-mp-text-primary md:text-4xl">
@@ -201,7 +203,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <Eye className="h-4 w-4" />
-                    {formatNumber(author.totalViews)} просмотров
+                    {formatViewCount(author.totalViews)}
                   </span>
                   <span>{formatNumber(author.subscriberCount ?? 0)} подписчиков</span>
                 </div>
@@ -227,7 +229,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
           videos={popularVideos.items}
         />
 
-        <section className="max-w-3xl">
+        <section className="sesh-account-card">
           <h2 className="mb-3 text-xl font-semibold text-mp-text-primary">
             О канале
           </h2>

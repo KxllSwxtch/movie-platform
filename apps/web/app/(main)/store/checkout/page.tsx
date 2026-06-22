@@ -160,9 +160,9 @@ export default function StoreCheckoutPage() {
   };
 
   return (
-    <Container size="lg" className="py-6">
+    <Container size="lg" className="sesh-store-page sesh-checkout-page py-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="sesh-store-header mb-6">
         <Button variant="ghost" asChild className="mb-4">
           <Link href="/store/cart">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -180,7 +180,7 @@ export default function StoreCheckoutPage() {
         <div className="lg:col-span-2">
           {/* Step 1: Shipping */}
           {checkoutStep === 'shipping' && (
-            <Card>
+            <Card className="sesh-store-card">
               <CardHeader>
                 <CardTitle className="text-lg">Адрес доставки</CardTitle>
               </CardHeader>
@@ -197,7 +197,7 @@ export default function StoreCheckoutPage() {
           {/* Step 2: Payment */}
           {checkoutStep === 'payment' && (
             <div className="space-y-6">
-              <Card>
+              <Card className="sesh-store-card">
                 <CardHeader>
                   <CardTitle className="text-lg">Заказ готов к оплате</CardTitle>
                 </CardHeader>
@@ -213,7 +213,7 @@ export default function StoreCheckoutPage() {
 
               {/* Bonus applicator */}
               {!isBonusLoading && bonusBalance > 0 && (
-                <Card>
+                <Card className="sesh-store-card">
                   <CardHeader>
                     <CardTitle className="text-lg">Использовать бонусы</CardTitle>
                   </CardHeader>
@@ -231,7 +231,7 @@ export default function StoreCheckoutPage() {
 
               {/* Payment method */}
               {!isFullyCoveredByBonus && (
-                <Card>
+                <Card className="sesh-store-card">
                   <CardHeader>
                     <CardTitle className="text-lg">Способ оплаты</CardTitle>
                   </CardHeader>
@@ -250,7 +250,7 @@ export default function StoreCheckoutPage() {
                 </Button>
                 <Button
                   variant="gradient"
-                  className="flex-1"
+                  className="sesh-store-button flex-1"
                   onClick={handleStartPayment}
                   disabled={isPaying || !orderId || (!isFullyCoveredByBonus && !paymentMethod)}
                 >
@@ -262,7 +262,7 @@ export default function StoreCheckoutPage() {
 
           {/* Step 4: Processing */}
           {checkoutStep === 'processing' && (
-            <Card className="py-12 text-center">
+            <Card className="sesh-store-card py-12 text-center">
               <CardContent>
                 <PaymentStatusPolling
                   status="PENDING"
@@ -275,7 +275,7 @@ export default function StoreCheckoutPage() {
 
           {/* Step 5: Complete */}
           {checkoutStep === 'complete' && (
-            <Card className="py-12 text-center">
+            <Card className="sesh-store-card py-12 text-center">
               <CardContent>
                 <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-mp-success-bg">
                   <Check className="h-10 w-10 text-mp-success-text" />
@@ -287,10 +287,10 @@ export default function StoreCheckoutPage() {
                   {orderId ? `Номер заказа: ${orderId.slice(0, 8)}...` : 'Спасибо за покупку!'}
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-                  <Button variant="gradient" asChild onClick={() => resetCheckout()}>
+                  <Button variant="gradient" className="sesh-store-button" asChild onClick={() => resetCheckout()}>
                     <Link href="/store/orders">Перейти к заказам</Link>
                   </Button>
-                  <Button variant="outline" asChild onClick={() => resetCheckout()}>
+                  <Button variant="outline" className="sesh-store-button" asChild onClick={() => resetCheckout()}>
                     <Link href="/store">Продолжить покупки</Link>
                   </Button>
                 </div>
@@ -303,7 +303,7 @@ export default function StoreCheckoutPage() {
         {checkoutStep !== 'complete' && (
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <Card>
+              <Card className="sesh-store-card">
                 <CardHeader>
                   <CardTitle className="text-lg">Ваш заказ</CardTitle>
                 </CardHeader>
@@ -347,14 +347,14 @@ export default function StoreCheckoutPage() {
 
               {/* Security badges */}
               <div className="space-y-3">
-                <div className="flex items-center gap-3 rounded-lg bg-mp-surface/50 p-3">
+                <div className="sesh-store-security flex items-center gap-3 rounded-lg p-3">
                   <Shield className="h-5 w-5 text-mp-accent-secondary" />
                   <div>
                     <p className="text-sm font-medium text-mp-text-primary">Безопасная оплата</p>
                     <p className="text-xs text-mp-text-secondary">256-bit SSL шифрование</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 rounded-lg bg-mp-surface/50 p-3">
+                <div className="sesh-store-security flex items-center gap-3 rounded-lg p-3">
                   <Lock className="h-5 w-5 text-mp-accent-secondary" />
                   <div>
                     <p className="text-sm font-medium text-mp-text-primary">Защита данных</p>

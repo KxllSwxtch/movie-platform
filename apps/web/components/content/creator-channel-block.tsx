@@ -10,7 +10,7 @@ import {
   type CreatorInput,
 } from "@/lib/author-identity";
 import { normalizeMediaUrl } from "@/lib/media-url";
-import { cn, formatNumber } from "@/lib/utils";
+import { cn, formatNumber, formatViewCount } from "@/lib/utils";
 
 interface CreatorChannelBlockProps {
   creator: CreatorInput;
@@ -62,7 +62,7 @@ export function CreatorChannelBlock({
           {identity.totalViews !== undefined ? (
             <span className="inline-flex items-center gap-1">
               <Eye className="h-3.5 w-3.5" />
-              {formatNumber(identity.totalViews)} просмотров
+              {formatViewCount(identity.totalViews)}
             </span>
           ) : null}
         </div>

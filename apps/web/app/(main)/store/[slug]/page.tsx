@@ -73,7 +73,7 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <Container size="lg" className="py-6">
+    <Container size="lg" className="sesh-store-page sesh-product-detail py-6">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-sm text-mp-text-secondary mb-6">
         <Link href="/store" className="hover:text-mp-text-primary transition-colors">
@@ -94,7 +94,7 @@ export default function ProductDetailPage() {
         <ProductImageGallery images={Array.isArray(product.images) ? product.images : []} productName={product.name} />
 
         {/* Right — Product info */}
-        <div className="space-y-6">
+        <div className="space-y-6 rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(20,9,34,0.88),rgba(8,3,18,0.9))] p-5 shadow-[0_20px_52px_rgba(0,0,0,0.28)] sm:p-6">
           <div>
             <h1 className="text-2xl font-bold text-mp-text-primary mb-2">
               {product.name}
@@ -132,7 +132,7 @@ export default function ProductDetailPage() {
           {/* Quantity selector + Add to cart */}
           {isAvailable && (
             <div className="flex items-center gap-4">
-              <div className="flex items-center border border-mp-border rounded-lg">
+              <div className="flex items-center rounded-xl border border-[#b94bff]/25 bg-black/20">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   disabled={quantity <= 1}

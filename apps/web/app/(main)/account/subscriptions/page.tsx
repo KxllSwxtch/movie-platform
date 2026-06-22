@@ -107,7 +107,7 @@ export default function MySubscriptionsPage() {
               История платежей
             </Link>
           </Button>
-          <Button variant="gradient" asChild>
+          <Button className="sesh-subscription-cta" asChild>
             <Link href="/pricing">
               <Plus className="mr-2 h-4 w-4" />
               Новая подписка
@@ -135,7 +135,7 @@ export default function MySubscriptionsPage() {
             <p className="mb-6 text-mp-text-secondary">
               Оформите подписку, чтобы получить доступ к эксклюзивному контенту
             </p>
-            <Button variant="gradient" asChild>
+            <Button className="sesh-subscription-primary" size="lg" asChild>
               <Link href="/pricing">Выбрать тариф</Link>
             </Button>
           </CardContent>

@@ -263,7 +263,7 @@ describe('DataTableCardView', () => {
       ];
 
       const { container } = render(<DataTableCardView rows={rows} />);
-      const card = container.querySelector('[class*="border-mp-accent-primary"]');
+      const card = container.querySelector('.sesh-data-table-card-selected');
       expect(card).toBeInTheDocument();
     });
 
@@ -273,7 +273,7 @@ describe('DataTableCardView', () => {
       ];
 
       const { container } = render(<DataTableCardView rows={rows} />);
-      const card = container.querySelector('[class*="border-mp-accent-primary/50"]');
+      const card = container.querySelector('.sesh-data-table-card-selected');
       expect(card).not.toBeInTheDocument();
     });
   });

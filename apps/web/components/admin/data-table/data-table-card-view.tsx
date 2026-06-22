@@ -38,10 +38,10 @@ export function DataTableCardView<TData>({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="rounded-lg border border-mp-border bg-mp-bg-secondary p-4 animate-pulse">
-            <div className="h-5 w-3/4 bg-mp-surface rounded mb-2" />
-            <div className="h-4 w-1/2 bg-mp-surface rounded mb-3" />
-            <div className="h-4 w-1/3 bg-mp-surface rounded" />
+          <div key={i} className="sesh-data-table-card rounded-lg border p-4 animate-pulse">
+            <div className="sesh-data-table-skeleton h-5 w-3/4 rounded mb-2" />
+            <div className="sesh-data-table-skeleton h-4 w-1/2 rounded mb-3" />
+            <div className="sesh-data-table-skeleton h-4 w-1/3 rounded" />
           </div>
         ))}
       </div>
@@ -50,7 +50,7 @@ export function DataTableCardView<TData>({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-mp-border bg-mp-bg-secondary p-8 text-center text-mp-text-secondary">
+      <div className="sesh-data-table-card rounded-lg border p-8 text-center text-mp-text-secondary">
         No results found.
       </div>
     );
@@ -70,8 +70,8 @@ export function DataTableCardView<TData>({
           <div
             key={row.id}
             className={cn(
-              'rounded-lg border border-mp-border bg-mp-bg-secondary overflow-hidden transition-colors',
-              row.getIsSelected() && 'border-mp-accent-primary/50 bg-mp-accent-primary/5'
+              'sesh-data-table-card rounded-lg border overflow-hidden transition-colors',
+              row.getIsSelected() && 'sesh-data-table-card-selected'
             )}
           >
             {/* Card header - preview fields */}
@@ -110,7 +110,7 @@ export function DataTableCardView<TData>({
 
             {/* Expanded details */}
             {isExpanded && detailCells.length > 0 && (
-              <div className="border-t border-mp-border px-4 py-3 bg-mp-surface/30 space-y-1.5">
+              <div className="sesh-data-table-card-details border-t px-4 py-3 space-y-1.5">
                 {detailCells.map((cell) => {
                   const header = cell.column.columnDef.header;
                   const headerText = typeof header === 'string' ? header : cell.column.id;

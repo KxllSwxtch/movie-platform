@@ -51,7 +51,7 @@ export default function AdminSettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Название платформы</Label>
-                <Input defaultValue="MoviePlatform" disabled />
+                <Input defaultValue="SESH" disabled />
               </div>
               <div className="space-y-2">
                 <Label>Описание</Label>
@@ -164,7 +164,7 @@ export default function AdminSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Подпись в футере</Label>
-                <Input defaultValue="Команда MoviePlatform" disabled />
+                <Input defaultValue="Команда SESH" disabled />
               </div>
             </div>
             <DisabledSaveButton />

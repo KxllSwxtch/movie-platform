@@ -16,7 +16,7 @@ interface ThemeProviderProps {
 
 /**
  * Theme provider wrapper around next-themes
- * Configured for MoviePlatform's dark-first design
+ * Configured for SESH's dark-first design
  */
 export function ThemeProvider({
   children,

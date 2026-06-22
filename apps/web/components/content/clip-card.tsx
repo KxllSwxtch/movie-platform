@@ -6,9 +6,10 @@ import Link from "next/link";
 import { AuthorInlineLink } from "@/components/content/author-inline-link";
 import { AgeBadge, type AgeCategory } from "@/components/content/age-badge";
 import { ContentImage } from "@/components/content/content-image";
+import { HoverVideoPreview } from "@/components/content/hover-video-preview";
 import { RatingBadge } from "@/components/ui/rating-badge";
 import type { CreatorInput } from "@/lib/author-identity";
-import { cn, formatDuration, formatNumber } from "@/lib/utils";
+import { cn, formatDuration, formatViewCount } from "@/lib/utils";
 
 export interface ClipContent {
   id: string;
@@ -33,9 +34,8 @@ interface ClipCardProps {
  */
 export function ClipCard({ content, className }: ClipCardProps) {
   return (
-    <article className={cn("group block shrink-0 content-card w-full", className)}>
+    <article className={cn("sesh-content-card sesh-clip-card group block shrink-0 content-card w-full", className)}>
       {/* Thumbnail */}
-      <Link href={`/videos/${content.slug}`} className="block">
       <div className="relative aspect-video rounded-xl overflow-hidden bg-mp-surface-2 mb-3">
         <ContentImage
           src={content.thumbnailUrl}
@@ -65,7 +65,7 @@ export function ClipCard({ content, className }: ClipCardProps) {
           ) : (
             <span />
           )}
-          <span className="text-xs bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded font-medium">
+          <span className="text-xs bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded font-medium transition-opacity group-hover:opacity-0">
             {formatDuration(content.duration)}
           </span>
         </div>
@@ -82,8 +82,14 @@ export function ClipCard({ content, className }: ClipCardProps) {
             />
           </div>
         </div>
+        <HoverVideoPreview
+          contentId={content.id}
+          title={content.title}
+          href={`/videos/${content.slug}`}
+          duration={content.duration}
+        />
+        <Link href={`/videos/${content.slug}`} className="absolute inset-0 z-10" aria-label={content.title} />
       </div>
-      </Link>
 
       {/* Content info */}
       <div>
@@ -100,7 +106,7 @@ export function ClipCard({ content, className }: ClipCardProps) {
         <div className="flex items-center gap-2 mt-1 text-sm text-mp-text-secondary">
           <span className="flex items-center gap-1">
             <Eye className="w-3.5 h-3.5" />
-            {formatNumber(content.viewCount)}
+            {formatViewCount(content.viewCount)}
           </span>
           <span>&middot;</span>
           <span>{formatDuration(content.duration)}</span>

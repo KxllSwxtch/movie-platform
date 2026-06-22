@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Магазин — MoviePlatform',
-  description: 'Магазин MoviePlatform — мерч, аксессуары и подарки для любителей кино.',
+  title: 'Магазин — SESH',
+  description: 'Магазин SESH — мерч, аксессуары и подарки для любителей кино.',
   openGraph: {
-    title: 'Магазин — MoviePlatform',
-    description: 'Магазин MoviePlatform — мерч, аксессуары и подарки для любителей кино.',
+    title: 'Магазин — SESH',
+    description: 'Магазин SESH — мерч, аксессуары и подарки для любителей кино.',
   },
 };
 

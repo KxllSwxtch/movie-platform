@@ -40,7 +40,7 @@ export function AdminHeader({ className }: AdminHeaderProps) {
   return (
     <header
       className={cn(
-        'fixed top-0 right-0 z-40 h-16 bg-mp-bg-secondary/75 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-4 md:px-6 left-0 md:left-[250px] shadow-lg shadow-black/10',
+        'sesh-admin-header fixed top-0 right-0 z-40 h-16 flex items-center justify-between px-4 md:px-6 left-0 md:left-[250px]',
         className
       )}
     >
@@ -49,18 +49,18 @@ export function AdminHeader({ className }: AdminHeaderProps) {
         {/* Mobile menu button - hidden on desktop via CSS */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="md:hidden p-2 text-mp-text-secondary hover:text-mp-text-primary rounded-lg hover:bg-mp-surface transition-colors"
+          className="sesh-admin-icon-button md:hidden p-2 text-mp-text-secondary hover:text-mp-text-primary rounded-lg transition-colors"
         >
           <List className="w-5 h-5" />
         </button>
 
         {/* Search */}
-        <div className="relative hidden sm:block">
-          <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mp-text-disabled" />
+        <div className="sesh-admin-search relative hidden sm:block">
+          <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
           <input
             type="text"
             placeholder="Поиск пользователей, контента, заказов..."
-            className="w-64 lg:w-80 h-9 pl-9 pr-4 bg-white/5 border border-white/10 rounded-lg text-sm text-mp-text-primary placeholder:text-mp-text-disabled focus:outline-none focus:ring-2 focus:ring-mp-accent-primary/50 focus:border-mp-accent-primary transition-all hover:bg-white/[0.07]"
+            className="w-64 lg:w-80 h-9 pl-9 pr-4 rounded-lg text-sm text-mp-text-primary focus:outline-none"
           />
         </div>
       </div>
@@ -69,7 +69,7 @@ export function AdminHeader({ className }: AdminHeaderProps) {
       <div className="flex items-center gap-2">
         {/* Mobile search button */}
         <button
-          className="sm:hidden p-2.5 text-mp-text-secondary hover:text-mp-text-primary rounded-lg hover:bg-mp-surface transition-colors"
+          className="sesh-admin-icon-button sm:hidden p-2.5 text-mp-text-secondary hover:text-mp-text-primary rounded-lg transition-colors"
           onClick={() => {
             // TODO: Implement admin search overlay
           }}
@@ -80,13 +80,13 @@ export function AdminHeader({ className }: AdminHeaderProps) {
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="relative p-2.5 md:p-2 text-mp-text-secondary hover:text-mp-text-primary rounded-lg hover:bg-mp-surface transition-colors">
+            <button className="sesh-admin-icon-button relative p-2.5 md:p-2 text-mp-text-secondary hover:text-mp-text-primary rounded-lg transition-colors">
               <Bell className="w-5 h-5" />
               {/* Notification badge */}
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-mp-accent-tertiary rounded-full" />
+              <span className="sesh-admin-notification-dot absolute top-1.5 right-1.5 w-2 h-2 rounded-full" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
+          <DropdownMenuContent align="end" className="sesh-admin-notifications-dropdown w-80">
             <DropdownMenuLabel>Уведомления</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="py-4 px-3 text-center text-sm text-mp-text-secondary">
@@ -98,10 +98,10 @@ export function AdminHeader({ className }: AdminHeaderProps) {
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-mp-surface transition-colors">
+            <button className="sesh-admin-profile-trigger flex items-center gap-2 p-1.5 rounded-lg transition-colors">
               <Avatar className="w-8 h-8">
                 <AvatarImage src={user?.avatarUrl || undefined} />
-                <AvatarFallback className="bg-mp-accent-primary text-white text-xs">
+                <AvatarFallback className="sesh-admin-avatar-fallback text-white text-xs">
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
@@ -115,8 +115,8 @@ export function AdminHeader({ className }: AdminHeaderProps) {
               </div>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="sesh-admin-profile-dropdown w-64">
+            <DropdownMenuLabel className="sesh-admin-profile-summary">
               <div className="flex flex-col">
                 <span className="text-mp-text-primary">
                   {user?.firstName} {user?.lastName}

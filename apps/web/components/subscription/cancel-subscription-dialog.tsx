@@ -92,8 +92,8 @@ export function CancelSubscriptionDialog({
               className={cn(
                 'w-full rounded-lg border p-4 text-left transition-all',
                 cancelType === 'end_of_period'
-                  ? 'border-mp-accent-primary bg-mp-accent-primary/5'
-                  : 'border-mp-border hover:border-mp-border/80 hover:bg-mp-surface'
+                  ? 'border-[#d5203a]/45 bg-[#8f101f]/12 shadow-[0_0_14px_rgba(213,32,58,0.1)]'
+                  : 'border-[#3a2630] hover:border-[#d5203a]/32 hover:bg-[#170712]/70'
               )}
             >
               <div className="flex items-start gap-3">
@@ -101,7 +101,7 @@ export function CancelSubscriptionDialog({
                   className={cn(
                     'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2',
                     cancelType === 'end_of_period'
-                      ? 'border-mp-accent-primary bg-mp-accent-primary'
+                      ? 'border-[#d5203a] bg-[#b91428]'
                       : 'border-mp-border'
                   )}
                 >

@@ -52,11 +52,11 @@ function formatDuration(days: number): string {
 function getPlanIcon(type: string) {
   switch (type) {
     case 'PREMIUM':
-      return <Crown className="h-6 w-6 text-mp-accent-primary" />;
+      return <Crown className="h-6 w-6 text-[#ff5a67]" />;
     case 'CONTENT_SPECIFIC':
-      return <Star className="h-6 w-6 text-mp-accent-secondary" />;
+      return <Star className="h-6 w-6 text-[#5fb6ff]" />;
     default:
-      return <Sparkle className="h-6 w-6 text-mp-accent-tertiary" />;
+      return <Sparkle className="h-6 w-6 text-[#d0477a]" />;
   }
 }
 
@@ -74,16 +74,16 @@ export function PlanCard({
       className={cn(
         'relative overflow-hidden transition-all duration-300 cursor-pointer',
         'hover:shadow-card-hover hover:-translate-y-1',
-        isSelected && 'ring-2 ring-mp-accent-primary shadow-glow-primary',
-        isCurrentPlan && 'ring-2 ring-mp-accent-secondary',
-        isPremium && 'border-mp-accent-primary/30',
+        isSelected && 'ring-2 ring-[#d5203a]/55 shadow-[0_0_22px_rgba(213,32,58,0.18)]',
+        isCurrentPlan && 'ring-2 ring-[#1b76ce]/55',
+        isPremium && 'border-[#d5203a]/28',
         className
       )}
       onClick={() => onSelect?.(plan)}
     >
       {/* Premium badge */}
       {isPremium && (
-        <div className="absolute -right-8 top-4 rotate-45 bg-mp-accent-primary px-8 py-1 text-xs font-semibold text-white shadow-sm">
+        <div className="absolute -right-8 top-4 rotate-45 bg-[linear-gradient(90deg,#8f101f,#c21e35,#43259d)] px-8 py-1 text-xs font-semibold text-white shadow-[0_0_14px_rgba(213,32,58,0.18)]">
           Популярный
         </div>
       )}
@@ -123,8 +123,8 @@ export function PlanCard({
         <ul className="space-y-3">
           {plan.features.map((feature, index) => (
             <li key={index} className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mp-accent-primary/20">
-                <Check className="h-3 w-3 text-mp-accent-primary" />
+              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#8f101f]/28">
+                <Check className="h-3 w-3 text-[#ff6a78]" />
               </div>
               <span className="text-sm text-mp-text-secondary">{feature}</span>
             </li>

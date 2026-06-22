@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Корзина — MoviePlatform',
-  description: 'Ваша корзина покупок в магазине MoviePlatform.',
+  title: 'Корзина — SESH',
+  description: 'Ваша корзина покупок в магазине SESH.',
 };
 
 export default function CartLayout({ children }: { children: React.ReactNode }) {

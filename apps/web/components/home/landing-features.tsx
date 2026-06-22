@@ -25,77 +25,61 @@ const features: Feature[] = [
     title: 'HD Качество',
     description:
       'Смотрите в Full HD и 4K с адаптивным стримингом на любом устройстве',
-    accent: '#C94BFF',
-    glowColor: 'rgba(201,75,255,0.25)',
+    accent: '#D70A2A',
+    glowColor: 'rgba(215,10,42,0.28)',
   },
   {
     icon: Sparkle,
     title: 'Бонусная система',
     description:
       'Получайте бонусы за активность и тратьте их на любой контент платформы',
-    accent: '#28E0C4',
-    glowColor: 'rgba(40,224,196,0.25)',
+    accent: '#0F66EB',
+    glowColor: 'rgba(15,102,235,0.28)',
   },
   {
     icon: Users,
     title: 'Партнерская программа',
     description:
       'Приглашайте друзей и получайте до 15% от их платежей на 5 уровнях',
-    accent: '#FF6B5A',
-    glowColor: 'rgba(255,107,90,0.25)',
+    accent: '#C70F4F',
+    glowColor: 'rgba(199,15,79,0.28)',
   },
   {
     icon: Shield,
     title: 'Безопасность',
     description:
       'Возрастные ограничения и надёжная защита вашего аккаунта и данных',
-    accent: '#4ADE80',
-    glowColor: 'rgba(74,222,128,0.25)',
+    accent: '#B11164',
+    glowColor: 'rgba(177,17,100,0.26)',
   },
   {
     icon: Monitor,
     title: 'Мультиустройства',
     description:
       'Смотрите на телефоне, планшете, ноутбуке или телевизоре без ограничений',
-    accent: '#3B82F6',
-    glowColor: 'rgba(59,130,246,0.25)',
+    accent: '#3A3ED8',
+    glowColor: 'rgba(58,62,216,0.26)',
   },
   {
     icon: Brain,
     title: 'Умные рекомендации',
     description:
       'Персональные подборки на основе ваших предпочтений и истории просмотров',
-    accent: '#F59E0B',
-    glowColor: 'rgba(245,158,11,0.25)',
+    accent: '#6D1BAC',
+    glowColor: 'rgba(109,27,172,0.27)',
   },
 ];
 
 export function LandingFeatures() {
   return (
-    <section className="py-16 md:py-24 relative overflow-hidden">
-      {/* Section bg: subtle violet radial */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(180deg, #05060A 0%, #080B12 30%, #080B12 70%, #05060A 100%)',
-        }}
-      />
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,75,255,0.06) 0%, transparent 70%)',
-        }}
-      />
-
-      <div className="relative container mx-auto px-4 sm:px-6">
+    <section className="sesh-lower-section sesh-section-features py-16 md:py-24">
+      <div className="sesh-section-inner container mx-auto px-4 sm:px-6">
         <ScrollReveal>
-          <div className="max-w-lg mb-10 md:mb-14">
-            <h2 className="text-xl sm:text-2xl font-bold text-mp-text-primary mb-3">
+          <div className="sesh-section-heading mb-10 max-w-lg md:mb-14">
+            <h2 className="mb-3 text-2xl font-bold text-white sm:text-3xl">
               Почему выбирают нас
             </h2>
-            <p className="text-mp-text-secondary leading-relaxed">
+            <p className="leading-relaxed text-[#aeb8d0]">
               Платформа, созданная для удобства и качественного контента
             </p>
           </div>
@@ -104,23 +88,24 @@ export function LandingFeatures() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
           {features.map((feature, i) => (
             <ScrollReveal key={i} delay={i * 0.08}>
-              <div className="group relative h-full">
+              <div className="group relative h-full sesh-feature-wrap">
                 {/* Gradient border — visible on hover */}
                 <div
-                  className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  className="absolute -inset-px rounded-[18px] opacity-70 transition-opacity duration-500 group-hover:opacity-100"
                   style={{
-                    background: `linear-gradient(135deg, ${feature.accent}40, transparent 60%)`,
+                    background: `linear-gradient(135deg, ${feature.accent}55, rgba(15,102,235,0.18), transparent 70%)`,
                   }}
                 />
 
                 {/* Card content */}
-                <div className="relative p-6 rounded-2xl bg-[#10131C] border border-white/[0.06] hover:border-transparent transition-colors duration-300 h-full">
+                <div className="sesh-feature-card relative h-full p-6 transition-all duration-300 group-hover:-translate-y-1">
                   {/* Icon with accent glow */}
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-shadow duration-300"
+                    className="sesh-icon-capsule mb-5 flex h-11 w-11 items-center justify-center"
                     style={{
-                      background: `${feature.accent}15`,
-                      boxShadow: `0 0 0 ${feature.glowColor}`,
+                      background:
+                        'linear-gradient(135deg, rgba(215,10,42,0.24), rgba(177,17,100,0.18), rgba(15,102,235,0.18))',
+                      boxShadow: `0 0 22px ${feature.glowColor}`,
                     }}
                   >
                     <feature.icon
@@ -129,10 +114,10 @@ export function LandingFeatures() {
                     />
                   </div>
 
-                  <h3 className="font-semibold text-mp-text-primary mb-2">
+                  <h3 className="mb-2 font-semibold text-white">
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-mp-text-secondary leading-relaxed">
+                  <p className="text-sm leading-relaxed text-[#aeb8d0]">
                     {feature.description}
                   </p>
                 </div>

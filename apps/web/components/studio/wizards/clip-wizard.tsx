@@ -63,7 +63,10 @@ function useDraftAutoSave(
   const hasRestoredRef = React.useRef(false);
 
   // Watch all values for auto-save
-  const values = form.watch();
+  const draftValues = form.watch([
+    'title', 'slug', 'description', 'ageCategory', 'status', 'thumbnailUrl',
+    'previewUrl', 'isFree', 'individualPrice', 'categoryId', 'tagIds', 'genreIds',
+  ]);
 
   // Debounced save
   React.useEffect(() => {
@@ -76,7 +79,7 @@ function useDraftAutoSave(
 
     timerRef.current = setTimeout(() => {
       try {
-        const serialized = JSON.stringify(values);
+        const serialized = JSON.stringify(form.getValues());
         localStorage.setItem(storageKey, serialized);
       } catch {
         // localStorage quota or serialization error — silently ignore
@@ -88,7 +91,7 @@ function useDraftAutoSave(
         clearTimeout(timerRef.current);
       }
     };
-  }, [values, storageKey, delayMs]);
+  }, [draftValues, form, storageKey, delayMs]);
 
   // Restore on mount
   React.useEffect(() => {

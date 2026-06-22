@@ -35,7 +35,7 @@ export function DataTableColumnHeader<TData, TValue>({
           <Button
             variant="ghost"
             size="sm"
-            className="-ml-3 h-8 data-[state=open]:bg-mp-surface"
+            className="sesh-data-table-header-button -ml-3 h-8"
           >
             <span>{title}</span>
             {column.getIsSorted() === 'desc' ? (

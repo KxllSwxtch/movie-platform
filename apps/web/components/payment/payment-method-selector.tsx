@@ -87,16 +87,16 @@ export function PaymentMethodSelector({
               disabled={disabled}
               className={cn(
                 'group relative w-full rounded-lg border p-4 text-left transition-all',
-                'focus:outline-none focus:ring-2 focus:ring-mp-accent-primary focus:ring-offset-2 focus:ring-offset-background',
+                'focus:outline-none focus:ring-2 focus:ring-[#d5203a]/45 focus:ring-offset-0',
                 isSelected
-                  ? 'border-mp-accent-primary bg-mp-accent-primary/5'
+                  ? 'border-[#d5203a]/55 bg-[#8f101f]/12 shadow-[0_0_16px_rgba(213,32,58,0.1)]'
                   : 'border-mp-border hover:border-mp-border/80 hover:bg-mp-surface',
                 disabled && 'cursor-not-allowed opacity-50'
               )}
             >
               {/* Recommended badge */}
               {method.recommended && (
-                <span className="absolute -top-2 right-3 rounded-full bg-mp-accent-primary px-2 py-0.5 text-[10px] font-medium text-white">
+                <span className="absolute -top-2 right-3 rounded-full bg-[#b91428] px-2 py-0.5 text-[10px] font-medium text-white shadow-[0_0_10px_rgba(213,32,58,0.22)]">
                   Рекомендуем
                 </span>
               )}
@@ -107,7 +107,7 @@ export function PaymentMethodSelector({
                   className={cn(
                     'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
                     isSelected
-                      ? 'border-mp-accent-primary bg-mp-accent-primary'
+                      ? 'border-[#d5203a] bg-[#b91428]'
                       : 'border-mp-border group-hover:border-mp-text-secondary'
                   )}
                 >
@@ -119,7 +119,7 @@ export function PaymentMethodSelector({
                   className={cn(
                     'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors',
                     isSelected
-                      ? 'bg-mp-accent-primary/20 text-mp-accent-primary'
+                      ? 'bg-[#8f101f]/24 text-[#ff6a78]'
                       : 'bg-mp-surface text-mp-text-secondary group-hover:text-mp-text-primary'
                   )}
                 >
@@ -179,9 +179,9 @@ export function PaymentMethodSelectorCompact({
             disabled={disabled}
             className={cn(
               'flex flex-1 flex-col items-center gap-2 rounded-lg border p-3 transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-mp-accent-primary',
+              'focus:outline-none focus:ring-2 focus:ring-[#d5203a]/45',
               isSelected
-                ? 'border-mp-accent-primary bg-mp-accent-primary/10'
+                ? 'border-[#d5203a]/55 bg-[#8f101f]/14 shadow-[0_0_14px_rgba(213,32,58,0.1)]'
                 : 'border-mp-border hover:border-mp-border/80 hover:bg-mp-surface/50',
               disabled && 'cursor-not-allowed opacity-50'
             )}
@@ -189,7 +189,7 @@ export function PaymentMethodSelectorCompact({
             <Icon
               className={cn(
                 'h-5 w-5',
-                isSelected ? 'text-mp-accent-primary' : 'text-mp-text-secondary'
+                isSelected ? 'text-[#ff6a78]' : 'text-mp-text-secondary'
               )}
             />
             <span

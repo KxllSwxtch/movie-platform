@@ -9,8 +9,8 @@ import './globals.css';
  */
 export const metadata: Metadata = {
   title: {
-    default: 'MoviePlatform - Streaming Platform',
-    template: '%s | MoviePlatform',
+    default: 'SESH — Streaming Platform',
+    template: '%s | SESH',
   },
   description:
     'Next-generation video streaming platform with series, tutorials, and exclusive content. Watch anytime, anywhere.',
@@ -25,9 +25,9 @@ export const metadata: Metadata = {
     'сериалы',
     'фильмы',
   ],
-  authors: [{ name: 'MoviePlatform Team' }],
-  creator: 'MoviePlatform',
-  publisher: 'MoviePlatform',
+  authors: [{ name: 'SESH Team' }],
+  creator: 'SESH',
+  publisher: 'SESH',
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   ),
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ru_RU',
     url: '/',
-    siteName: 'MoviePlatform',
-    title: 'MoviePlatform - Streaming Platform',
+    siteName: 'SESH',
+    title: 'SESH — Streaming Platform',
     description:
       'Next-generation video streaming platform with series, tutorials, and exclusive content.',
     images: [
@@ -44,13 +44,13 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'MoviePlatform',
+        alt: 'SESH',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MoviePlatform - Streaming Platform',
+    title: 'SESH — Streaming Platform',
     description:
       'Next-generation video streaming platform with series, tutorials, and exclusive content.',
     images: ['/og-image.png'],

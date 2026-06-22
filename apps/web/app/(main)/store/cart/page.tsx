@@ -50,9 +50,9 @@ export default function CartPage() {
   if (isLoading) return null; // loading.tsx handles this
 
   return (
-    <Container size="lg" className="py-6">
+    <Container size="lg" className="sesh-store-page sesh-cart-page py-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="sesh-store-header mb-6">
         <Button variant="ghost" asChild className="mb-4">
           <Link href="/store">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -64,7 +64,7 @@ export default function CartPage() {
 
       {isEmpty ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-full bg-mp-surface flex items-center justify-center mb-4">
+          <div className="sesh-store-empty-icon w-16 h-16 rounded-full flex items-center justify-center mb-4">
             <Bag className="w-8 h-8 text-mp-text-disabled" />
           </div>
           <h3 className="text-lg font-medium text-mp-text-primary mb-2">Корзина пуста</h3>
@@ -110,7 +110,7 @@ export default function CartPage() {
 
           {/* Order summary */}
           <div>
-            <Card className="sticky top-24">
+            <Card className="sesh-store-summary sticky top-24">
               <CardHeader>
                 <CardTitle className="text-lg">Итого</CardTitle>
               </CardHeader>
@@ -133,11 +133,11 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <Button
-                  variant="gradient"
-                  className="w-full"
-                  asChild
-                >
+                  <Button
+                    variant="gradient"
+                    className="sesh-store-button w-full"
+                    asChild
+                  >
                   <Link href="/store/checkout">Оформить заказ</Link>
                 </Button>
 

@@ -55,13 +55,13 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-1 flex-wrap items-center gap-2 w-full sm:w-auto">
         {/* Search input */}
         {searchKey && (
-          <div className="relative flex-1 max-w-sm">
-            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-mp-text-disabled" />
+          <div className="sesh-data-table-search relative flex-1 max-w-sm">
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
             <input
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full h-9 pl-9 pr-4 bg-mp-surface border border-mp-border rounded-lg text-sm text-mp-text-primary placeholder:text-mp-text-disabled focus:outline-none focus:ring-2 focus:ring-mp-accent-primary/50 focus:border-mp-accent-primary transition-all"
+              className="w-full h-9 pl-9 pr-4 rounded-lg text-sm text-mp-text-primary focus:outline-none"
             />
           </div>
         )}
@@ -98,12 +98,12 @@ export function DataTableToolbar<TData>({
       {/* Right side - Column visibility */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 ml-auto">
+          <Button variant="outline" size="sm" className="sesh-data-table-columns h-9 ml-auto">
             <SlidersHorizontal className="mr-2 h-4 w-4" />
             Столбцы
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[180px]">
+        <DropdownMenuContent align="end" className="sesh-moderation-columns-menu w-[180px]">
           <DropdownMenuLabel>Видимые столбцы</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {table

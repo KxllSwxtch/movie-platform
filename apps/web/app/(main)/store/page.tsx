@@ -118,9 +118,9 @@ export default function StorePage() {
   };
 
   return (
-    <Container size="full" className="py-6">
+    <Container size="full" className="sesh-store-page py-6">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="sesh-store-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-mp-text-primary">Магазин</h1>
           <p className="text-sm text-mp-text-secondary mt-1">
@@ -128,7 +128,7 @@ export default function StorePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="sesh-store-controls flex flex-col gap-3 sm:flex-row sm:items-center">
           {/* Search */}
           <div className="relative hidden sm:block">
             <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mp-text-disabled" />
@@ -136,12 +136,12 @@ export default function StorePage() {
               placeholder="Поиск товаров..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="pl-9 w-[200px]"
+              className="sesh-store-input pl-9 w-full sm:w-[220px]"
             />
           </div>
 
           <Select value={sortValue} onValueChange={(v) => { setSortValue(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="sesh-store-select w-full sm:w-[170px]">
               <SelectValue placeholder="Сортировка" />
             </SelectTrigger>
             <SelectContent>
@@ -157,7 +157,7 @@ export default function StorePage() {
             variant={showFilters ? 'default' : 'outline'}
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
+            className="sesh-store-filter-button gap-2"
           >
             <SlidersHorizontal className="w-4 h-4" />
             Фильтры
@@ -178,7 +178,7 @@ export default function StorePage() {
             placeholder="Поиск товаров..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="pl-9"
+            className="sesh-store-input pl-9"
           />
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function StorePage() {
       {/* Mobile: Sheet overlay (do not mount on desktop to avoid invisible overlays blocking clicks) */}
       <div className="md:hidden">
         <Sheet open={showFilters} onOpenChange={setShowFilters}>
-          <SheetContent side="left" className="w-80">
+          <SheetContent side="left" className="sesh-store-filter-sheet w-80">
             <SheetHeader>
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>

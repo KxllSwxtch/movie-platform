@@ -2,12 +2,12 @@
 
 import { Play, Heart, ChatCircle, ShareNetwork } from '@phosphor-icons/react';
 import Hls from 'hls.js';
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { AuthorInlineLink } from '@/components/content/author-inline-link';
 import { cn, copyTextToClipboard, formatNumber, formatRelativeTime } from '@/lib/utils';
 import { normalizeMediaUrl } from '@/lib/media-url';
+import { normalizeCreatorIdentity } from '@/lib/author-identity';
 import type { CreatorInput } from '@/lib/author-identity';
 import { useStreamUrl } from '@/hooks/use-streaming';
 import { useContentComments, useCreateContentComment } from '@/hooks/use-comments';
@@ -26,6 +26,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/avatar';
+
+let activeShortVideo: HTMLVideoElement | null = null;
 
 export interface ShortContent {
   id: string;
@@ -68,6 +70,41 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
     const liked = likeStatus.data?.liked ?? false;
     const likeCount = likeStatus.data?.likeCount ?? content.likeCount ?? 0;
     const commentCount = commentsQuery.data?.total ?? content.commentCount ?? 0;
+    const creatorIdentity = normalizeCreatorIdentity(content.creator);
+    const creatorAvatarSrc = creatorIdentity?.avatarUrl
+      ? normalizeMediaUrl(creatorIdentity.avatarUrl)
+      : undefined;
+
+    const pauseCurrentVideo = useCallback((reset = false) => {
+      const el = videoRef.current;
+      if (!el) return;
+      if (activeShortVideo === el) {
+        activeShortVideo = null;
+      }
+      el.pause();
+      if (reset) {
+        el.currentTime = 0;
+      }
+    }, []);
+
+    const playActiveVideo = useCallback(() => {
+      const el = videoRef.current;
+      if (!el) return;
+
+      if (activeShortVideo && activeShortVideo !== el) {
+        activeShortVideo.pause();
+        activeShortVideo.currentTime = 0;
+      }
+      activeShortVideo = el;
+      el.muted = true;
+
+      const playPromise = el.play();
+      if (playPromise && typeof (playPromise as Promise<void>).catch === 'function') {
+        (playPromise as Promise<void>).catch(() => {
+          // Autoplay can be blocked; user can tap the video.
+        });
+      }
+    }, []);
 
     useEffect(() => {
       // Reset local state when card changes
@@ -83,8 +120,9 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         if (videoRef.current) {
           videoRef.current.muted = true;
         }
+        pauseCurrentVideo(true);
       }
-    }, [isActive]);
+    }, [isActive, pauseCurrentVideo]);
 
     const videoSrc = useMemo(() => {
       if (!isActive) return undefined;
@@ -105,10 +143,9 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
 
       if (!isActive || !videoSrc) {
         try {
-          el.pause();
+          pauseCurrentVideo(true);
           el.removeAttribute('src');
           el.load();
-          el.currentTime = 0;
         } catch {
           // ignore
         }
@@ -133,11 +170,8 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         hls.attachMedia(el);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          const playPromise = el.play();
-          if (playPromise && typeof (playPromise as Promise<void>).catch === 'function') {
-            (playPromise as Promise<void>).catch(() => {
-              // Autoplay can be blocked; user can tap the video.
-            });
+          if (videoRef.current === el && isActive) {
+            playActiveVideo();
           }
         });
 
@@ -153,6 +187,10 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         });
 
         return () => {
+          if (activeShortVideo === el) {
+            activeShortVideo = null;
+          }
+          el.pause();
           if (hlsRef.current) {
             hlsRef.current.destroy();
             hlsRef.current = null;
@@ -163,17 +201,23 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
       // Safari (native HLS) or non-HLS URL
       try {
         el.src = videoSrc;
-        const playPromise = el.play();
-        if (playPromise && typeof (playPromise as Promise<void>).catch === 'function') {
-          (playPromise as Promise<void>).catch(() => {
-            // ignore
-          });
-        }
+        playActiveVideo();
       } catch {
         // ignore
       }
-      return undefined;
-    }, [isActive, videoSrc]);
+      return () => {
+        if (activeShortVideo === el) {
+          activeShortVideo = null;
+        }
+        el.pause();
+      };
+    }, [isActive, pauseCurrentVideo, playActiveVideo, videoSrc]);
+
+    useEffect(() => {
+      return () => {
+        pauseCurrentVideo(true);
+      };
+    }, [pauseCurrentVideo]);
 
     const handleToggleLike = async () => {
       if (!isAuthenticated) {
@@ -252,7 +296,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           ref={ref}
           data-short-id={content.id}
           className={cn(
-            'relative w-full h-full snap-start snap-always flex items-center justify-center bg-black',
+            'relative flex h-full w-full snap-start snap-always items-center justify-center bg-transparent px-4 py-0 sm:px-6 md:px-0',
             className
           )}
           onClick={(e) => {
@@ -262,6 +306,8 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
             handleToggleMute();
           }}
         >
+          <div className="relative flex h-full w-full max-w-[760px] items-center justify-center gap-3 sm:gap-4 md:gap-5 lg:max-w-[720px]">
+            <div className="relative h-full w-full overflow-hidden bg-[#05060a] shadow-[0_24px_70px_rgba(0,0,0,0.34)] sm:mt-3 sm:h-[calc(100%-24px)] sm:aspect-[9/16] sm:max-h-[860px] sm:w-auto sm:self-start sm:rounded-[10px]">
         {/* Video element */}
         <video
           ref={videoRef}
@@ -269,70 +315,84 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           loop
           muted={isMuted}
           playsInline
-          autoPlay={isActive}
-          className="absolute inset-0 w-full h-full object-cover"
+          preload={isActive ? 'metadata' : 'none'}
+          className="absolute inset-0 h-full w-full object-cover"
         />
 
         {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/82 via-black/34 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-black/22 to-transparent" />
 
         {/* Bottom info */}
-        <div className="absolute bottom-10 md:bottom-6 left-4 right-[4.5rem] z-10">
-          <h3 className="text-white font-semibold text-lg leading-tight mb-1 line-clamp-2">
+        <div className="absolute bottom-7 left-5 right-5 z-10 sm:bottom-8 sm:left-6 sm:right-6">
+          <h3 className="mb-1.5 line-clamp-2 text-[22px] font-bold leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] sm:text-2xl">
             {content.title}
           </h3>
-          <AuthorInlineLink
-            creator={content.creator}
-            avatarSize="sm"
-            showUsername
-            className="max-w-full text-white/80 hover:text-white [&_.text-mp-text-tertiary]:text-white/55"
-          />
+          {creatorIdentity && (
+            <div className="truncate text-sm font-medium text-white/86 drop-shadow-[0_1px_8px_rgba(0,0,0,0.72)]">
+              {creatorIdentity.displayName}
+              {creatorIdentity.username ? (
+                <span className="ml-2 text-white/60">@{creatorIdentity.username}</span>
+              ) : null}
+            </div>
+          )}
         </div>
+            </div>
 
         {/* Side action bar */}
-        <div className="absolute right-3 bottom-24 md:bottom-20 z-10 flex flex-col items-center gap-5">
+        <div className="absolute bottom-28 right-3 z-10 flex flex-col items-center gap-4 sm:bottom-20 md:static md:translate-y-[38px] md:gap-5">
+          {creatorIdentity && (
+            <div className="rounded-full bg-[linear-gradient(135deg,#b91428,#43259d,#0e6fb7)] p-[2px] shadow-[0_0_14px_rgba(213,32,58,0.22)]">
+              <UserAvatar
+                size="default"
+                name={creatorIdentity.displayName}
+                src={creatorAvatarSrc}
+                className="h-11 w-11 border-2 border-[#080013] bg-[#10131c]"
+              />
+            </div>
+          )}
           <button
             type="button"
-            className="flex flex-col items-center gap-1 group"
+            className="group flex flex-col items-center gap-1"
             aria-label="Нравится"
             onClick={handleToggleLike}
             disabled={likeContent.isPending || unlikeContent.isPending}
           >
-            <div className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
-              <Heart className={cn('w-5 h-5 text-white', liked && 'fill-current')} />
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d5203a]/22 bg-[#07020f]/54 text-white shadow-[0_0_16px_rgba(213,32,58,0.16)] backdrop-blur-md transition-all group-hover:border-[#ff6a78]/50 group-hover:bg-[#1b0712]/74">
+              <Heart className={cn('h-5 w-5', liked && 'fill-current text-[#ff4059]')} />
             </div>
-            <span className="text-xs text-white/80">{formatNumber(likeCount)}</span>
+            <span className="text-xs font-semibold text-white">{formatNumber(likeCount)}</span>
           </button>
 
           <button
             type="button"
-            className="flex flex-col items-center gap-1 group"
+            className="group flex flex-col items-center gap-1"
             aria-label="Комментарии"
             onClick={handleComments}
           >
-            <div className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
-              <ChatCircle className="w-5 h-5 text-white" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d5203a]/22 bg-[#07020f]/54 text-white shadow-[0_0_16px_rgba(213,32,58,0.16)] backdrop-blur-md transition-all group-hover:border-[#55b7ff]/50 group-hover:bg-[#0b1727]/74">
+              <ChatCircle className="h-5 w-5" weight="fill" />
             </div>
-            <span className="text-xs text-white/80">{formatNumber(commentCount)}</span>
+            <span className="text-xs font-semibold text-white">{formatNumber(commentCount)}</span>
           </button>
 
           <button
             type="button"
-            className="flex flex-col items-center gap-1 group"
+            className="group flex flex-col items-center gap-1"
             aria-label="Поделиться"
             onClick={handleShare}
           >
-            <div className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
-              <ShareNetwork className="w-5 h-5 text-white" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d5203a]/22 bg-[#07020f]/54 text-white shadow-[0_0_16px_rgba(213,32,58,0.16)] backdrop-blur-md transition-all group-hover:border-[#55b7ff]/50 group-hover:bg-[#0b1727]/74">
+              <ShareNetwork className="h-5 w-5" weight="fill" />
             </div>
-            <span className="text-xs text-white/80">{formatNumber(content.shareCount ?? 0)}</span>
+            <span className="text-xs font-semibold text-white">{formatNumber(content.shareCount ?? 0)}</span>
           </button>
         </div>
 
         {/* Stream state indicator for active card */}
         {isActive && (isLoading || error || !videoSrc) && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-            <div className="px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white/90 text-sm">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <div className="rounded-full bg-[#07020f]/62 px-4 py-2 text-sm text-white/90 shadow-[0_0_16px_rgba(213,32,58,0.14)] backdrop-blur-md">
               Видео готовится…
             </div>
           </div>
@@ -340,12 +400,13 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
 
         {/* Center play indicator (shown when paused) */}
         {!isActive && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <Play className="w-8 h-8 text-white ml-1" weight="fill" />
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/16 bg-[#07020f]/40 shadow-[0_0_18px_rgba(213,32,58,0.16)] backdrop-blur-md">
+              <Play className="ml-1 h-8 w-8 text-white" weight="fill" />
             </div>
           </div>
         )}
+        </div>
         </div>
 
         <Sheet open={commentsOpen} onOpenChange={setCommentsOpen}>

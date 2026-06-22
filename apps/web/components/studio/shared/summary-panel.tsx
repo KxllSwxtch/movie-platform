@@ -125,7 +125,7 @@ export function SummaryPanel({ form, contentType }: SummaryPanelProps) {
         {/* Badges row */}
         <div className="flex flex-wrap gap-2">
           {typeLabel !== '—' && (
-            <Badge color="#c94bff">{typeLabel}</Badge>
+            <Badge color="#d5203a">{typeLabel}</Badge>
           )}
           {values.ageCategory && (
             <Badge color={ageColor}>{values.ageCategory}</Badge>

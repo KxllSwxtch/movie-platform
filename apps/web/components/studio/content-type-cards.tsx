@@ -61,10 +61,10 @@ export function ContentTypeCards({
             onClick={() => onChange(type)}
             className={cn(
               'flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all duration-200 cursor-pointer',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c94bff]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05060a]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5203a]/45 focus-visible:ring-offset-0',
               isSelected
-                ? 'border-[#c94bff] bg-[#c94bff]/10 shadow-[0_0_15px_rgba(201,75,255,0.15)]'
-                : 'border-mp-border bg-mp-surface/50 hover:border-mp-text-disabled',
+                ? 'border-[#d5203a]/50 bg-[#8f101f]/16 shadow-[0_0_16px_rgba(213,32,58,0.12)]'
+                : 'border-mp-border bg-mp-surface/50 hover:border-[#d5203a]/28',
               disabled && 'pointer-events-none opacity-50'
             )}
           >
@@ -72,7 +72,7 @@ export function ContentTypeCards({
               weight={isSelected ? 'fill' : 'regular'}
               className={cn(
                 'h-8 w-8 transition-colors duration-200',
-                isSelected ? 'text-[#c94bff]' : 'text-mp-text-secondary'
+                isSelected ? 'text-[#ff6a78]' : 'text-mp-text-secondary'
               )}
             />
             <div className="space-y-0.5">

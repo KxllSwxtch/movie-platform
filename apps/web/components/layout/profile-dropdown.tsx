@@ -38,27 +38,27 @@ export function ProfileDropdown() {
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <button
-          className="group flex items-center gap-3 rounded-lg p-1 transition-colors hover:bg-mp-surface/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mp-accent-primary/50"
+          className="sesh-profile-trigger group flex items-center gap-1.5 rounded-lg p-0.5 focus-visible:outline-none"
           aria-label="Меню профиля"
         >
           <UserAvatar
             src={user?.avatarUrl}
             name={fullName}
-            size="sm"
+            size="xs"
           />
           <div className="hidden lg:block text-left">
-            <p className="text-sm font-medium text-mp-text-primary leading-tight">
+            <p className="text-[13px] font-medium text-mp-text-primary leading-tight">
               {fullName}
             </p>
-            <p className="text-xs text-mp-text-secondary leading-tight">
+            <p className="text-[11px] text-mp-text-secondary leading-tight">
               {email}
             </p>
           </div>
-          <CaretDown className="hidden lg:block w-4 h-4 text-mp-text-secondary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          <CaretDown className="hidden h-3.5 w-3.5 text-mp-text-secondary transition-transform duration-200 group-data-[state=open]:rotate-180 lg:block" />
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" sideOffset={8} className="w-56">
+      <DropdownMenuContent align="end" sideOffset={10} className="sesh-profile-dropdown w-64">
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center gap-3">
             <UserAvatar

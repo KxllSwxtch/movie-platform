@@ -10,9 +10,9 @@ export function StudioLayoutClient({
 }) {
   return (
     <StudioAuthGuard>
-      <div className="mx-auto max-w-6xl flex gap-8">
+      <div className="sesh-studio-workspace mx-auto flex max-w-6xl gap-5 lg:gap-8">
         <StudioSidebar />
-        <div className="min-w-0 flex-1">
+        <div className="sesh-studio-workspace-content min-w-0 flex-1">
           <StudioMobileTabs />
           {children}
         </div>

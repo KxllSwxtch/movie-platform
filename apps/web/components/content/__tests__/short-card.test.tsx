@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 
 import { ShortCard, type ShortContent } from "@/components/content/short-card";
@@ -31,8 +31,12 @@ vi.mock("hls.js", () => ({
   },
 }));
 
+const streamUrlMock = vi.hoisted(() => ({
+  data: null as null | { streamUrl: string },
+}));
+
 vi.mock("@/hooks/use-streaming", () => ({
-  useStreamUrl: () => ({ data: null, isLoading: false, error: null }),
+  useStreamUrl: () => ({ data: streamUrlMock.data, isLoading: false, error: null }),
 }));
 
 vi.mock("@/hooks/use-comments", () => ({
@@ -73,14 +77,17 @@ const mockShort: ShortContent = {
 };
 
 describe("ShortCard", () => {
-  it("renders short title and clickable author profile link", () => {
+  beforeEach(() => {
+    streamUrlMock.data = null;
+    vi.clearAllMocks();
+  });
+
+  it("renders short title and creator identity", () => {
     render(<ShortCard content={mockShort} />);
 
     expect(screen.getByText("Test Short")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Tester/ })).toHaveAttribute(
-      "href",
-      "/author/tester",
-    );
+    expect(screen.getByText("Tester")).toBeInTheDocument();
+    expect(screen.getByText("@tester")).toBeInTheDocument();
   });
 
   it("renders like, comment, and share buttons", () => {
@@ -108,9 +115,17 @@ describe("ShortCard", () => {
     expect(ref.current).toHaveAttribute("data-short-id", "s1");
   });
 
-  it("sets video autoPlay when isActive=true", () => {
+  it("plays active video through controlled muted playback without autoPlay", async () => {
+    streamUrlMock.data = { streamUrl: "/short.mp4" };
+
     render(<ShortCard content={mockShort} isActive />);
 
-    expect(document.querySelector("video")).toHaveAttribute("autoplay");
+    const video = document.querySelector("video");
+    expect(video).not.toHaveAttribute("autoplay");
+
+    await waitFor(() => {
+      expect(HTMLVideoElement.prototype.play).toHaveBeenCalledTimes(1);
+    });
+    expect(video).toHaveProperty("muted", true);
   });
 });

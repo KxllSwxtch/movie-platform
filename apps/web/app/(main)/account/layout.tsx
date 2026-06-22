@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { AccountLayoutClient } from './layout-client';
 
 export const metadata: Metadata = {
-  title: 'Мой аккаунт — MoviePlatform',
+  title: 'Мой аккаунт — SESH',
   description: 'Управляйте профилем, подписками и настройками вашего аккаунта',
 };
 

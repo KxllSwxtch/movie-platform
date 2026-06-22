@@ -2,7 +2,7 @@ import type { ShortContent } from "@/components/content";
 import type { CreatorInput } from "@/lib/author-identity";
 
 const fallbackCreator = {
-  displayName: "MoviePlatform",
+  displayName: "SESH",
   username: "movieplatform",
 };
 

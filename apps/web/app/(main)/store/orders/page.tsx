@@ -73,8 +73,10 @@ export default function OrdersPage() {
   };
 
   return (
-    <Container size="lg" className="py-6">
-      <h1 className="text-2xl font-bold text-mp-text-primary mb-6">Мои заказы</h1>
+    <Container size="lg" className="sesh-store-page sesh-orders-page py-6">
+      <div className="sesh-store-header mb-6">
+        <h1 className="text-2xl font-bold text-mp-text-primary">Мои заказы</h1>
+      </div>
 
       {/* Filter tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
@@ -88,7 +90,7 @@ export default function OrdersPage() {
 
       {isLoading ? null : orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-full bg-mp-surface flex items-center justify-center mb-4">
+          <div className="sesh-store-empty-icon w-16 h-16 rounded-full flex items-center justify-center mb-4">
             <Package className="w-8 h-8 text-mp-text-disabled" />
           </div>
           <h3 className="text-lg font-medium text-mp-text-primary mb-2">
@@ -108,7 +110,7 @@ export default function OrdersPage() {
               <Link
                 key={order.id}
                 href={`/store/orders/${order.id}`}
-                className="block rounded-xl border border-mp-border p-4 hover:border-mp-accent-primary/50 transition-colors"
+                className="sesh-store-card block p-4 transition-all"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">

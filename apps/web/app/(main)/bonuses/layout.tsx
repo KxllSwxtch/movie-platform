@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Бонусы',
-  description: 'Управляйте бонусами на MoviePlatform — баланс, история начислений и вывод средств.',
+  description: 'Управляйте бонусами на SESH — баланс, история начислений и вывод средств.',
   openGraph: {
     title: 'Бонусы',
-    description: 'Управляйте бонусами на MoviePlatform — баланс, история начислений и вывод средств.',
+    description: 'Управляйте бонусами на SESH — баланс, история начислений и вывод средств.',
   },
 };
 

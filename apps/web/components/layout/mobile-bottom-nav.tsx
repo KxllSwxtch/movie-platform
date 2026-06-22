@@ -30,7 +30,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-mp-bg-secondary/95 backdrop-blur-xl border-t border-mp-border"
+      className="sesh-mobile-bottom-nav fixed bottom-0 inset-x-0 z-50 md:hidden bg-mp-bg-secondary/95 backdrop-blur-xl border-t border-mp-border"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center justify-around h-16">

@@ -33,9 +33,8 @@ export function PartnerQuickActions({
       </Button>
 
       <Button
-        variant={canWithdraw ? 'default' : 'outline'}
+        variant={canWithdraw ? 'gradient' : 'outline'}
         asChild
-        className={canWithdraw ? 'bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary' : ''}
       >
         <Link href="/bonuses/withdraw">
           <Wallet className="mr-2 h-4 w-4" />

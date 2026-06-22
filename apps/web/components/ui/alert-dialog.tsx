@@ -5,6 +5,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
+import { useOverlayBodyCleanup } from '@/hooks/use-overlay-body-cleanup';
 
 const AlertDialog = AlertDialogPrimitive.Root;
 
@@ -19,7 +20,7 @@ const AlertDialogOverlay = React.forwardRef<
   <AlertDialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-60 bg-black/60 backdrop-blur-sm pointer-events-auto',
+      'sesh-ui-overlay fixed inset-0 z-60 bg-black/60 backdrop-blur-sm pointer-events-auto',
       'data-[state=open]:animate-in data-[state=closed]:animate-out',
       'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className
@@ -32,14 +33,15 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <AlertDialogPortal>
+>(({ className, ...props }, ref) => {
+  useOverlayBodyCleanup();
+  return <AlertDialogPortal>
     <AlertDialogOverlay />
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
         'fixed left-[50%] top-[50%] z-60 grid w-[calc(100vw-2rem)] sm:w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4',
-        'bg-mp-surface border border-mp-border p-6 shadow-lg duration-200 rounded-xl',
+        'sesh-ui-dialog border p-6 shadow-lg duration-200 rounded-xl',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -49,8 +51,8 @@ const AlertDialogContent = React.forwardRef<
       )}
       {...props}
     />
-  </AlertDialogPortal>
-));
+  </AlertDialogPortal>;
+});
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({

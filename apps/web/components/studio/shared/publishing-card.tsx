@@ -69,14 +69,14 @@ function StatusCard({
       className={cn(
         'flex flex-col items-start rounded-lg border p-3 text-left transition-all duration-200',
         selected
-          ? 'border-[#c94bff] bg-[#c94bff]/10'
-          : 'border-[#272b38] bg-[#10131c]/50 hover:border-[#5a6072]'
+          ? 'border-[#d5203a]/50 bg-[#8f101f]/16 shadow-[0_0_14px_rgba(213,32,58,0.1)]'
+          : 'border-[#272b38] bg-[#10131c]/50 hover:border-[#d5203a]/28'
       )}
     >
       <span
         className={cn(
           'text-sm font-medium',
-          selected ? 'text-[#c94bff]' : 'text-[#f5f7ff]'
+          selected ? 'text-[#ff6a78]' : 'text-[#f5f7ff]'
         )}
       >
         {label}

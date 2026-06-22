@@ -266,9 +266,9 @@ export default function AccountDashboardPage() {
                     )}
                     {/* Progress bar at bottom */}
                     <div className="absolute bottom-0 left-0 right-0">
-                      <div className="h-1 bg-white/20">
+                      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
                         <div
-                          className="h-full bg-mp-accent-primary transition-all"
+                          className="h-full sesh-progress-bar transition-all"
                           style={{ width: `${progressPercent}%` }}
                         />
                       </div>

@@ -41,7 +41,7 @@ describe('ShortsPage data mapping', () => {
         creator: null,
       }).creator,
     ).toEqual({
-      displayName: 'MoviePlatform',
+      displayName: 'SESH',
       username: 'movieplatform',
     });
   });

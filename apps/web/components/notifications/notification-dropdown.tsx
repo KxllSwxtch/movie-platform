@@ -61,9 +61,9 @@ export function NotificationDropdown({
   }
 
   return (
-    <div className="w-full sm:w-[460px] md:w-[520px] max-w-[calc(100vw-1rem)] flex flex-col max-h-full">
+    <div className="sesh-notifications-panel w-full sm:w-[460px] md:w-[520px] max-w-[calc(100vw-1rem)] flex flex-col max-h-full">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 border-b border-mp-border">
+      <div className="sesh-notifications-header flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 border-b border-mp-border">
         <h3 className="text-sm font-semibold text-mp-text-primary">
           Уведомления
         </h3>
@@ -131,7 +131,7 @@ export function NotificationDropdown({
 
       {/* Footer */}
       {!isEmpty && (
-        <div className="border-t border-mp-border px-4 py-2.5">
+        <div className="sesh-notifications-footer border-t border-mp-border px-4 py-2.5">
           <Link
             href="/account/notifications"
             onClick={onClose}

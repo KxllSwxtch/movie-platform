@@ -25,14 +25,14 @@ export function DashboardHero({ content, isLoading }: DashboardHeroProps) {
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(135deg, rgba(201,75,255,0.2) 0%, rgba(40,224,196,0.12) 40%, rgba(255,107,90,0.08) 70%, rgba(16,19,28,1) 100%)',
+              'linear-gradient(135deg, rgba(213,32,58,0.2) 0%, rgba(20,125,202,0.12) 40%, rgba(255,107,90,0.08) 70%, rgba(16,19,28,1) 100%)',
           }}
         />
         <div
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(201,75,255,0.1) 0%, transparent 60%)',
+              'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(213,32,58,0.1) 0%, transparent 60%)',
           }}
         />
         <div className="relative h-full flex flex-col justify-end p-6 md:p-10 max-w-xl">

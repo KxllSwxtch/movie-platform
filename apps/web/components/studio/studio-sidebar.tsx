@@ -36,7 +36,7 @@ export function StudioSidebar() {
             onClick={toggleSidebarCollapsed}
             aria-label={isSidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
             className={cn(
-              'mb-2 hidden w-full items-center rounded-lg text-sm font-medium text-mp-text-secondary transition-colors hover:bg-mp-surface/80 hover:text-mp-text-primary lg:flex',
+              'sesh-nav-item mb-2 hidden w-full items-center rounded-lg text-sm font-medium transition-colors lg:flex',
               isSidebarCollapsed ? 'h-11 justify-center px-0' : 'gap-3 px-3 py-2.5',
             )}
           >
@@ -58,11 +58,9 @@ export function StudioSidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex items-center rounded-lg text-sm font-medium transition-colors',
+                    'sesh-nav-item flex items-center rounded-lg text-sm font-medium transition-colors',
                     isSidebarCollapsed ? 'h-11 justify-center gap-0 px-0' : 'gap-3 px-3 py-2.5',
-                    isActive
-                      ? 'bg-mp-accent-primary/10 text-mp-accent-primary'
-                      : 'text-mp-text-secondary hover:bg-mp-surface/80 hover:text-mp-text-primary',
+                    isActive && 'sesh-nav-item-active',
                   )}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
@@ -83,8 +81,8 @@ export function StudioMobileTabs() {
   const pathname = usePathname();
 
   return (
-    <div className="lg:hidden -mx-4 sm:-mx-6 mb-6 overflow-x-auto border-b border-mp-border">
-      <div className="flex min-w-max gap-1 px-4 sm:px-6 pb-2">
+    <div className="sesh-account-mobile-tabs lg:hidden mb-6">
+      <div className="sesh-account-mobile-tabs-grid">
         {STUDIO_NAV.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
@@ -95,10 +93,8 @@ export function StudioMobileTabs() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-colors',
-                isActive
-                  ? 'bg-mp-accent-primary/10 text-mp-accent-primary'
-                  : 'text-mp-text-secondary hover:bg-mp-surface/80 hover:text-mp-text-primary',
+                'sesh-nav-item flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-colors',
+                isActive && 'sesh-nav-item-active',
               )}
             >
               <item.icon className="h-3.5 w-3.5 shrink-0" />

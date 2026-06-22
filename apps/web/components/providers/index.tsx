@@ -4,6 +4,7 @@ import * as React from 'react';
 import dynamic from 'next/dynamic';
 
 import { NetworkStatus } from '@/components/ui/network-status';
+import { getQueryClient } from '@/lib/query-client';
 import { useAuthStore } from '@/stores/auth.store';
 
 const Toaster = dynamic(
@@ -28,13 +29,36 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   // Hydrate auth store on mount (SSR-safe)
   React.useEffect(() => {
+    let settled = false;
     // Subscribe to finish-hydration BEFORE triggering rehydrate so the
     // callback fires even if rehydrate completes synchronously.
     const unsub = useAuthStore.persist.onFinishHydration(() => {
+      settled = true;
       useAuthStore.getState().setHydrated(true);
     });
-    useAuthStore.persist.rehydrate();
+    Promise.resolve(useAuthStore.persist.rehydrate())
+      .catch(() => {
+        useAuthStore.getState().logout();
+      })
+      .finally(() => {
+        if (!settled) {
+          useAuthStore.getState().setHydrated(true);
+        }
+      });
+
     return unsub;
+  }, []);
+
+  React.useEffect(() => {
+    const handleSessionExpired = () => {
+      useAuthStore.getState().logout();
+      getQueryClient().clear();
+    };
+
+    window.addEventListener('mp-auth-session-expired', handleSessionExpired);
+    return () => {
+      window.removeEventListener('mp-auth-session-expired', handleSessionExpired);
+    };
   }, []);
 
   return (

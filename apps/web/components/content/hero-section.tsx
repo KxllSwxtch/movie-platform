@@ -13,7 +13,7 @@ import { useAddToWatchlist } from "@/hooks/use-account";
  */
 const genreColors: Record<string, string> = {
   horror: "#EF4444",
-  action: "#C94BFF",
+  action: "#d5203a",
   drama: "#3B82F6",
   comedy: "#28E0C4",
   romance: "#FF6B5A",
@@ -22,7 +22,7 @@ const genreColors: Record<string, string> = {
   fantasy: "#EC4899",
   // Russian genre names
   ужасы: "#EF4444",
-  боевик: "#C94BFF",
+  боевик: "#d5203a",
   драма: "#3B82F6",
   комедия: "#28E0C4",
   мелодрама: "#FF6B5A",
@@ -31,7 +31,7 @@ const genreColors: Record<string, string> = {
   фэнтези: "#EC4899",
   документальный: "#28E0C4",
   анимация: "#F97316",
-  default: "#C94BFF",
+  default: "#d5203a",
 };
 
 export interface HeroContent {
@@ -158,7 +158,7 @@ export function HeroSection({
           <Button
             variant="solid"
             size="lg"
-            className="rounded-lg shadow-button hover:shadow-button-hover"
+            className="rounded-lg"
             asChild
             onClick={onCTAClick}
           >

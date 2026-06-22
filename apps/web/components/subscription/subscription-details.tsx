@@ -198,8 +198,8 @@ export function SubscriptionDetails({
               <ul className="space-y-2">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-center gap-2 text-sm text-mp-text-secondary">
-                    <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-mp-accent-primary/20">
-                      <Check className="h-2.5 w-2.5 text-mp-accent-primary" />
+                    <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#8f101f]/28">
+                      <Check className="h-2.5 w-2.5 text-[#ff6a78]" />
                     </div>
                     {feature}
                   </li>

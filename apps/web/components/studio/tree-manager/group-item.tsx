@@ -175,7 +175,7 @@ export function GroupItem({
       style={style}
       className={cn(
         'rounded-lg border bg-[#10131c] border-[#272b38] transition-shadow duration-200',
-        isDragging && 'ring-2 ring-[#c94bff]/50 shadow-lg opacity-90'
+        isDragging && 'ring-2 ring-[#d5203a]/50 shadow-lg opacity-90'
       )}
     >
       {/* ---- Group header ---- */}
@@ -264,7 +264,7 @@ export function GroupItem({
           <button
             type="button"
             onClick={onAddItem}
-            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#272b38] py-2 text-xs text-[#9ca2bc] transition-colors hover:border-[#c94bff]/50 hover:text-[#c94bff]"
+            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#272b38] py-2 text-xs text-[#9ca2bc] transition-colors hover:border-[#d5203a]/50 hover:text-[#ff6a78]"
           >
             <Plus size={14} weight="bold" />
             Добавить {itemLabel.toLowerCase()}

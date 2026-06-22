@@ -97,6 +97,24 @@ export function formatNumber(num: number): string {
 }
 
 /**
+ * Format view count with correct Russian pluralization.
+ */
+export function formatViewCount(count?: number | null): string {
+  const value = count ?? 0;
+  const absValue = Math.abs(value);
+  const lastTwo = absValue % 100;
+  const last = absValue % 10;
+
+  let word = 'просмотров';
+  if (lastTwo < 11 || lastTwo > 14) {
+    if (last === 1) word = 'просмотр';
+    else if (last >= 2 && last <= 4) word = 'просмотра';
+  }
+
+  return `${formatNumber(value)} ${word}`;
+}
+
+/**
  * Format file size
  */
 export function formatFileSize(bytes: number): string {

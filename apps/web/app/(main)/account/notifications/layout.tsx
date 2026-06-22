@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Уведомления | MoviePlatform',
+  title: 'Уведомления | SESH',
   description: 'Просматривайте и управляйте вашими уведомлениями',
 };
 

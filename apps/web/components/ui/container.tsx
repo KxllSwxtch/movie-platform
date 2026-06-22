@@ -8,10 +8,10 @@ interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const sizeClasses = {
-  sm: 'max-w-2xl', // 672px
-  md: 'max-w-4xl', // 896px
-  lg: 'max-w-6xl', // 1152px
-  xl: 'max-w-7xl', // 1280px
+  sm: 'max-w-2xl',
+  md: 'max-w-4xl',
+  lg: 'max-w-6xl',
+  xl: 'max-w-7xl',
   full: 'max-w-full',
 };
 
@@ -20,7 +20,13 @@ const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
     return (
       <Component
         ref={ref}
-        className={cn('mx-auto w-full px-4 sm:px-6 lg:px-8', sizeClasses[size], className)}
+        className={cn(
+          size === 'full'
+            ? 'w-full'
+            : 'mx-auto w-full px-4 sm:px-6 lg:px-8',
+          sizeClasses[size],
+          className,
+        )}
         {...props}
       >
         {children}
@@ -28,6 +34,7 @@ const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
     );
   }
 );
+
 Container.displayName = 'Container';
 
 export { Container };

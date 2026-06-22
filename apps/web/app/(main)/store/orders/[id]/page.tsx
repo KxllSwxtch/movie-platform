@@ -86,7 +86,7 @@ export default function OrderDetailPage() {
   if (isLoading || !order) return null;
 
   return (
-    <Container size="lg" className="py-6">
+    <Container size="lg" className="sesh-store-page sesh-order-detail py-6">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-sm text-mp-text-secondary mb-6">
         <Link href="/store" className="hover:text-mp-text-primary transition-colors">
@@ -128,7 +128,7 @@ export default function OrderDetailPage() {
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status timeline */}
-          <Card>
+          <Card className="sesh-store-panel">
             <CardHeader>
               <CardTitle className="text-lg">Статус заказа</CardTitle>
             </CardHeader>
@@ -138,7 +138,7 @@ export default function OrderDetailPage() {
           </Card>
 
           {/* Items table */}
-          <Card>
+          <Card className="sesh-store-panel">
             <CardHeader>
               <CardTitle className="text-lg">Товары</CardTitle>
             </CardHeader>
@@ -181,7 +181,7 @@ export default function OrderDetailPage() {
           </Card>
 
           {/* Shipping address */}
-          <Card>
+          <Card className="sesh-store-panel">
             <CardHeader>
               <CardTitle className="text-lg">Адрес доставки</CardTitle>
             </CardHeader>
@@ -198,7 +198,7 @@ export default function OrderDetailPage() {
 
           {/* Tracking number */}
           {order.trackingNumber && (
-            <Card>
+            <Card className="sesh-store-panel">
               <CardHeader>
                 <CardTitle className="text-lg">Отслеживание</CardTitle>
               </CardHeader>
@@ -225,7 +225,7 @@ export default function OrderDetailPage() {
 
         {/* Payment summary sidebar */}
         <div>
-          <Card className="sticky top-24">
+          <Card className="sesh-store-panel sticky top-24">
             <CardHeader>
               <CardTitle className="text-lg">Оплата</CardTitle>
             </CardHeader>
@@ -265,7 +265,7 @@ export default function OrderDetailPage() {
 
       {/* Cancel confirmation dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent>
+        <DialogContent className="border-[#b94bff]/25 bg-[#0d0718]/96 shadow-[0_24px_70px_rgba(0,0,0,0.48)]">
           <DialogHeader>
             <DialogTitle>Отменить заказ?</DialogTitle>
             <DialogDescription>

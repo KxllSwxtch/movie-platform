@@ -186,13 +186,13 @@ export function ShortEditor({ content, contentId }: ShortEditorProps) {
             {/* Hints */}
             <div className="mb-4 flex flex-wrap gap-3">
               <div className="flex items-center gap-2 rounded-lg border border-[#272b38] bg-[#151824]/50 px-3 py-2">
-                <DeviceMobileCamera className="h-4 w-4 text-[#c94bff]" />
+                <DeviceMobileCamera className="h-4 w-4 text-[#ff6a78]" />
                 <span className="text-xs text-[#9ca2bc]">
                   Вертикальное видео 9:16
                 </span>
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-[#272b38] bg-[#151824]/50 px-3 py-2">
-                <Timer className="h-4 w-4 text-[#28e0c4]" />
+                <Timer className="h-4 w-4 text-[#5fb6ff]" />
                 <span className="text-xs text-[#9ca2bc]">
                   Максимум 60 секунд
                 </span>
@@ -363,7 +363,6 @@ export function ShortEditor({ content, contentId }: ShortEditorProps) {
               type="button"
               onClick={handleSave}
               disabled={updateContent.isPending}
-              className="bg-[#c94bff] hover:bg-[#c94bff]/90 text-white"
             >
               {updateContent.isPending ? (
                 <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />

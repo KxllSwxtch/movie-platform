@@ -143,8 +143,8 @@ export default function TutorialsPage() {
   );
 
   return (
-    <Container size="full" className="py-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <Container size="full" className="sesh-catalog-page py-6">
+      <div className="sesh-catalog-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-mp-text-primary">Обучение</h1>
           <p className="text-sm text-mp-text-secondary mt-1">
@@ -152,7 +152,7 @@ export default function TutorialsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="sesh-catalog-controls flex flex-col gap-3 sm:flex-row sm:items-center">
           <Select
             value={sortBy}
             onValueChange={(v) => {
@@ -160,7 +160,7 @@ export default function TutorialsPage() {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Сортировка" />
             </SelectTrigger>
             <SelectContent>
@@ -172,14 +172,14 @@ export default function TutorialsPage() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center border border-mp-border rounded-lg p-1">
+          <div className="sesh-view-toggle flex items-center border border-mp-border rounded-lg p-1">
             <button
               onClick={() => setViewMode("grid")}
               className={cn(
                 "p-1.5 rounded transition-colors",
                 viewMode === "grid"
-                  ? "bg-mp-accent-primary/20 text-mp-accent-primary"
-                  : "text-mp-text-secondary hover:text-mp-text-primary",
+                  ? "sesh-view-toggle-active"
+                  : "sesh-view-toggle-inactive",
               )}
               aria-label="Grid view"
             >
@@ -190,8 +190,8 @@ export default function TutorialsPage() {
               className={cn(
                 "p-1.5 rounded transition-colors",
                 viewMode === "list"
-                  ? "bg-mp-accent-primary/20 text-mp-accent-primary"
-                  : "text-mp-text-secondary hover:text-mp-text-primary",
+                  ? "sesh-view-toggle-active"
+                  : "sesh-view-toggle-inactive",
               )}
               aria-label="List view"
             >
@@ -203,7 +203,7 @@ export default function TutorialsPage() {
             variant={showFilters ? "default" : "outline"}
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
+            className="sesh-filter-button gap-2"
           >
             <SlidersHorizontal className="w-4 h-4" />
             Фильтры
@@ -219,7 +219,7 @@ export default function TutorialsPage() {
       {/* Mobile: Sheet overlay (do not mount on desktop to avoid invisible overlays blocking clicks) */}
       <div className="md:hidden">
         <Sheet open={showFilters} onOpenChange={setShowFilters}>
-          <SheetContent side="left" className="w-80">
+          <SheetContent side="left" className="sesh-mobile-filter-sheet w-[min(340px,calc(100vw-24px))]">
             <SheetHeader>
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>

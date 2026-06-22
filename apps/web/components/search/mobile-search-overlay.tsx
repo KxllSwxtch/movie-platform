@@ -82,9 +82,9 @@ export function MobileSearchOverlay() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-mp-bg-primary md:hidden">
+    <div className="sesh-mobile-search fixed inset-0 z-50 bg-mp-bg-primary md:hidden">
       {/* Header with search input */}
-      <div className="flex items-center gap-3 p-4 border-b border-mp-border">
+      <div className="sesh-mobile-search-header flex items-center gap-3 p-4 border-b border-mp-border">
         <form onSubmit={handleSubmit} className="flex-1 relative">
           <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mp-text-disabled" />
           <input

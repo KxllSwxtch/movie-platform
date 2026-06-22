@@ -98,7 +98,7 @@ export function ChildItem({
       style={style}
       className={cn(
         'group/child flex flex-col gap-2 rounded-md border bg-[#080b12] border-[#272b38]/50 p-3 transition-shadow duration-200',
-        isDragging && 'ring-2 ring-[#c94bff]/50 shadow-lg opacity-90'
+        isDragging && 'ring-2 ring-[#d5203a]/50 shadow-lg opacity-90'
       )}
     >
       {/* Top row: handle + number + title input + badges + delete */}

@@ -147,7 +147,7 @@ export function TransactionCard({
   return (
     <div
       className={cn(
-        'group rounded-xl border border-mp-border bg-mp-bg-secondary p-4 transition-all',
+        'sesh-transaction-card group rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(20,9,34,0.9),rgba(8,3,18,0.92))] p-4 shadow-[0_14px_38px_rgba(0,0,0,0.24)] transition-all hover:border-[#b94bff]/30',
         isClickable && 'cursor-pointer hover:border-mp-border/80 hover:bg-mp-surface/50',
         className
       )}
@@ -279,7 +279,7 @@ export function TransactionCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-mp-border bg-mp-bg-secondary p-4',
+        'sesh-transaction-card rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(20,9,34,0.9),rgba(8,3,18,0.92))] p-4 shadow-[0_14px_38px_rgba(0,0,0,0.24)]',
         className
       )}
     >

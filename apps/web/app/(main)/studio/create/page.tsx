@@ -18,7 +18,7 @@ const CONTENT_TYPES = [
     description: 'Многосерийный контент с сезонами и эпизодами',
     icon: FilmStrip,
     href: '/studio/create/series',
-    color: '#c94bff',
+    color: '#d5203a',
   },
   {
     type: 'CLIP',
@@ -26,7 +26,7 @@ const CONTENT_TYPES = [
     description: 'Музыкальные видео, трейлеры и промо-видео',
     icon: MusicNote,
     href: '/studio/create/video',
-    color: '#28e0c4',
+    color: '#147dca',
   },
   {
     type: 'SHORT',
@@ -34,7 +34,7 @@ const CONTENT_TYPES = [
     description: 'Короткие вертикальные видео до 60 секунд',
     icon: Lightning,
     href: '/studio/create/short',
-    color: '#ff6b5a',
+    color: '#b91428',
   },
   {
     type: 'TUTORIAL',
@@ -48,22 +48,22 @@ const CONTENT_TYPES = [
 
 export default function StudioCreatePage() {
   return (
-    <div className="py-8 md:py-12">
+    <div className="sesh-create-page py-6 md:py-8">
       <StudioPageHeader
         title="Что вы хотите создать?"
         description="Выберите тип контента — для каждого типа мы подготовили оптимальную форму"
       />
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-2xl">
+      <div className="sesh-create-grid mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {CONTENT_TYPES.map(({ type, label, description, icon: Icon, href, color }) => (
           <Link
             key={type}
             href={href}
             className={cn(
-              'group flex flex-col items-start gap-3 rounded-xl border p-5 text-left transition-all duration-200',
+              'sesh-create-card group flex flex-col items-start gap-3 rounded-xl border p-5 text-left transition-all duration-200',
               'border-[#272b38] bg-[#10131c]/80 hover:bg-[#10131c]',
               'hover:border-[color:var(--accent)] hover:shadow-[0_0_20px_rgba(var(--glow),0.15)]',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c94bff]/50',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5203a]/45',
             )}
             style={{
               '--accent': color,

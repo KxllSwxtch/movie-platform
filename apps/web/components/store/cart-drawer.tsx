@@ -44,8 +44,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[400px] flex flex-col bg-mp-bg-secondary border-mp-border p-0">
-        <SheetHeader className="px-6 py-4 border-b border-mp-border">
+      <SheetContent
+        side="right"
+        className="sesh-cart-drawer w-full sm:w-[430px] flex flex-col p-0"
+      >
+        <SheetHeader className="sesh-cart-drawer-header px-6 py-5">
           <SheetTitle className="text-mp-text-primary">
             Корзина {!isEmpty && `(${cart?.itemCount ?? 0})`}
           </SheetTitle>
@@ -53,26 +56,26 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-mp-accent-primary border-t-transparent rounded-full animate-spin" />
+            <div className="sesh-cart-spinner w-8 h-8 rounded-full animate-spin" />
           </div>
         ) : isEmpty ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-mp-surface flex items-center justify-center mb-4">
+            <div className="sesh-cart-empty-icon w-16 h-16 rounded-full flex items-center justify-center mb-4">
               <Bag className="w-8 h-8 text-mp-text-disabled" />
             </div>
             <h3 className="text-base font-medium text-mp-text-primary mb-1">Корзина пуста</h3>
             <p className="text-sm text-mp-text-secondary mb-4">
               Добавьте товары из магазина
             </p>
-            <Button variant="outline" asChild onClick={() => onOpenChange(false)}>
+            <Button className="sesh-cart-secondary-button" asChild onClick={() => onOpenChange(false)}>
               <Link href="/store">Перейти в магазин</Link>
             </Button>
           </div>
         ) : (
           <>
             {/* Items list */}
-            <ScrollArea className="flex-1 px-6">
-              <div className="divide-y divide-mp-border">
+            <ScrollArea className="flex-1 px-5">
+              <div className="sesh-cart-items">
                 {items.map((item) => (
                   <CartItemRow
                     key={item.productId}
@@ -87,7 +90,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             </ScrollArea>
 
             {/* Footer */}
-            <div className="border-t border-mp-border px-6 py-4 space-y-3">
+            <div className="sesh-cart-drawer-footer px-6 py-5 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-mp-text-secondary">Итого</span>
                 <span className="text-lg font-semibold text-mp-text-primary">
@@ -95,14 +98,14 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 </span>
               </div>
 
-              <Button variant="gradient" className="w-full" asChild onClick={() => onOpenChange(false)}>
+              <Button className="sesh-cart-checkout-button w-full" asChild onClick={() => onOpenChange(false)}>
                 <Link href="/store/checkout">Оформить заказ</Link>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-mp-text-secondary"
+                className="sesh-cart-clear-button w-full"
                 onClick={() => clearCart()}
               >
                 Очистить корзину

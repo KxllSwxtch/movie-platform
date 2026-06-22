@@ -6,31 +6,25 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent bg-clip-padding text-sm font-medium outline-none transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-[#d5203a]/45 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default:
-          'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:-translate-y-0.5 active:translate-y-0',
+        default: 'sesh-button',
         destructive:
-          'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:-translate-y-0.5 active:translate-y-0',
-        outline:
-          'border border-mp-border bg-transparent shadow-sm hover:bg-mp-surface-3 hover:border-mp-border/80',
-        secondary:
-          'bg-mp-surface-3 text-mp-text-primary border border-mp-border/50 hover:bg-mp-surface-4 hover:border-mp-border',
-        ghost: 'text-mp-text-secondary hover:text-mp-text-primary hover:bg-white/5',
-        link: 'text-primary underline-offset-4 hover:underline',
-        // MoviePlatform custom variants - Professional with subtle lift
-        gradient:
-          'bg-mp-accent-primary text-white shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0',
-        glow: 'bg-mp-accent-primary text-white shadow-glow-primary hover:shadow-glow-secondary hover:-translate-y-0.5 active:translate-y-0',
+          'bg-[#8f101f] text-white shadow-[inset_0_0_0_1px_rgba(255,80,96,0.22),0_10px_24px_rgba(0,0,0,0.28)] hover:bg-[#a81428] hover:-translate-y-0.5 active:translate-y-0',
+        outline: 'sesh-button-outline',
+        secondary: 'sesh-button-secondary',
+        ghost: 'sesh-button-ghost',
+        link: 'text-[#ff6a78] underline-offset-4 hover:text-[#69bfff] hover:underline',
+        gradient: 'sesh-button',
+        glow: 'sesh-button',
         // Professional variants
-        glass:
-          'backdrop-blur-md bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20',
+        glass: 'sesh-button-glass',
         pill:
-          'rounded-full bg-mp-surface-2 text-mp-text-secondary border border-mp-border/30 hover:bg-mp-surface-3 hover:text-mp-text-primary hover:border-mp-border/50',
+          'sesh-button-secondary rounded-full',
         solid:
-          'bg-white text-mp-bg-primary font-semibold shadow-sm hover:bg-white/95 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0',
+          'bg-[#f5f7ff] text-[#07020f] font-semibold shadow-[0_10px_24px_rgba(0,0,0,0.24)] hover:bg-white hover:-translate-y-0.5 active:translate-y-0',
       },
       size: {
         default: 'h-10 px-4 py-2',

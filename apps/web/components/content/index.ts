@@ -4,6 +4,7 @@ export { AuthorInlineLink } from "./author-inline-link";
 export { ClipCard, type ClipContent } from "./clip-card";
 export { CreatorChannelBlock } from "./creator-channel-block";
 export { ContentImage } from "./content-image";
+export { HoverVideoPreview } from "./hover-video-preview";
 export { ContentComments } from "./content-comments";
 export { ContentRating } from "./content-rating";
 export { ContentRow } from "./content-row";

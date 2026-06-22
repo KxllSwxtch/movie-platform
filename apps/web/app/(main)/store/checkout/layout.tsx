@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Оформление заказа — MoviePlatform',
-  description: 'Оформите заказ в магазине MoviePlatform.',
+  title: 'Оформление заказа — SESH',
+  description: 'Оформите заказ в магазине SESH.',
 };
 
 export default function CheckoutLayout({ children }: { children: React.ReactNode }) {

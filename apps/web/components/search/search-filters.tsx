@@ -201,7 +201,7 @@ export function SearchFilters({
       <div className={cn('flex items-center gap-3 md:hidden', className)}>
         <Drawer>
           <DrawerTrigger asChild>
-            <Button variant="outline" size="default" className="gap-2">
+            <Button variant="outline" size="default" className="min-w-0 flex-1 gap-2">
               <SlidersHorizontal className="h-4 w-4" />
               Фильтры
               {activeCount > 0 && (
@@ -211,7 +211,7 @@ export function SearchFilters({
               )}
             </Button>
           </DrawerTrigger>
-          <DrawerContent>
+          <DrawerContent className="sesh-search-filter-drawer">
             <DrawerHeader>
               <DrawerTitle>Фильтры</DrawerTitle>
             </DrawerHeader>
@@ -241,7 +241,7 @@ export function SearchFilters({
           value={filters.sortBy}
           onValueChange={(v) => onFiltersChange({ ...filters, sortBy: v })}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="min-w-0 flex-1">
             <SelectValue placeholder="Сортировка" />
           </SelectTrigger>
           <SelectContent>

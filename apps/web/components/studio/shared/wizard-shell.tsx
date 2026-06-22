@@ -62,7 +62,7 @@ function StepIndicator({
               <div
                 className={cn(
                   'h-px flex-1 transition-colors duration-300',
-                  isCompleted ? 'bg-[#c94bff]' : 'bg-[#272b38]'
+                  isCompleted ? 'bg-[#b91428]' : 'bg-[#272b38]'
                 )}
               />
             )}
@@ -79,9 +79,9 @@ function StepIndicator({
               <span
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300',
-                  isCompleted && 'bg-[#c94bff] border-[#c94bff] text-white',
+                  isCompleted && 'bg-[#b91428] border-[#d5203a] text-white',
                   isCurrent &&
-                    'border-[#c94bff] text-[#c94bff] bg-[#c94bff]/10',
+                    'border-[#d5203a] text-[#ff6a78] bg-[#8f101f]/16 shadow-[0_0_14px_rgba(213,32,58,0.12)]',
                   !isCompleted &&
                     !isCurrent &&
                     'border-[#272b38] text-[#5a6072]'
@@ -99,7 +99,7 @@ function StepIndicator({
                 className={cn(
                   'text-sm font-medium hidden sm:inline transition-colors duration-300',
                   isCurrent && 'text-[#f5f7ff]',
-                  isCompleted && 'text-[#c94bff]',
+                  isCompleted && 'text-[#ff6a78]',
                   !isCompleted && !isCurrent && 'text-[#5a6072]'
                 )}
               >
@@ -210,7 +210,6 @@ export function WizardShell({
                 type="button"
                 onClick={onSubmit}
                 disabled={isSubmitting}
-                className="bg-[#c94bff] hover:bg-[#c94bff]/90 text-white"
               >
                 {isSubmitting ? (
                   <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />

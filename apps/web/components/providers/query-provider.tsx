@@ -30,7 +30,7 @@ export function QueryProvider({
       {showDevtools && (
         <ReactQueryDevtools
           initialIsOpen={false}
-          buttonPosition="bottom-left"
+          buttonPosition="bottom-right"
         />
       )}
     </QueryClientProvider>

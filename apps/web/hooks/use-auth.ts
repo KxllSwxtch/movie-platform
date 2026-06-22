@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { toast } from 'sonner';
 
-import { api, ApiError, endpoints } from '@/lib/api-client';
+import { api, ApiError, endpoints, resetAuthSessionInvalidation } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
 import { canUsePartnerRole, isVerified, normalizeLegacyRole } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
@@ -56,6 +56,7 @@ export function useAuth() {
       return response.data;
     },
     onSuccess: (data) => {
+      resetAuthSessionInvalidation();
       setAuth(data.user, data.accessToken, data.refreshToken, data.sessionId);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success('Добро пожаловать!');
@@ -78,6 +79,7 @@ export function useAuth() {
       return response.data;
     },
     onSuccess: (data) => {
+      resetAuthSessionInvalidation();
       setAuth(data.user, data.accessToken, data.refreshToken, data.sessionId);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success('Регистрация успешна! Добро пожаловать!');
@@ -156,13 +158,14 @@ export function useAuth() {
    */
   const logout = async () => {
     try {
-      await api.post(endpoints.auth.logout, {});
+      await api.post(endpoints.auth.logout, {}, { skipRefresh: true });
     } catch {
       // Ignore logout errors
     } finally {
+      await queryClient.cancelQueries();
       clearAuth();
       queryClient.clear();
-      router.push('/');
+      router.replace('/login');
       toast.success('Вы вышли из аккаунта');
     }
   };

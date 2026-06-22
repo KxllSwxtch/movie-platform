@@ -142,10 +142,10 @@ export default function NotificationsPage() {
             type="button"
             onClick={() => setActiveFilter(tab.value)}
             className={cn(
-              "shrink-0 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
+              "sesh-nav-item shrink-0 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
               activeFilter === tab.value
-                ? "bg-mp-accent-primary text-white"
-                : "bg-mp-surface text-mp-text-secondary hover:bg-mp-surface-elevated hover:text-mp-text-primary",
+                ? "sesh-nav-item-active"
+                : "bg-mp-surface/70",
             )}
           >
             {tab.label}

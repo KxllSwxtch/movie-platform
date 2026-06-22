@@ -104,6 +104,13 @@ export const useAuthStore = create<AuthState>()(
       // Clear auth state (logout)
       logout: () => {
         syncAuthCookies(null, false);
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.removeItem('mp-redirect-after-login');
+          } catch {
+            // Ignore storage errors.
+          }
+        }
         set({
           user: null,
           accessToken: null,

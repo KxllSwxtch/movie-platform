@@ -68,23 +68,14 @@ const plans: PricingPlan[] = [
 
 export function LandingPricing() {
   return (
-    <section className="py-16 md:py-24 bg-[#05060A] relative">
-      {/* Subtle glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 50% 60% at 50% 30%, rgba(201,75,255,0.05) 0%, transparent 70%)',
-        }}
-      />
-
-      <div className="relative container mx-auto px-4 sm:px-6">
+    <section className="sesh-lower-section sesh-section-pricing py-16 md:py-24">
+      <div className="sesh-section-inner container mx-auto px-4 sm:px-6">
         <ScrollReveal>
           <div className="text-center mb-10 md:mb-14">
-            <h2 className="text-xl sm:text-2xl font-bold text-mp-text-primary mb-3">
+            <h2 className="mb-3 text-2xl font-bold text-white sm:text-3xl">
               Выберите свой тариф
             </h2>
-            <p className="text-mp-text-secondary max-w-md mx-auto">
+            <p className="mx-auto max-w-md text-[#aeb8d0]">
               Начните бесплатно и переходите на премиум, когда будете готовы
             </p>
           </div>
@@ -95,46 +86,46 @@ export function LandingPricing() {
             <ScrollReveal key={i} delay={i * 0.1}>
               <div
                 className={cn(
-                  'relative rounded-2xl h-full',
+                  'relative h-full',
                   plan.featured && 'md:-mt-4 md:mb-[-16px]'
                 )}
               >
                 {/* Gradient border for featured card */}
                 {plan.featured && (
-                  <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-mp-accent-primary/40 via-mp-accent-secondary/20 to-transparent" />
+                  <div className="absolute -inset-px rounded-2xl bg-[linear-gradient(135deg,rgba(215,10,42,0.72),rgba(177,17,100,0.46),rgba(58,62,216,0.34),rgba(15,102,235,0.32))]" />
                 )}
 
                 <div
                   className={cn(
-                    'relative rounded-2xl p-6 md:p-7 h-full flex flex-col',
+                    'sesh-pricing-card relative flex h-full flex-col p-6 md:p-7',
                     plan.featured
-                      ? 'bg-[#10131C]'
-                      : 'bg-white/[0.02] border border-white/[0.06]'
+                      ? 'sesh-pricing-card-featured'
+                      : ''
                   )}
                 >
                   {/* Badge */}
                   {plan.badge && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="px-4 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary text-white shadow-lg shadow-mp-accent-primary/20">
+                      <span className="sesh-price-badge px-4 py-1.5 text-xs font-semibold">
                         {plan.badge}
                       </span>
                     </div>
                   )}
 
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-mp-text-primary mb-1">
+                    <h3 className="text-lg font-semibold text-white mb-1">
                       {plan.name}
                     </h3>
-                    <p className="text-sm text-mp-text-secondary">
+                    <p className="text-sm text-[#aeb8d0]">
                       {plan.description}
                     </p>
                   </div>
 
                   <div className="mb-6">
-                    <span className="text-3xl md:text-4xl font-bold text-mp-text-primary">
+                    <span className="text-3xl md:text-4xl font-bold text-white">
                       {plan.price}
                     </span>
-                    <span className="text-sm text-mp-text-secondary ml-1">
+                    <span className="text-sm text-[#aeb8d0] ml-1">
                       {plan.period}
                     </span>
                   </div>
@@ -146,11 +137,11 @@ export function LandingPricing() {
                           className={cn(
                             'w-4 h-4 mt-0.5 flex-shrink-0',
                             plan.featured
-                              ? 'text-mp-accent-secondary'
-                              : 'text-mp-text-disabled'
+                              ? 'text-[#0F66EB]'
+                              : 'text-[#C70F4F]/70'
                           )}
                         />
-                        <span className="text-sm text-mp-text-secondary">
+                        <span className="text-sm text-[#aeb8d0]">
                           {feature}
                         </span>
                       </li>
@@ -160,7 +151,12 @@ export function LandingPricing() {
                   <Button
                     variant={plan.buttonVariant}
                     size="lg"
-                    className="w-full justify-center"
+                    className={cn(
+                      'w-full shrink-0 justify-center',
+                      plan.buttonVariant === 'gradient'
+                        ? 'sesh-landing-primary'
+                        : 'sesh-landing-secondary'
+                    )}
                     asChild
                   >
                     <Link href="/register">
@@ -178,7 +174,7 @@ export function LandingPricing() {
           <div className="text-center mt-8 md:mt-10">
             <Link
               href="/pricing"
-              className="text-sm text-mp-text-secondary hover:text-mp-accent-primary transition-colors inline-flex items-center gap-1"
+              className="inline-flex items-center gap-1 text-sm text-[#aeb8d0] transition-colors hover:text-white"
             >
               Подробнее о тарифах
               <ArrowRight className="w-3.5 h-3.5" />

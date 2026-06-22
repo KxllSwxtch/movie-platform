@@ -15,10 +15,10 @@ const popularItems = [
 ];
 
 const mockSeries = [
-  { id: 1, title: 'Код судьбы', year: '2024', rating: 8.6, gradient: 'linear-gradient(135deg, #1a0a2e 0%, #C94BFF20 50%, #0d1520 100%)' },
+  { id: 1, title: 'Код судьбы', year: '2024', rating: 8.6, gradient: 'linear-gradient(135deg, #1a0a2e 0%, #d5203a20 50%, #0d1520 100%)' },
   { id: 2, title: 'Грань реальности', year: '2024', rating: 8.9, gradient: 'linear-gradient(135deg, #0a1a2e 0%, #28E0C420 50%, #0d1520 100%)' },
   { id: 3, title: 'Последний рубеж', year: '2023', rating: 8.2, gradient: 'linear-gradient(135deg, #1a1005 0%, #FF6B5A20 50%, #0d1520 100%)' },
-  { id: 4, title: 'Тёмный мир', year: '2024', rating: 9.0, gradient: 'linear-gradient(135deg, #15102a 0%, #C94BFF15 50%, #0a0c18 100%)' },
+  { id: 4, title: 'Тёмный мир', year: '2024', rating: 9.0, gradient: 'linear-gradient(135deg, #15102a 0%, #d5203a15 50%, #0a0c18 100%)' },
   { id: 5, title: 'Парадокс', year: '2023', rating: 8.5, gradient: 'linear-gradient(135deg, #0d1520 0%, #28E0C415 50%, #0a1a2e 100%)' },
   { id: 6, title: 'Сигнал', year: '2024', rating: 8.8, gradient: 'linear-gradient(135deg, #1a0a20 0%, #FF6B5A15 50%, #0d1520 100%)' },
 ];
@@ -26,7 +26,7 @@ const mockSeries = [
 const mockCourses = [
   { id: 1, title: 'Основы программирования', year: '2024', rating: 9.3, gradient: 'linear-gradient(135deg, #0a1a2e 0%, #28E0C420 50%, #0d1520 100%)' },
   { id: 2, title: 'Веб-разработка с нуля', year: '2024', rating: 9.0, gradient: 'linear-gradient(135deg, #0d1520 0%, #28E0C415 50%, #0a1a2e 100%)' },
-  { id: 3, title: 'UI/UX дизайн', year: '2023', rating: 8.8, gradient: 'linear-gradient(135deg, #1a0a2e 0%, #C94BFF15 50%, #0a1a2e 100%)' },
+  { id: 3, title: 'UI/UX дизайн', year: '2023', rating: 8.8, gradient: 'linear-gradient(135deg, #1a0a2e 0%, #d5203a15 50%, #0a1a2e 100%)' },
   { id: 4, title: 'Мобильная разработка', year: '2024', rating: 8.6, gradient: 'linear-gradient(135deg, #15102a 0%, #28E0C415 50%, #0a0c18 100%)' },
   { id: 5, title: 'DevOps практики', year: '2023', rating: 8.9, gradient: 'linear-gradient(135deg, #0d1520 0%, #FF6B5A15 50%, #1a0a2e 100%)' },
   { id: 6, title: 'Анализ данных', year: '2024', rating: 9.1, gradient: 'linear-gradient(135deg, #1a1005 0%, #28E0C420 50%, #0d1520 100%)' },

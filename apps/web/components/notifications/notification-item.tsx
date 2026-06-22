@@ -189,7 +189,7 @@ export function NotificationItem({
   );
 
   const itemClassName = cn(
-    "group w-full flex items-start gap-3.5 px-4 py-3.5 sm:px-5 text-left transition-colors",
+    "sesh-notification-item group w-full flex items-start gap-3.5 px-4 py-3.5 sm:px-5 text-left transition-colors",
     "hover:bg-mp-surface-elevated/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mp-accent-primary/50",
     href ? "cursor-pointer" : "cursor-default",
     notification.isRead

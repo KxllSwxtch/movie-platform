@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { memo } from 'react';
 
 import { ContentImage } from '@/components/content/content-image';
+import { HoverVideoPreview } from '@/components/content/hover-video-preview';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { cn } from '@/lib/utils';
 
@@ -41,8 +42,7 @@ function formatRemainingTime(minutes: number): string {
  */
 export const VideoCardProgress = memo(function VideoCardProgress({ content, className }: VideoCardProgressProps) {
   return (
-    <Link
-      href={`/watch/${content.id}`}
+    <article
       className={cn(
         'group block w-[75vw] sm:w-[280px] md:w-[308px] shrink-0',
         className
@@ -76,20 +76,26 @@ export const VideoCardProgress = memo(function VideoCardProgress({ content, clas
             className="rounded-none"
           />
         </div>
+        <HoverVideoPreview
+          contentId={content.id}
+          title={content.title}
+          href={`/watch/${content.id}`}
+        />
+        <Link href={`/watch/${content.id}`} className="absolute inset-0 z-10" aria-label={content.title} />
       </div>
 
       {/* Content info */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-base font-medium text-white truncate group-hover:text-mp-accent-primary transition-colors">
-            {content.title}
-          </h3>
+          <Link href={`/watch/${content.id}`} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]">
+            <h3 className="truncate text-base font-medium text-white transition-colors group-hover:text-mp-accent-primary">{content.title}</h3>
+          </Link>
           <p className="text-sm text-mp-text-secondary">{content.year}</p>
         </div>
         <span className="text-sm text-mp-text-secondary whitespace-nowrap shrink-0">
           {formatRemainingTime(content.remainingMinutes)}
         </span>
       </div>
-    </Link>
+    </article>
   );
 });

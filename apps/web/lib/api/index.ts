@@ -13,6 +13,7 @@ export {
   getRefreshToken,
   setTokens,
   clearAuthState,
+  resetAuthSessionInvalidation,
   attemptTokenRefresh,
 } from './auth';
 

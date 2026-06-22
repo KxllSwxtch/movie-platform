@@ -35,7 +35,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 border-dashed">
+        <Button variant="outline" size="sm" className="sesh-data-table-facet h-9 border-dashed">
           <PlusCircle className="mr-2 h-4 w-4" />
           {title}
           {selectedValues?.size > 0 && (
@@ -73,7 +73,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent className="sesh-data-table-facet-menu w-[200px] p-0" align="start">
         <div className="p-2">
           <p className="px-2 py-1.5 text-sm font-medium text-mp-text-secondary">
             Filter by {title}
@@ -100,16 +100,16 @@ export function DataTableFacetedFilter<TData, TValue>({
                 className={cn(
                   'flex w-full items-center rounded-md px-2 py-1.5 text-sm transition-colors',
                   isSelected
-                    ? 'bg-mp-accent-primary/10 text-mp-accent-primary'
-                    : 'hover:bg-mp-surface text-mp-text-primary'
+                    ? 'sesh-data-table-facet-selected'
+                    : 'sesh-data-table-facet-option text-mp-text-primary'
                 )}
               >
                 <div
                   className={cn(
                     'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border',
                     isSelected
-                      ? 'border-mp-accent-primary bg-mp-accent-primary'
-                      : 'border-mp-border opacity-50'
+                      ? 'sesh-data-table-facet-check'
+                      : 'sesh-data-table-facet-check-empty opacity-50'
                   )}
                 >
                   {isSelected && <CheckIcon className="h-3 w-3 text-white" />}

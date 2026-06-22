@@ -58,10 +58,10 @@ export function GenreSelect({
               onClick={() => handleToggle(genre.id)}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c94bff]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05060a]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5203a]/45 focus-visible:ring-offset-0',
                 isSelected
-                  ? 'bg-[#c94bff]/20 border-[#c94bff] text-[#c94bff]'
-                  : 'bg-mp-surface border-mp-border text-mp-text-secondary hover:border-mp-text-secondary',
+                  ? 'border-[#d5203a]/55 bg-[#8f101f]/22 text-[#ff6a78]'
+                  : 'bg-mp-surface border-mp-border text-mp-text-secondary hover:border-[#d5203a]/32',
                 disabled && 'pointer-events-none opacity-50'
               )}
             >

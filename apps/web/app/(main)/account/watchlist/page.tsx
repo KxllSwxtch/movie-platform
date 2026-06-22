@@ -132,10 +132,10 @@ export default function WatchlistPage() {
                 setCurrentPage(1);
               }}
               className={cn(
-                'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                'sesh-nav-item rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
                 typeFilter === filter.value
-                  ? 'bg-mp-accent-primary text-white'
-                  : 'bg-mp-surface text-mp-text-secondary hover:bg-mp-surface-elevated hover:text-mp-text-primary'
+                  ? 'sesh-nav-item-active'
+                  : 'bg-mp-surface/70'
               )}
             >
               {filter.label}

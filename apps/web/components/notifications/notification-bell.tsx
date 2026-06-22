@@ -41,10 +41,10 @@ export function NotificationBell() {
       variant="ghost"
       size="icon"
       aria-label="Уведомления"
-      className="relative text-mp-text-secondary hover:text-mp-text-primary"
+      className="relative h-8 w-8 text-mp-text-secondary hover:text-mp-text-primary"
       {...(isMobile ? { onClick: () => setOpen(true) } : {})}
     >
-      <Bell className="w-5 h-5" />
+      <Bell className="h-4 w-4" />
       {unreadCount > 0 && (
         <span
           className={cn(
@@ -69,7 +69,7 @@ export function NotificationBell() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent
             side="bottom"
-            className="rounded-t-2xl bg-mp-bg-secondary border-mp-border p-0 max-h-[85vh] flex flex-col"
+            className="sesh-notifications-sheet rounded-t-2xl bg-mp-bg-secondary border-mp-border p-0 max-h-[85vh] flex flex-col"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Уведомления</SheetTitle>
@@ -94,7 +94,7 @@ export function NotificationBell() {
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-auto max-w-[calc(100vw-1rem)] p-0 border border-mp-border bg-mp-bg-secondary rounded-xl shadow-2xl shadow-black/40 overflow-hidden"
+        className="sesh-notifications-popover w-auto max-w-[calc(100vw-1rem)] p-0 border border-mp-border bg-mp-bg-secondary rounded-xl shadow-2xl shadow-black/40 overflow-hidden"
       >
         <NotificationDropdown onClose={() => setOpen(false)} />
       </PopoverContent>

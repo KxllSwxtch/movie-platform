@@ -209,7 +209,7 @@ export function ShortWizard({ onSuccess }: ShortWizardProps) {
             {/* Hints */}
             <div className="mb-4 flex flex-wrap gap-3">
               <div className="flex items-center gap-2 rounded-lg border border-[#272b38] bg-[#151824]/50 px-3 py-2">
-                <DeviceMobileCamera className="h-4 w-4 text-[#c94bff]" />
+                <DeviceMobileCamera className="h-4 w-4 text-[#ff6a78]" />
                 <span className="text-xs text-[#9ca2bc]">
                   Вертикальное видео 9:16
                 </span>

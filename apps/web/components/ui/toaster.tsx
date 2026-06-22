@@ -4,7 +4,7 @@ import { Toaster as SonnerToaster } from 'sonner';
 
 /**
  * Toast notification provider using Sonner
- * Styled to match MoviePlatform design system
+ * Styled to match the SESH design system
  */
 export function Toaster() {
   return (

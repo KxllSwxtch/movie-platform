@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { DataTableColumnHeader } from "@/components/admin/data-table/data-table-column-header";
 import { DataTableRowActions } from "@/components/admin/data-table/data-table-row-actions";
 import { AgeBadge, Badge } from "@/components/ui/badge";
+import { ContentImage } from "@/components/content/content-image";
 import type { Content } from "@movie-platform/shared";
 
 type AdminContentRow = Content & {
@@ -43,7 +44,7 @@ function getContentTypeBadge(type: string) {
     },
     TUTORIAL: {
       label: "Обучение",
-      className: "bg-purple-500/20 text-purple-400 border-transparent",
+      className: "sesh-moderation-badge-secondary border-transparent",
     },
   };
 
@@ -86,14 +87,6 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat("ru-RU").format(value ?? 0);
 }
 
-function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export const contentColumns: ColumnDef<Content>[] = [
   {
     accessorKey: "title",
@@ -101,13 +94,26 @@ export const contentColumns: ColumnDef<Content>[] = [
       <DataTableColumnHeader column={column} title="Название" />
     ),
     cell: ({ row }) => (
-      <div className="flex max-w-[320px] flex-col">
-        <span className="truncate font-medium text-mp-text-primary">
-          {row.original.title}
-        </span>
-        <span className="truncate font-mono text-xs text-mp-text-disabled">
-          {row.original.slug}
-        </span>
+      <div className="sesh-moderation-title-cell flex min-w-[250px] max-w-[340px] items-center gap-3">
+        <div className="sesh-moderation-thumbnail relative h-11 w-[68px] shrink-0 overflow-hidden rounded-md">
+          <ContentImage
+            src={row.original.thumbnailUrl || ""}
+            alt=""
+            fill
+            sizes="68px"
+            className="object-cover"
+            fallbackClassName="bg-white/[0.04]"
+            fallbackIcon={<FilmStrip className="h-5 w-5 text-white/30" />}
+          />
+        </div>
+        <div className="min-w-0">
+          <span className="block truncate font-semibold text-mp-text-primary">
+            {row.original.title}
+          </span>
+          <span className="block truncate font-mono text-xs text-mp-text-disabled">
+            {row.original.slug}
+          </span>
+        </div>
       </div>
     ),
     enableSorting: true,
@@ -197,20 +203,6 @@ export const contentColumns: ColumnDef<Content>[] = [
     cell: ({ row }) => (
       <span className="text-mp-text-secondary">
         {formatNumber(row.original.viewCount)}
-      </span>
-    ),
-    enableSorting: true,
-  },
-  {
-    accessorKey: "createdAt",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Создан" />
-    ),
-    cell: ({ row }) => (
-      <span className="text-sm text-mp-text-secondary">
-        {row.original.createdAt
-          ? formatDate(row.original.createdAt as string | Date)
-          : "—"}
       </span>
     ),
     enableSorting: true,

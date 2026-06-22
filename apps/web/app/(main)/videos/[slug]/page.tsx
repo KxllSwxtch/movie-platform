@@ -15,7 +15,7 @@ import { Container } from "@/components/ui/container";
 import { ContentGrid } from "@/components/ui/grid";
 import { Spinner } from "@/components/ui/spinner";
 import { useContentDetail, useContentList } from "@/hooks/use-content";
-import { formatDuration, formatNumber } from "@/lib/utils";
+import { formatDuration, formatViewCount } from "@/lib/utils";
 
 export default function VideoDetailPage() {
   const params = useParams();
@@ -111,7 +111,7 @@ export default function VideoDetailPage() {
       <div className="mb-8 flex flex-wrap items-center gap-4 text-sm text-mp-text-secondary">
         <span className="flex items-center gap-1.5">
           <Eye className="h-4 w-4" />
-          {formatNumber(video.viewCount)} просмотров
+          {formatViewCount(video.viewCount)}
         </span>
         {video.duration > 0 && (
           <span className="flex items-center gap-1.5">

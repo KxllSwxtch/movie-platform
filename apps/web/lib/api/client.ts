@@ -15,6 +15,7 @@ import {
   getAuthToken,
   attemptTokenRefresh,
   configureAuth,
+  clearAuthState,
 } from './auth';
 
 // ============ Constants ============
@@ -122,17 +123,12 @@ async function fetchWithTimeout(
 function redirectToLogin(): void {
   if (typeof window === 'undefined') return;
 
-  // Ensure cookies are cleared before redirecting to prevent middleware redirect loop
-  document.cookie = 'mp-auth-token=;path=/;max-age=0';
-  document.cookie = 'mp-authenticated=;path=/;max-age=0';
-
-  // Store current URL for redirect after login
   const currentPath = window.location.pathname + window.location.search;
+  clearAuthState();
   if (currentPath !== '/login') {
     sessionStorage.setItem('mp-redirect-after-login', currentPath);
   }
-
-  window.location.href = '/login';
+  window.location.replace('/login');
 }
 
 // ============ Public API ============

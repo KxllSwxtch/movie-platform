@@ -16,7 +16,7 @@ import {
  */
 export default function LandingPageClient() {
   return (
-    <div className="min-h-screen bg-[#05060A]">
+    <div className="sesh-landing min-h-screen overflow-x-hidden">
       <LandingNav />
       <LandingHero />
       <LandingStats />

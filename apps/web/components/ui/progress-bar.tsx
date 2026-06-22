@@ -21,14 +21,14 @@ const progressBarVariants = cva(
 );
 
 const progressFillVariants = cva(
-  'h-full rounded-full transition-all duration-300 ease-out',
+  'h-full rounded-full transition-all duration-300 ease-out sesh-progress-bar',
   {
     variants: {
       variant: {
-        default: 'bg-mp-accent-primary',
-        gradient: 'bg-mp-accent-primary', // Solid color (minimalist design)
-        secondary: 'bg-mp-accent-secondary',
-        tertiary: 'bg-mp-accent-tertiary',
+        default: '',
+        gradient: '',
+        secondary: '',
+        tertiary: '',
         success: 'bg-green-500',
       },
     },

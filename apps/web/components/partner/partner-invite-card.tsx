@@ -33,7 +33,7 @@ export function PartnerInviteCard({
 
   const absoluteReferralUrl = buildAbsoluteAppUrl(referralUrl);
 
-  const shareText = `Присоединяйся к MoviePlatform! Используй мой код ${referralCode} и получи бонусы при регистрации.`;
+  const shareText = `Присоединяйся к SESH! Используй мой код ${referralCode} и получи бонусы при регистрации.`;
 
   const shareLinks = [
     {
@@ -58,7 +58,7 @@ export function PartnerInviteCard({
       name: 'Email',
       icon: Envelope,
       color: 'hover:bg-mp-accent-primary/20 hover:text-mp-accent-primary',
-      url: `mailto:?subject=${encodeURIComponent('Приглашение в MoviePlatform')}&body=${encodeURIComponent(shareText + '\n\n' + absoluteReferralUrl)}`,
+      url: `mailto:?subject=${encodeURIComponent('Приглашение в SESH')}&body=${encodeURIComponent(shareText + '\n\n' + absoluteReferralUrl)}`,
     },
   ];
 

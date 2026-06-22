@@ -157,10 +157,10 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Desktop table view */}
-      <div className="hidden md:block rounded-lg border border-mp-border bg-mp-bg-secondary overflow-hidden">
+      <div className="sesh-data-table-shell hidden md:block rounded-lg border overflow-hidden">
         <div
           ref={topScrollRef}
-          className="overflow-x-auto overflow-y-hidden border-b border-mp-border/60 custom-scrollbar"
+          className="sesh-data-table-top-scroll overflow-x-auto overflow-y-hidden border-b custom-scrollbar"
           onScroll={syncHorizontalScroll("top")}
         >
           <div className="h-3" style={{ width: scrollWidth || "100%" }} />
@@ -176,7 +176,7 @@ export function DataTable<TData, TValue>({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow
                     key={headerGroup.id}
-                    className="bg-mp-surface/50 hover:bg-mp-surface/50"
+                    className="sesh-data-table-header-row"
                   >
                     {headerGroup.headers.map((header) => {
                       return (
@@ -200,7 +200,7 @@ export function DataTable<TData, TValue>({
                     <TableRow key={index}>
                       {columns.map((_, colIndex) => (
                         <TableCell key={colIndex}>
-                          <div className="h-5 w-full animate-pulse bg-mp-surface rounded" />
+                          <div className="sesh-data-table-skeleton h-5 w-full animate-pulse rounded" />
                         </TableCell>
                       ))}
                     </TableRow>

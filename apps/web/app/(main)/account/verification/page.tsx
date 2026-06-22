@@ -86,7 +86,7 @@ function StepProgress({ currentStep, status }: { currentStep: number; status: st
                   className={cn(
                     'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors',
                     isDone && 'border-mp-accent-secondary bg-mp-accent-secondary/10 text-mp-accent-secondary',
-                    isActive && !isDone && 'border-mp-accent-primary bg-mp-accent-primary/10 text-mp-accent-primary',
+                    isActive && !isDone && 'border-[#d5203a]/55 bg-[#8f101f]/16 text-[#ff6a78] shadow-[0_0_14px_rgba(213,32,58,0.12)]',
                     isFailed && 'border-red-500 bg-red-500/10 text-red-500',
                     !isDone && !isActive && !isFailed && 'border-mp-border text-mp-text-disabled'
                   )}
@@ -103,7 +103,7 @@ function StepProgress({ currentStep, status }: { currentStep: number; status: st
                   <p className={cn(
                     'text-xs font-medium',
                     isDone && 'text-mp-accent-secondary',
-                    isActive && !isDone && 'text-mp-accent-primary',
+                    isActive && !isDone && 'text-[#ff6a78]',
                     isFailed && 'text-red-500',
                     !isDone && !isActive && !isFailed && 'text-mp-text-disabled'
                   )}>
@@ -454,7 +454,7 @@ export default function VerificationPage() {
                     className={cn(
                       'flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors',
                       isDragging
-                        ? 'border-mp-accent-primary bg-mp-accent-primary/5'
+                        ? 'border-[#d5203a]/55 bg-[#8f101f]/12 shadow-[0_0_14px_rgba(213,32,58,0.1)]'
                         : uploadedFile
                           ? 'border-mp-accent-secondary bg-mp-accent-secondary/5'
                           : 'border-mp-border hover:border-mp-text-disabled hover:bg-mp-surface/50'

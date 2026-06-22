@@ -44,7 +44,7 @@ export default function PricingPage() {
     <Container size="xl" className="py-8 md:py-12">
       {/* Header */}
       <div className="mb-12 text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-mp-accent-primary/10 px-4 py-2 text-sm font-medium text-mp-accent-primary">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d5203a]/24 bg-[#8f101f]/16 px-4 py-2 text-sm font-medium text-[#ff6a78] shadow-[0_0_14px_rgba(213,32,58,0.1)]">
           <Sparkle className="h-4 w-4" />
           Тарифные планы
         </div>
@@ -223,8 +223,8 @@ export default function PricingPage() {
       </div>
 
       {/* CTA */}
-      <div className="mt-16 rounded-2xl bg-gradient-to-br from-mp-accent-primary/20 to-mp-accent-secondary/20 p-8 text-center md:p-12">
-        <Crown className="mx-auto mb-4 h-12 w-12 text-mp-accent-primary" />
+      <div className="mt-16 rounded-2xl border border-[#d5203a]/18 bg-[linear-gradient(135deg,rgba(105,7,17,0.2),rgba(67,37,157,0.12),rgba(14,111,183,0.1))] p-8 text-center shadow-[inset_0_0_0_1px_rgba(20,125,202,0.06)] md:p-12">
+        <Crown className="mx-auto mb-4 h-12 w-12 text-[#ff6a78]" />
         <h2 className="mb-4 text-2xl font-bold text-mp-text-primary">
           Готовы начать?
         </h2>

@@ -35,25 +35,23 @@ function formatPrice(price: number): string {
 export function ProductCard({ content, onAddToCart, isAddingToCart, className }: ProductCardProps) {
   const isAvailable = content.status === ProductStatus.ACTIVE;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = () => {
     if (onAddToCart && isAvailable) {
-      e.preventDefault();
-      e.stopPropagation();
       onAddToCart(content.id);
     }
   };
 
   return (
-    <Link
-      href={`/store/${content.slug}`}
+    <article
       className={cn(
-        'group block shrink-0 content-card w-full',
+        'sesh-store-card group block w-full shrink-0 rounded-2xl border border-white/10 bg-[#0d0718]/78 p-3 shadow-[0_14px_38px_rgba(0,0,0,0.24)] transition-[border-color,box-shadow] focus-within:border-[#55b7ff]/55 focus-within:shadow-[0_0_0_2px_rgba(85,183,255,0.16),0_16px_42px_rgba(0,0,0,0.28)]',
         !isAvailable && 'opacity-60',
         className
       )}
     >
       {/* Thumbnail container */}
       <div className="relative aspect-square rounded-xl overflow-hidden bg-mp-surface-2 mb-3">
+        <Link href={`/store/${content.slug}`} className="absolute inset-0 z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#55b7ff]" aria-label={content.name} />
         {/* Image with smooth zoom */}
         <ContentImage
           src={content.thumbnailUrl ?? ''}
@@ -82,8 +80,11 @@ export function ProductCard({ content, onAddToCart, isAddingToCart, className }:
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent touch:opacity-60 opacity-0 hover-hover:group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Cart icon that scales in */}
-        <div
-          className="absolute inset-0 flex items-center justify-center touch:opacity-80 opacity-0 hover-hover:group-hover:opacity-100 transition-all duration-300 touch:scale-100 scale-90 hover-hover:group-hover:scale-100"
+        <button
+          type="button"
+          aria-label={isAvailable ? `Добавить ${content.name} в корзину` : 'Нет в наличии'}
+          disabled={!isAvailable || isAddingToCart}
+          className="absolute inset-0 z-20 flex scale-90 items-center justify-center opacity-0 transition-all duration-200 touch:scale-100 touch:opacity-80 hover-hover:group-hover:scale-100 hover-hover:group-hover:opacity-100 focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#55b7ff] disabled:pointer-events-none"
           onClick={handleAddToCart}
         >
           <div className={cn(
@@ -92,14 +93,14 @@ export function ProductCard({ content, onAddToCart, isAddingToCart, className }:
           )}>
             <Bag className={cn('w-6 h-6 touch:w-5 touch:h-5 text-white', isAddingToCart && 'animate-pulse')} />
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Content info */}
       <div>
-        <h3 className="font-medium text-mp-text-primary truncate group-hover:text-mp-accent-primary transition-colors duration-200">
-          {content.name}
-        </h3>
+        <Link href={`/store/${content.slug}`} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]">
+          <h3 className="truncate font-medium text-mp-text-primary transition-colors duration-200 group-hover:text-mp-accent-primary">{content.name}</h3>
+        </Link>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-base font-semibold text-mp-text-primary">
             {formatPrice(content.price)} ₽
@@ -111,6 +112,6 @@ export function ProductCard({ content, onAddToCart, isAddingToCart, className }:
           )}
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

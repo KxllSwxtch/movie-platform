@@ -10,7 +10,7 @@ import {
 } from '@phosphor-icons/react';
 import Link from 'next/link';
 import * as React from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -129,7 +129,7 @@ function StepIndicator({
               <div
                 className={cn(
                   'h-px flex-1 transition-colors duration-300',
-                  isCompleted ? 'bg-[#c94bff]' : 'bg-mp-border'
+                  isCompleted ? 'bg-[#b91428]' : 'bg-mp-border'
                 )}
               />
             )}
@@ -146,8 +146,8 @@ function StepIndicator({
               <span
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300',
-                  isCompleted && 'bg-[#c94bff] border-[#c94bff] text-white',
-                  isCurrent && 'border-[#c94bff] text-[#c94bff] bg-[#c94bff]/10',
+                  isCompleted && 'bg-[#b91428] border-[#d5203a] text-white',
+                  isCurrent && 'border-[#d5203a] text-[#ff6a78] bg-[#8f101f]/16 shadow-[0_0_14px_rgba(213,32,58,0.12)]',
                   !isCompleted && !isCurrent && 'border-mp-border text-mp-text-disabled'
                 )}
               >
@@ -157,7 +157,7 @@ function StepIndicator({
                 className={cn(
                   'text-sm font-medium hidden sm:inline transition-colors duration-300',
                   isCurrent && 'text-mp-text-primary',
-                  isCompleted && 'text-[#c94bff]',
+                  isCompleted && 'text-[#ff6a78]',
                   !isCompleted && !isCurrent && 'text-mp-text-disabled'
                 )}
               >
@@ -319,7 +319,7 @@ export function ContentForm({
   const slug = watch('slug');
   const selectedContentType = watch('contentType');
   const currentStatus = watch('status');
-  const allValues = watch();
+  const summaryValues = useWatch({ control });
 
   React.useEffect(() => {
     if (canManagePublication || !currentStatus) return;
@@ -382,29 +382,31 @@ export function ContentForm({
 
   // Auto-save draft with debounce
   React.useEffect(() => {
-    if (isEditMode) return;
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      try {
-        const values = getValues();
-        if (values.title || values.description || values.contentType) {
-          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(values));
+    if (isEditMode) return undefined;
+    const draftFields = new Set<keyof ContentFormValues>([
+      'title', 'slug', 'description', 'contentType', 'ageCategory', 'status',
+      'categoryId', 'thumbnailUrl', 'previewUrl', 'isFree', 'individualPrice', 'tagIds', 'genreIds',
+    ]);
+    const subscription = watch((_values, { name }) => {
+      if (!name || !draftFields.has(name as keyof ContentFormValues)) return;
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        try {
+          const values = getValues();
+          if (values.title || values.description || values.contentType) {
+            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(values));
+          }
+        } catch {
+          // Ignore storage errors
         }
-      } catch {
-        // Ignore storage errors
-      }
-    }, 3000);
+      }, 3000);
+    });
 
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      subscription.unsubscribe();
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [allValues, isEditMode, getValues]);
+  }, [watch, isEditMode, getValues]);
 
   // ---- Step navigation ----
   const handleNext = async () => {
@@ -797,7 +799,7 @@ export function ContentForm({
           {/* Summary sidebar */}
           <div className="min-w-0">
             <SummaryCard
-              values={allValues}
+              values={summaryValues as ContentFormValues}
               categories={categoriesFlat}
               tags={availableTags}
               genres={availableGenres}
@@ -864,14 +866,14 @@ function StatusCard({
       className={cn(
         'flex flex-col items-start rounded-lg border p-3 text-left transition-all duration-200',
         selected
-          ? 'border-[#c94bff] bg-[#c94bff]/10'
-          : 'border-mp-border bg-mp-surface/50 hover:border-mp-text-disabled'
+          ? 'border-[#d5203a]/50 bg-[#8f101f]/16 shadow-[0_0_14px_rgba(213,32,58,0.1)]'
+          : 'border-mp-border bg-mp-surface/50 hover:border-[#d5203a]/28'
       )}
     >
       <span
         className={cn(
           'text-sm font-medium',
-          selected ? 'text-[#c94bff]' : 'text-mp-text-primary'
+          selected ? 'text-[#ff6a78]' : 'text-mp-text-primary'
         )}
       >
         {label}

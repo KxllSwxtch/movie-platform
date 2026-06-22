@@ -4,6 +4,7 @@ import { Play, Clock, CheckCircle } from '@phosphor-icons/react';
 import Link from 'next/link';
 
 import { ContentImage } from '@/components/content/content-image';
+import { HoverVideoPreview } from '@/components/content/hover-video-preview';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { cn } from '@/lib/utils';
 
@@ -72,8 +73,7 @@ export function EpisodeCard({ content, seriesSlug, className, variant = 'default
   }
 
   return (
-    <Link
-      href={`/watch/${content.id}`}
+    <article
       className={cn(
         'group block shrink-0 w-full',
         content.isNext && 'ring-2 ring-mp-accent-primary rounded-xl',
@@ -145,20 +145,27 @@ export function EpisodeCard({ content, seriesSlug, className, variant = 'default
             />
           </div>
         )}
+        <HoverVideoPreview
+          contentId={content.id}
+          title={content.title}
+          href={`/watch/${content.id}`}
+          duration={content.duration * 60}
+        />
+        <Link href={`/watch/${content.id}`} className="absolute inset-0 z-10" aria-label={content.title} />
       </div>
 
       {/* Content info */}
       <div>
-        <h4 className="font-medium text-mp-text-primary line-clamp-1 group-hover:text-mp-accent-primary transition-colors duration-200">
-          {content.title}
-        </h4>
+        <Link href={`/watch/${content.id}`} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]">
+          <h4 className="line-clamp-1 font-medium text-mp-text-primary transition-colors duration-200 group-hover:text-mp-accent-primary">{content.title}</h4>
+        </Link>
         {content.description && (
           <p className="text-sm text-mp-text-secondary mt-1 line-clamp-2">
             {content.description}
           </p>
         )}
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -167,8 +174,7 @@ function EpisodeCardCompact({ content, className }: Omit<EpisodeCardProps, 'vari
   const hasProgress = content.progress !== undefined && content.progress > 0 && content.progress < 100;
 
   return (
-    <Link
-      href={`/watch/${content.id}`}
+    <article
       className={cn(
         'group block shrink-0 w-full',
         className
@@ -209,13 +215,20 @@ function EpisodeCardCompact({ content, className }: Omit<EpisodeCardProps, 'vari
             <ProgressBar value={content.progress!} size="xs" variant="gradient" className="rounded-none" />
           </div>
         )}
+        <HoverVideoPreview
+          contentId={content.id}
+          title={content.title}
+          href={`/watch/${content.id}`}
+          duration={content.duration * 60}
+        />
+        <Link href={`/watch/${content.id}`} className="absolute inset-0 z-10" aria-label={content.title} />
       </div>
 
-      <h5 className="text-sm font-medium text-mp-text-primary truncate group-hover:text-mp-accent-primary transition-colors">
-        {content.title}
-      </h5>
+      <Link href={`/watch/${content.id}`} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]">
+        <h5 className="truncate text-sm font-medium text-mp-text-primary transition-colors group-hover:text-mp-accent-primary">{content.title}</h5>
+      </Link>
       <p className="text-xs text-mp-text-secondary">{formatDuration(content.duration)}</p>
-    </Link>
+    </article>
   );
 }
 

@@ -147,15 +147,12 @@ export default function StudioPage() {
   ];
 
   return (
-    <div className="py-8 md:py-12 space-y-8">
+    <div className="sesh-studio-page py-6 md:py-8 space-y-8">
       <StudioPageHeader
         title="Мой контент"
         description="Управление контентом на платформе"
         action={
-          <Button
-            asChild
-            className="bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary text-white hover:opacity-90"
-          >
+          <Button asChild className="sesh-studio-create-button">
             <Link href="/studio/create">
               <Plus className="mr-2 h-4 w-4" />
               Создать контент
@@ -167,9 +164,9 @@ export default function StudioPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <Card key={stat.label} className="border-mp-border bg-mp-surface/50">
+          <Card key={stat.label} className="sesh-studio-stat-card">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="rounded-lg bg-mp-accent-primary/10 p-2.5">
+              <div className="sesh-studio-stat-icon rounded-lg p-2.5">
                 <stat.icon className="h-5 w-5 text-mp-accent-primary" />
               </div>
               <div>
@@ -207,7 +204,7 @@ export default function StudioPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <Card className="border-mp-border bg-mp-surface/50">
+        <Card className="sesh-studio-empty-card">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <FilmSlate className="h-12 w-12 text-mp-text-disabled mb-4" />
             <h3 className="text-lg font-semibold text-mp-text-primary mb-1">
@@ -221,7 +218,6 @@ export default function StudioPage() {
             {!debouncedSearch && contentType === "all" && status === "all" && (
               <Button
                 asChild
-                className="bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary text-white"
               >
                 <Link href="/studio/create">
                   <Plus className="mr-2 h-4 w-4" />

@@ -232,7 +232,7 @@ export function TreeManager({
       <button
         type="button"
         onClick={handleAddGroup}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#272b38] py-3 text-sm text-[#9ca2bc] transition-colors hover:border-[#c94bff]/50 hover:text-[#c94bff]"
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#272b38] py-3 text-sm text-[#9ca2bc] transition-colors hover:border-[#d5203a]/50 hover:text-[#ff6a78]"
       >
         <Plus size={16} weight="bold" />
         Добавить {groupLabel.toLowerCase()}

@@ -95,7 +95,7 @@ export default function AdminDashboardPage() {
     <div>
       <AdminPageHeader
         title="Панель управления"
-        description="Обзор статистики платформы MoviePlatform"
+        description="Обзор статистики платформы SESH"
       />
 
       {/* Stats Grid */}

@@ -1,47 +1,42 @@
 'use client';
 
-import { Play } from '@phosphor-icons/react';
-import Link from 'next/link';
+import { SeshLogo } from '@/components/common/sesh-logo';
 
-/**
- * Auth layout - centered layout for login/register pages
- */
 export default function AuthLayoutClient({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-mp-bg-primary">
-      {/* Background effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-mp-accent-primary/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-mp-accent-secondary/10 rounded-full blur-[120px]" />
-      </div>
+    <div className="sesh-auth-shell relative min-h-screen overflow-hidden bg-[#05020b] text-white">
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-0 bg-[url('/images/mainbackground.png')] bg-cover bg-center bg-no-repeat"
+      />
 
-      {/* Header */}
-      <header className="relative z-10 p-6">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-mp-accent-primary flex items-center justify-center">
-            <Play className="w-4 h-4 text-white" weight="fill" />
-          </div>
-          <span className="text-xl font-bold text-mp-text-primary">
-            Movie<span className="text-gradient">Platform</span>
-          </span>
-        </Link>
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-[1] bg-black/[0.08]"
+      />
+
+      <header className="relative z-10 px-[26px] pt-[27px]">
+        <SeshLogo
+          href="/"
+          className="sesh-auth-logo"
+          imageClassName="h-12 w-auto"
+          priority
+        />
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 flex items-center justify-center p-6 relative z-10">
-        <div className="w-full max-w-md">
+      <main className="relative z-10 flex min-h-[calc(100vh-164px)] items-center justify-center px-6 pb-10 pt-9">
+        <div className="w-full max-w-[570px]">
           {children}
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 p-6 text-center">
-        <p className="text-sm text-mp-text-disabled" suppressHydrationWarning>
-          &copy; {new Date().getFullYear()} MoviePlatform. Все права защищены.
+      <footer className="absolute bottom-[47px] left-0 right-0 z-10 text-center">
+        <p className="text-[15px] font-medium text-[#8f96ad]" suppressHydrationWarning>
+          &copy; {new Date().getFullYear()} СЕШ. Все права защищены.
         </p>
       </footer>
     </div>

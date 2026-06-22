@@ -17,8 +17,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 
+import { SeshLogo } from '@/components/common/sesh-logo';
 import { CollapsedNavTooltip } from '@/components/layout/collapsed-nav-tooltip';
 import { useAuth } from '@/hooks/use-auth';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/ui.store';
 
@@ -74,6 +76,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ className }: AdminSidebarProps) {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
   const { logout } = useAuth();
   const {
     isMobileMenuOpen,
@@ -99,7 +102,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-full flex-col border-r border-white/10 bg-mp-bg-secondary/95 shadow-2xl shadow-black/20 backdrop-blur-xl transition-[transform,width] duration-300 ease-in-out',
+          'sesh-admin-sidebar fixed left-0 top-0 z-50 flex h-full flex-col border-r transition-[transform,width] duration-300 ease-in-out',
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
           'md:translate-x-0',
           isSidebarCollapsed ? 'md:w-[76px]' : 'md:w-[250px]',
@@ -109,31 +112,22 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       >
         <div
           className={cn(
-            'flex h-16 shrink-0 items-center justify-between border-b border-white/10',
+            'relative flex h-16 shrink-0 items-center justify-between border-b border-white/10',
             isSidebarCollapsed ? 'px-4' : 'px-5',
           )}
         >
-          <CollapsedNavTooltip label="MoviePlatform" collapsed={isSidebarCollapsed}>
-            <Link
-              href="/admin/dashboard"
-              className={cn(
-                'flex min-w-0 items-center gap-3',
-                isSidebarCollapsed && 'md:w-full md:justify-center',
+          <CollapsedNavTooltip label="SESH" collapsed={isSidebarCollapsed}>
+            <SeshLogo
+              href="/admin"
+              className="min-w-0 md:absolute md:left-1/2 md:-translate-x-1/2"
+              imageClassName={cn(
+                'h-10 w-auto',
+                isSidebarCollapsed ? 'md:h-9' : 'md:h-11',
               )}
+              priority
+              mobile={isMobile || isSidebarCollapsed}
               onClick={handleNavClick}
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-mp-accent-primary shadow-glow-primary">
-                <Play className="h-4 w-4 text-white" weight="fill" />
-              </div>
-              <div className={cn('flex flex-col', isSidebarCollapsed && 'md:hidden')}>
-                <span className="text-sm font-semibold leading-none text-mp-text-primary">
-                  MoviePlatform
-                </span>
-                <span className="mt-1 text-[10px] font-medium uppercase tracking-wider text-mp-text-disabled">
-                  Админ-панель
-                </span>
-              </div>
-            </Link>
+            />
           </CollapsedNavTooltip>
           <button
             onClick={() => setMobileMenuOpen(false)}
@@ -171,13 +165,13 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                         href={item.href}
                         onClick={handleNavClick}
                         className={cn(
-                          'relative flex items-center rounded-lg text-sm font-medium transition-all',
+                          'sesh-admin-nav-item relative flex items-center rounded-lg text-sm font-medium transition-all',
                           isSidebarCollapsed
                             ? 'gap-0 px-3 py-2.5 md:mx-auto md:h-11 md:w-11 md:justify-center md:px-0'
                             : 'gap-3 px-3 py-2.5',
                           active
-                            ? 'bg-mp-accent-primary text-white shadow-glow-primary'
-                            : 'text-mp-text-secondary hover:bg-white/5 hover:text-mp-text-primary',
+                            ? 'sesh-admin-nav-item-active text-white'
+                            : 'text-mp-text-secondary hover:text-mp-text-primary',
                         )}
                       >
                         <item.icon className="h-4.5 w-4.5 shrink-0" />

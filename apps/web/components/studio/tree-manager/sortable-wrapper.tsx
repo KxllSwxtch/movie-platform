@@ -33,7 +33,7 @@ export function SortableWrapper({ id, children, className }: SortableWrapperProp
       style={style}
       className={cn(
         'transition-shadow duration-200',
-        isDragging && 'ring-2 ring-[#c94bff]/50 shadow-lg opacity-90',
+        isDragging && 'ring-2 ring-[#d5203a]/50 shadow-lg opacity-90',
         className
       )}
     >

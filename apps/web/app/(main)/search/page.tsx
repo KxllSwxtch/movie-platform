@@ -122,9 +122,9 @@ export default function SearchPage() {
   const totalPages = Math.ceil(totalResults / 20);
 
   return (
-    <Container size="xl" className="py-6">
+    <Container size="full" className="sesh-search-page py-6">
       {/* Search input */}
-      <div className="mb-6">
+      <div className="sesh-search-hero mb-6">
         <SearchInput
           placeholder="Поиск сериалов, видео, курсов..."
           autoFocus

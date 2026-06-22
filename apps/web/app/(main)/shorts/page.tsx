@@ -5,15 +5,14 @@ import { CaretUp, CaretDown, SpinnerGap } from '@phosphor-icons/react';
 
 import { ShortCard, type ShortContent } from '@/components/content';
 import { useContentInfinite } from '@/hooks/use-content';
-import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { mapContentItemToShort } from './shorts.utils';
 
 export default function ShortsPage() {
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [viewportHeight, setViewportHeight] = React.useState(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const itemRefs = React.useRef<(HTMLDivElement | null)[]>([]);
-  const sentinelRef = React.useRef<HTMLDivElement>(null);
+  const scrollFrameRef = React.useRef(0);
 
   const {
     data,
@@ -30,46 +29,48 @@ export default function ShortsPage() {
     );
   }, [data]);
 
-  // IntersectionObserver: detect which short is in view
+  const scrollToIndex = React.useCallback((index: number) => {
+    const container = containerRef.current;
+    if (!container || viewportHeight === 0) return;
+    container.scrollTo({ top: index * viewportHeight, behavior: 'smooth' });
+  }, [viewportHeight]);
+
+  // Keep one viewport per item while mounting only the previous, current and next cards.
   React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = (entry.target as HTMLElement).dataset.shortId;
-            const idx = shorts.findIndex((s) => s.id === id);
-            if (idx !== -1) {
-              setActiveIndex(idx);
-            }
-          }
-        });
-      },
-      { threshold: 0.7 }
-    );
+    const container = containerRef.current;
+    if (!container) return undefined;
 
-    itemRefs.current.forEach((el) => {
-      if (el) observer.observe(el);
-    });
+    const updateSize = () => setViewportHeight(container.clientHeight);
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(container);
+    updateSize();
 
-    return () => observer.disconnect();
-  }, [shorts]);
+    const handleScroll = () => {
+      if (scrollFrameRef.current) return;
+      scrollFrameRef.current = window.requestAnimationFrame(() => {
+        scrollFrameRef.current = 0;
+        const height = container.clientHeight;
+        if (!height) return;
+        const nextIndex = Math.max(0, Math.min(shorts.length - 1, Math.round(container.scrollTop / height)));
+        setActiveIndex((current) => current === nextIndex ? current : nextIndex);
+      });
+    };
 
-  // IntersectionObserver: load more when reaching the end
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      resizeObserver.disconnect();
+      container.removeEventListener('scroll', handleScroll);
+      if (scrollFrameRef.current) window.cancelAnimationFrame(scrollFrameRef.current);
+    };
+  }, [shorts.length]);
+
+  // Fetch before the virtual window reaches the end.
   React.useEffect(() => {
-    if (!sentinelRef.current || !hasNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    if (activeIndex >= shorts.length - 3 && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [activeIndex, shorts.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Keyboard navigation
   React.useEffect(() => {
@@ -85,85 +86,80 @@ export default function ShortsPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeIndex, shorts.length]);
-
-  const scrollToIndex = (index: number) => {
-    itemRefs.current[index]?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, [activeIndex, shorts.length, scrollToIndex]);
 
   if (isLoading) {
     return (
-      <div className="relative shorts-viewport-height -m-4 md:-m-6 flex items-center justify-center bg-black">
-        <Spinner size="xl" />
+      <div className="sesh-shorts-loading shorts-viewport-height">
+        <div className="sesh-shorts-loading-card">
+          <div className="sesh-shorts-loading-spinner" />
+          <p>Загрузка шортсов...</p>
+        </div>
       </div>
     );
   }
 
   if (shorts.length === 0) {
     return (
-      <div className="relative shorts-viewport-height -m-4 md:-m-6 flex items-center justify-center bg-black">
+      <div className="relative shorts-viewport-height flex w-full items-center justify-center">
         <p className="text-mp-text-secondary text-lg">Shorts пока нет</p>
       </div>
     );
   }
 
   return (
-    <div className="relative shorts-viewport-height -m-4 md:-m-6">
+    <div className="relative shorts-viewport-height w-full overflow-hidden">
       {/* Scroll container */}
       <div
         ref={containerRef}
-        className="h-full overflow-y-scroll snap-y snap-mandatory custom-scrollbar"
+        className="h-full overflow-y-scroll snap-y snap-mandatory overscroll-contain"
         style={{ scrollbarWidth: 'none' }}
       >
-        {shorts.map((short, index) => (
-          <ShortCard
-            key={short.id}
-            ref={(el) => {
-              itemRefs.current[index] = el;
-            }}
-            content={short}
-            isActive={index === activeIndex}
-            className="h-full"
-          />
-        ))}
+        <div className="relative w-full" style={{ height: Math.max(viewportHeight, shorts.length * viewportHeight) }}>
+          {shorts.map((short, index) => {
+            if (Math.abs(index - activeIndex) > 1) return null;
+            return (
+              <div
+                key={short.id}
+                className="absolute left-0 w-full snap-start"
+                style={{ top: index * viewportHeight, height: viewportHeight || '100%' }}
+              >
+                <ShortCard content={short} isActive={index === activeIndex} className="h-full" />
+              </div>
+            );
+          })}
+        </div>
 
-        {/* Sentinel for infinite scroll */}
-        <div ref={sentinelRef} className="h-1" />
-
-        {isFetchingNextPage && (
-          <div className="flex items-center justify-center py-4">
-            <SpinnerGap className="w-6 h-6 text-white animate-spin" />
-          </div>
-        )}
+        {isFetchingNextPage && <SpinnerGap className="absolute bottom-4 left-1/2 h-6 w-6 -translate-x-1/2 animate-spin text-white" />}
       </div>
 
       {/* Navigation buttons */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex flex-col gap-2">
+      <div className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-2 md:flex">
         <button
           onClick={() => scrollToIndex(Math.max(activeIndex - 1, 0))}
           disabled={activeIndex === 0}
           className={cn(
-            'w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center transition-colors',
+            'flex h-10 w-10 items-center justify-center rounded-full border border-[#d5203a]/20 bg-[#07020f]/45 text-white/80 shadow-[0_0_14px_rgba(213,32,58,0.12)] backdrop-blur-md transition-colors',
             activeIndex === 0
               ? 'opacity-30 cursor-not-allowed'
-              : 'hover:bg-white/20'
+              : 'hover:border-[#55b7ff]/40 hover:bg-[#10131c]/70 hover:text-white'
           )}
           aria-label="Предыдущее видео"
         >
-          <CaretUp className="w-5 h-5 text-white" />
+          <CaretUp className="h-5 w-5" />
         </button>
         <button
           onClick={() => scrollToIndex(Math.min(activeIndex + 1, shorts.length - 1))}
           disabled={activeIndex === shorts.length - 1}
           className={cn(
-            'w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center transition-colors',
+            'flex h-10 w-10 items-center justify-center rounded-full border border-[#d5203a]/20 bg-[#07020f]/45 text-white/80 shadow-[0_0_14px_rgba(213,32,58,0.12)] backdrop-blur-md transition-colors',
             activeIndex === shorts.length - 1
               ? 'opacity-30 cursor-not-allowed'
-              : 'hover:bg-white/20'
+              : 'hover:border-[#55b7ff]/40 hover:bg-[#10131c]/70 hover:text-white'
           )}
           aria-label="Следующее видео"
         >
-          <CaretDown className="w-5 h-5 text-white" />
+          <CaretDown className="h-5 w-5" />
         </button>
       </div>
 

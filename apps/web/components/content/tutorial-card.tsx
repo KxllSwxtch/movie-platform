@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AuthorInlineLink } from "@/components/content/author-inline-link";
 import { AgeBadge, type AgeCategory } from "@/components/content/age-badge";
 import { ContentImage } from "@/components/content/content-image";
+import { HoverVideoPreview } from "@/components/content/hover-video-preview";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { RatingBadge } from "@/components/ui/rating-badge";
 import type { CreatorInput } from "@/lib/author-identity";
@@ -44,11 +45,8 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
   const isComplete = progress === 100;
 
   return (
-    <article className={cn("group block shrink-0 content-card w-full", className)}>
-      <Link
-        href={`/tutorials/${content.slug}`}
-        className="relative mb-3 block aspect-video overflow-hidden rounded-xl bg-mp-surface-2"
-      >
+    <article className={cn("sesh-content-card sesh-tutorial-card group block shrink-0 content-card w-full", className)}>
+      <div className="relative mb-3 block aspect-video overflow-hidden rounded-xl bg-mp-surface-2">
         <ContentImage
           src={content.thumbnailUrl}
           alt={content.title}
@@ -107,7 +105,13 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
             />
           </div>
         )}
-      </Link>
+        <HoverVideoPreview
+          contentId={content.id}
+          title={content.title}
+          href={`/tutorials/${content.slug}`}
+        />
+        <Link href={`/tutorials/${content.slug}`} className="absolute inset-0 z-10" aria-label={content.title} />
+      </div>
 
       <div>
         <Link href={`/tutorials/${content.slug}`} className="block">
@@ -158,10 +162,7 @@ export function TutorialCardProgress({
         className,
       )}
     >
-      <Link
-        href={`/tutorials/${content.slug}`}
-        className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-lg bg-mp-surface-2"
-      >
+      <div className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-lg bg-mp-surface-2">
         <ContentImage
           src={content.thumbnailUrl}
           alt={content.title}
@@ -174,7 +175,13 @@ export function TutorialCardProgress({
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity touch:opacity-60 hover-hover:group-hover:opacity-100">
           <Play className="w-6 h-6 text-white" weight="fill" />
         </div>
-      </Link>
+        <HoverVideoPreview
+          contentId={content.id}
+          title={content.title}
+          href={`/tutorials/${content.slug}`}
+        />
+        <Link href={`/tutorials/${content.slug}`} className="absolute inset-0 z-10" aria-label={content.title} />
+      </div>
 
       <div className="min-w-0 flex-1">
         <Link href={`/tutorials/${content.slug}`} className="block">

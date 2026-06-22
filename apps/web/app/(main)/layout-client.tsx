@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
-
 import { AppHeader } from '@/components/layout/app-header';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
@@ -21,26 +19,8 @@ export default function MainLayoutClient({
 }) {
   const isSidebarCollapsed = useUIStore((state) => state.isSidebarCollapsed);
 
-  // Safety net: periodically clear stale pointer-events:none left by Radix modals.
-  // Uses setInterval (not MutationObserver) to avoid race conditions with
-  // Radix's synchronous pointer-events lifecycle during open/close transitions.
-  useEffect(() => {
-    const id = setInterval(() => {
-      if (
-        document.body.style.pointerEvents === 'none' &&
-        !document.querySelector(
-          '[data-state="open"][role="dialog"], [data-state="open"][role="menu"], [data-state="open"][role="alertdialog"]'
-        )
-      ) {
-        document.body.style.pointerEvents = '';
-      }
-    }, 500);
-
-    return () => clearInterval(id);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-mp-bg-primary">
+    <div className="mp-home-shell min-h-screen overflow-x-hidden bg-[#080013] text-white">
       {/* Sidebar */}
       <AppSidebar />
 
@@ -48,14 +28,14 @@ export default function MainLayoutClient({
       <div
         className={cn(
           'min-h-screen transition-[margin-left] duration-300 ml-0',
-          isSidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[230px]'
+          isSidebarCollapsed ? 'md:ml-[72px]' : 'md:ml-[260px]'
         )}
       >
         {/* Header */}
         <AppHeader />
 
         {/* Page content */}
-        <main id="main-content" className="p-4 md:p-6 pb-20 md:pb-6">
+        <main id="main-content" className="relative z-10 px-4 pb-20 pt-0 md:px-[24px] md:pb-8">
           <PageTransition variant="fade">
             {children}
           </PageTransition>

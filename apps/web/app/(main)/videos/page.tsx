@@ -150,8 +150,8 @@ export default function VideosPage() {
   );
 
   return (
-    <Container size="full" className="py-6">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <Container size="full" className="sesh-catalog-page py-6">
+      <div className="sesh-catalog-header mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-mp-text-primary">Видео</h1>
           <p className="mt-1 text-sm text-mp-text-secondary">
@@ -159,7 +159,7 @@ export default function VideosPage() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="sesh-catalog-controls flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative w-full sm:w-64">
             <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mp-text-secondary" />
             <Input
@@ -192,14 +192,14 @@ export default function VideosPage() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center rounded-lg border border-mp-border p-1">
+          <div className="sesh-view-toggle flex items-center rounded-lg border border-mp-border p-1">
             <button
               onClick={() => setViewMode("grid")}
               className={cn(
                 "rounded p-1.5 transition-colors",
                 viewMode === "grid"
-                  ? "bg-mp-accent-primary/20 text-mp-accent-primary"
-                  : "text-mp-text-secondary hover:text-mp-text-primary",
+                  ? "sesh-view-toggle-active"
+                  : "sesh-view-toggle-inactive",
               )}
               aria-label="Grid view"
             >
@@ -210,8 +210,8 @@ export default function VideosPage() {
               className={cn(
                 "rounded p-1.5 transition-colors",
                 viewMode === "list"
-                  ? "bg-mp-accent-primary/20 text-mp-accent-primary"
-                  : "text-mp-text-secondary hover:text-mp-text-primary",
+                  ? "sesh-view-toggle-active"
+                  : "sesh-view-toggle-inactive",
               )}
               aria-label="List view"
             >
@@ -223,7 +223,7 @@ export default function VideosPage() {
             variant={showFilters ? "default" : "outline"}
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
+            className="sesh-filter-button gap-2"
           >
             <SlidersHorizontal className="h-4 w-4" />
             Фильтры
@@ -236,8 +236,8 @@ export default function VideosPage() {
         </div>
       </div>
 
-      <div className="-mx-4 mb-6 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-        <div className="flex min-w-max items-center gap-2 pb-1">
+      <div className="sesh-category-scroll mb-6">
+        <div className="sesh-category-tabs">
           <button
             type="button"
             onClick={() => {
@@ -245,10 +245,8 @@ export default function VideosPage() {
               setCurrentPage(1);
             }}
             className={cn(
-              "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
-              !selectedCategoryId
-                ? "border-mp-accent-primary bg-mp-accent-primary text-white shadow-sm"
-                : "border-mp-border bg-mp-surface/60 text-mp-text-secondary hover:bg-mp-surface hover:text-mp-text-primary",
+              "sesh-category-tab",
+              !selectedCategoryId && "sesh-category-tab-active",
             )}
           >
             <Sparkle className="h-4 w-4" />
@@ -263,10 +261,8 @@ export default function VideosPage() {
                 setCurrentPage(1);
               }}
               className={cn(
-                "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
-                selectedCategoryId === category.id
-                  ? "border-mp-accent-primary bg-mp-accent-primary text-white shadow-sm"
-                  : "border-mp-border bg-mp-surface/60 text-mp-text-secondary hover:bg-mp-surface hover:text-mp-text-primary",
+                "sesh-category-tab",
+                selectedCategoryId === category.id && "sesh-category-tab-active",
               )}
             >
               {category.iconUrl ? (
@@ -286,7 +282,7 @@ export default function VideosPage() {
 
       <div className="md:hidden">
         <Sheet open={showFilters} onOpenChange={setShowFilters}>
-          <SheetContent side="left" className="w-80">
+          <SheetContent side="left" className="sesh-mobile-filter-sheet w-[min(340px,calc(100vw-24px))]">
             <SheetHeader>
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>

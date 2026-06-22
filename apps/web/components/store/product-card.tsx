@@ -41,12 +41,12 @@ export const ProductCard = memo(function ProductCard({ product, onAddToCart, cla
   return (
     <div
       className={cn(
-        'group relative content-card rounded-xl border border-mp-border bg-mp-surface overflow-hidden',
+        'sesh-store-card group relative content-card overflow-hidden rounded-2xl border border-white/10 bg-[#0d0718]/88 shadow-[0_16px_42px_rgba(0,0,0,0.28)] transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-[#b94bff]/35 focus-within:border-[#55b7ff]/55 focus-within:shadow-[0_0_0_2px_rgba(85,183,255,0.18),0_18px_46px_rgba(0,0,0,0.34)]',
         className
       )}
     >
       {/* Image */}
-      <Link href={`/store/${product.slug}`} className="block">
+      <Link href={`/store/${product.slug}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#55b7ff]">
         <div className="relative aspect-square bg-mp-surface-2 overflow-hidden">
           {imageUrl ? (
             <Image
@@ -75,7 +75,7 @@ export const ProductCard = memo(function ProductCard({ product, onAddToCart, cla
 
       {/* Info */}
       <div className="p-4">
-        <Link href={`/store/${product.slug}`}>
+        <Link href={`/store/${product.slug}`} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]">
           <h3 className="font-medium text-mp-text-primary line-clamp-2 group-hover:text-mp-accent-primary transition-colors duration-200">
             {product.name}
           </h3>
@@ -93,7 +93,7 @@ export const ProductCard = memo(function ProductCard({ product, onAddToCart, cla
         </div>
 
         {/* Add to cart - visible on hover (desktop) or always (mobile) */}
-        <div className="mt-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+        <div className="mt-3 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
           <Button
             variant="outline"
             size="sm"

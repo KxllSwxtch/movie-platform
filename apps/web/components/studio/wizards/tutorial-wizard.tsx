@@ -130,16 +130,23 @@ export function TutorialWizard({ onSuccess }: TutorialWizardProps) {
   });
 
   const { watch, trigger, formState } = form;
-  const watchedValues = watch();
   const draftTimerRef = React.useRef<ReturnType<typeof setTimeout>>();
 
   React.useEffect(() => {
-    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-    draftTimerRef.current = setTimeout(() => saveDraft(watchedValues), 1000);
+    const draftFields = new Set<keyof TutorialFormValues>([
+      'title', 'slug', 'description', 'ageCategory', 'status', 'thumbnailUrl',
+      'previewUrl', 'isFree', 'individualPrice', 'categoryId', 'tagIds', 'genreIds',
+    ]);
+    const subscription = watch((_values, { name }) => {
+      if (!name || !draftFields.has(name as keyof TutorialFormValues)) return;
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = setTimeout(() => saveDraft(form.getValues()), 1000);
+    });
     return () => {
+      subscription.unsubscribe();
       if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
     };
-  }, [watchedValues]);
+  }, [form, watch]);
 
   const ensureDraftContent = React.useCallback(async (): Promise<boolean> => {
     if (createdContentId) return true;
