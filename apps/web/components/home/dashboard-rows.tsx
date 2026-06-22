@@ -7,6 +7,8 @@ import { useCallback, useRef } from "react";
 import {
   AuthorInlineLink,
   HoverVideoPreview,
+  isValidNumber,
+  safeProgressPercent,
   VideoCardProgress,
   type VideoProgressContent,
 } from "@/components/content";
@@ -48,6 +50,25 @@ interface DashboardApiItem {
   author?: CreatorInput;
 }
 
+interface ContinueWatchingApiItem {
+  id?: string;
+  contentId?: string;
+  progressSeconds?: number | null;
+  progress?: number | null;
+  remainingSeconds?: number | null;
+  duration?: number | null;
+  content?: {
+    id?: string;
+    title?: string;
+    thumbnailUrl?: string | null;
+    duration?: number | null;
+    publishedAt?: string | null;
+  } | null;
+  title?: string;
+  thumbnailUrl?: string | null;
+  year?: number | null;
+}
+
 export function DashboardRows({ data }: DashboardRowsProps) {
   const trendingScrollRef = useRef<HTMLDivElement>(null);
   const {
@@ -60,8 +81,9 @@ export function DashboardRows({ data }: DashboardRowsProps) {
     tutorials,
   } = data;
 
-  const continueItems: VideoProgressContent[] =
-    (continueWatching.data?.items as VideoProgressContent[] | undefined) || [];
+  const continueItems = mapContinueWatchingItems(
+    continueWatching.data?.items as ContinueWatchingApiItem[] | undefined,
+  );
   const trendingItems = (trending.data?.data?.items || []).map(
     mapToDashboardCard,
   );
@@ -88,8 +110,8 @@ export function DashboardRows({ data }: DashboardRowsProps) {
 
   return (
     <div className="space-y-[32px]">
-      {continueItems.length > 1 && (
-        <section className="rounded-[14px] border border-white/[0.06] bg-black/20 p-3 backdrop-blur-xl">
+      {continueItems.length > 0 ? (
+        <section className="w-fit max-w-full rounded-[14px] border border-white/[0.06] bg-black/20 p-3 backdrop-blur-xl">
           <div className="mb-3.5 flex items-end justify-between">
             <h2 className="text-[22px] font-semibold text-white">
               Продолжить просмотр
@@ -101,13 +123,13 @@ export function DashboardRows({ data }: DashboardRowsProps) {
               Смотреть все
             </Link>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+          <div className="flex w-fit max-w-full items-start gap-4 overflow-x-auto pb-1 no-scrollbar">
             {continueItems.map((item) => (
               <VideoCardProgress key={item.id} content={item} />
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
       <section className="relative">
         <div className="flex items-start gap-[36px] overflow-hidden">
@@ -351,4 +373,54 @@ function mapToDashboardCard(item: DashboardApiItem): DashboardCardContent {
     duration: item.duration,
     creator: item.creator ?? item.author,
   };
+}
+
+export function mapContinueWatchingItems(
+  items: ContinueWatchingApiItem[] | undefined,
+): VideoProgressContent[] {
+  if (!Array.isArray(items)) return [];
+
+  return items.flatMap((item) => {
+    const content = item.content;
+    const id = content?.id || item.contentId || item.id;
+    const title = content?.title || item.title;
+    if (!id || !title) return [];
+
+    const durationCandidate = content?.duration ?? item.duration;
+    const duration = isValidNumber(durationCandidate) && durationCandidate > 0
+      ? durationCandidate
+      : undefined;
+
+    let currentTime = isValidNumber(item.progressSeconds)
+      ? Math.max(0, item.progressSeconds)
+      : 0;
+
+    if (!isValidNumber(item.progressSeconds) && duration) {
+      if (isValidNumber(item.remainingSeconds)) {
+        currentTime = Math.max(0, duration - item.remainingSeconds);
+      } else if (isValidNumber(item.progress)) {
+        currentTime = Math.max(0, duration * (item.progress / 100));
+      }
+    }
+
+    const publishedYear = content?.publishedAt
+      ? new Date(content.publishedAt).getFullYear()
+      : undefined;
+    const year = isValidNumber(item.year) && item.year > 0
+      ? item.year
+      : isValidNumber(publishedYear)
+        ? publishedYear
+        : undefined;
+
+    return [{
+      id,
+      title,
+      thumbnailUrl:
+        content?.thumbnailUrl || item.thumbnailUrl || "/images/movie-placeholder.jpg",
+      progress: safeProgressPercent(currentTime, duration),
+      currentTime,
+      duration,
+      year,
+    }];
+  });
 }

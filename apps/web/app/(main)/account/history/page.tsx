@@ -208,7 +208,7 @@ export default function HistoryPage() {
                     <div className="absolute bottom-0 left-0 right-0">
                       <div className="h-1 bg-white/20">
                         <div
-                          className="h-full bg-mp-accent-primary"
+                          className="h-full rounded-full bg-[#C70F4F] shadow-[0_0_10px_rgba(199,15,79,0.45)]"
                           style={{ width: `${progressPercent}%` }}
                         />
                       </div>

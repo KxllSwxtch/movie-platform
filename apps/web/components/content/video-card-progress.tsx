@@ -12,12 +12,13 @@ import { cn } from '@/lib/utils';
 export interface VideoProgressContent {
   id: string;
   title: string;
-  year: number;
+  year?: number;
   thumbnailUrl: string;
   /** Progress percentage (0-100) */
   progress: number;
-  /** Duration remaining in minutes */
-  remainingMinutes: number;
+  /** Current playback position and duration, in seconds. */
+  currentTime: number;
+  duration?: number;
 }
 
 interface VideoCardProgressProps {
@@ -28,7 +29,28 @@ interface VideoCardProgressProps {
 /**
  * Format remaining time
  */
-function formatRemainingTime(minutes: number): string {
+export function isValidNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+export function safeProgressPercent(currentTime: unknown, duration: unknown): number {
+  if (!isValidNumber(duration) || duration <= 0) return 0;
+
+  const safeCurrentTime = isValidNumber(currentTime) ? currentTime : 0;
+  return Math.min(100, Math.max(0, (safeCurrentTime / duration) * 100));
+}
+
+export function formatRemainingTime(
+  currentTime: unknown,
+  duration: unknown,
+): string | null {
+  if (!isValidNumber(duration) || duration <= 0) return null;
+
+  const safeCurrentTime = isValidNumber(currentTime) ? currentTime : 0;
+  const remainingSeconds = Math.max(0, duration - Math.max(0, safeCurrentTime));
+  if (remainingSeconds <= 0) return null;
+
+  const minutes = Math.ceil(remainingSeconds / 60);
   if (minutes < 60) {
     return `осталось ${minutes} мин`;
   }
@@ -41,6 +63,9 @@ function formatRemainingTime(minutes: number): string {
  * Video card with progress bar matching Figma "Continue Watch" design
  */
 export const VideoCardProgress = memo(function VideoCardProgress({ content, className }: VideoCardProgressProps) {
+  const progress = safeProgressPercent(content.currentTime, content.duration);
+  const remainingTime = formatRemainingTime(content.currentTime, content.duration);
+
   return (
     <article
       className={cn(
@@ -70,7 +95,7 @@ export const VideoCardProgress = memo(function VideoCardProgress({ content, clas
         {/* Progress bar at bottom */}
         <div className="absolute bottom-0 left-0 right-0">
           <ProgressBar
-            value={content.progress}
+            value={progress}
             size="sm"
             variant="gradient"
             className="rounded-none"
@@ -90,11 +115,15 @@ export const VideoCardProgress = memo(function VideoCardProgress({ content, clas
           <Link href={`/watch/${content.id}`} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]">
             <h3 className="truncate text-base font-medium text-white transition-colors group-hover:text-mp-accent-primary">{content.title}</h3>
           </Link>
-          <p className="text-sm text-mp-text-secondary">{content.year}</p>
+          {content.year ? (
+            <p className="text-sm text-mp-text-secondary">{content.year}</p>
+          ) : null}
         </div>
-        <span className="text-sm text-mp-text-secondary whitespace-nowrap shrink-0">
-          {formatRemainingTime(content.remainingMinutes)}
-        </span>
+        {remainingTime ? (
+          <span className="shrink-0 whitespace-nowrap text-sm text-mp-text-secondary">
+            {remainingTime}
+          </span>
+        ) : null}
       </div>
     </article>
   );
