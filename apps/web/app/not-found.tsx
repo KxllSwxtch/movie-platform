@@ -41,7 +41,7 @@ export default function NotFound() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-mp-bg-primary">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-transparent">
       <div className="text-center">
         {/* 404 graphic */}
         <div className="relative mb-8">

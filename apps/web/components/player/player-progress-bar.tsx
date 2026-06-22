@@ -164,7 +164,7 @@ export function PlayerProgressBar({ onSeek, className }: PlayerProgressBarProps)
 
             {/* Progress */}
             <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-mp-accent-primary to-mp-accent-secondary rounded-full"
+              className="absolute inset-y-0 left-0 rounded-full bg-[#C70F4F] shadow-[0_0_10px_rgba(199,15,79,0.45)]"
               style={{ width: `${progress}%` }}
             />
           </div>

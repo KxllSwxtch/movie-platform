@@ -3,7 +3,7 @@ import { VideoPlayerSkeleton } from '@/components/player';
 
 export default function WatchLoading() {
   return (
-    <div className="min-h-screen bg-mp-bg-primary">
+    <div className="min-h-screen bg-transparent">
       {/* Back navigation bar */}
       <div className="border-b border-mp-border bg-mp-bg-secondary/50 h-14" />
 

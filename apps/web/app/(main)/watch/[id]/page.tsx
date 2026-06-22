@@ -242,7 +242,7 @@ export default function WatchPage() {
 
     if (status === 403) {
       return (
-        <div className="min-h-screen bg-mp-bg-primary flex items-center justify-center">
+        <div className="min-h-screen bg-transparent flex items-center justify-center">
           <div className="text-center max-w-md px-4">
             <div className="w-16 h-16 rounded-full bg-mp-accent-primary/10 flex items-center justify-center mx-auto mb-6">
               <Lock className="w-8 h-8 text-mp-accent-primary" />
@@ -272,7 +272,7 @@ export default function WatchPage() {
       contentError && (contentError as ApiError)?.status === 404;
     if (status === 404 && contentNotFound) {
       return (
-        <div className="min-h-screen bg-mp-bg-primary flex items-center justify-center">
+        <div className="min-h-screen bg-transparent flex items-center justify-center">
           <div className="text-center max-w-md px-4">
             <div className="w-16 h-16 rounded-full bg-mp-error-bg flex items-center justify-center mx-auto mb-6">
               <WarningCircle className="w-8 h-8 text-mp-error-text" />
@@ -294,7 +294,7 @@ export default function WatchPage() {
     // Non-404 stream errors (and content detail not yet loaded)
     if (status && status !== 404) {
       return (
-        <div className="min-h-screen bg-mp-bg-primary flex items-center justify-center">
+        <div className="min-h-screen bg-transparent flex items-center justify-center">
           <div className="text-center max-w-md px-4">
             <div className="w-16 h-16 rounded-full bg-mp-error-bg flex items-center justify-center mx-auto mb-6">
               <WarningCircle className="w-8 h-8 text-mp-error-text" />
@@ -329,7 +329,7 @@ export default function WatchPage() {
   // Loading state — show skeleton while both queries are in flight
   if (isLoading && !videoNotReady) {
     return (
-      <div className="min-h-screen bg-mp-bg-primary">
+      <div className="min-h-screen bg-transparent">
         <div className="border-b border-mp-border bg-mp-bg-secondary/50 h-14" />
         <div className="w-full bg-black">
           <Container size="full" className="px-0 md:px-6 lg:px-8">
@@ -374,7 +374,7 @@ export default function WatchPage() {
     : undefined;
 
   return (
-    <div className="min-h-screen bg-mp-bg-primary">
+    <div className="min-h-screen bg-transparent">
       {/* Back navigation */}
       <div className="border-b border-mp-border bg-mp-bg-secondary/50 backdrop-blur-sm sticky top-0 z-10 -mx-4 md:-mx-6 w-[calc(100%+2rem)] md:w-[calc(100%+3rem)] px-4 md:px-6">
         <div className="flex items-center h-14">
