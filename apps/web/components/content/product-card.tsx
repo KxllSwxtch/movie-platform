@@ -88,7 +88,7 @@ export function ProductCard({ content, onAddToCart, isAddingToCart, className }:
           onClick={handleAddToCart}
         >
           <div className={cn(
-            'w-14 h-14 touch:w-11 touch:h-11 rounded-full bg-mp-accent-primary/90 backdrop-blur-sm flex items-center justify-center shadow-glow-primary',
+            'w-14 h-14 touch:w-11 touch:h-11 rounded-full bg-[#C70F4F]/90 backdrop-blur-sm flex items-center justify-center shadow-glow-primary',
             isAddingToCart && 'opacity-60',
           )}>
             <Bag className={cn('w-6 h-6 touch:w-5 touch:h-5 text-white', isAddingToCart && 'animate-pulse')} />

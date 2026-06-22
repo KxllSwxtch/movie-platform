@@ -1,6 +1,8 @@
 'use client';
 
+import { VerificationStatus as SharedVerificationStatus } from '@movie-platform/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as React from 'react';
 import { toast } from 'sonner';
 
 import { api, ApiError, endpoints } from '@/lib/api-client';
@@ -25,7 +27,7 @@ interface UserProfile {
 
 /** Verification status response */
 interface VerificationStatus {
-  status: 'NONE' | 'UNVERIFIED' | 'PENDING' | 'APPROVED' | 'VERIFIED' | 'REJECTED';
+  status: SharedVerificationStatus;
   method?: string;
   createdAt?: string;
   submittedAt?: string;
@@ -194,9 +196,9 @@ export function useConfirmEmailChange() {
 // ==============================
 
 export function useVerificationStatus() {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { isAuthenticated, isHydrated, updateUser } = useAuthStore();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: queryKeys.users.verification(),
     queryFn: async () => {
       const response = await api.get<VerificationStatus>(endpoints.users.verificationStatus);
@@ -204,6 +206,14 @@ export function useVerificationStatus() {
     },
     enabled: isAuthenticated && isHydrated,
   });
+
+  React.useEffect(() => {
+    if (query.data?.status) {
+      updateUser({ verificationStatus: query.data.status });
+    }
+  }, [query.data?.status, updateUser]);
+
+  return query;
 }
 
 export function useSubmitVerification() {

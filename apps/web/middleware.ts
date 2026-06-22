@@ -3,9 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   canUseAdmin,
   canUsePartnerDashboard,
-  canUseStudio,
   getPartnerRedirectPath,
-  getStudioRedirectPath,
 } from '@/lib/role-permissions';
 
 /**
@@ -25,19 +23,12 @@ const PARTNER_ONLY_ROUTES = [
   '/account/referrals',
   '/account/withdrawals',
   '/bonuses/withdraw',
-  '/partner',
-];
-
-const CREATOR_TOOL_ROUTES = [
-  '/studio',
 ];
 
 const VERIFIED_ONLY_ROUTES = [
-  '/partner',
   '/account/referrals',
   '/account/withdrawals',
   '/bonuses/withdraw',
-  '/studio',
   '/store/checkout',
   '/checkout',
 ];
@@ -156,23 +147,6 @@ export function middleware(request: NextRequest) {
 
     if (!canUsePartnerDashboard(role, verificationStatus)) {
       const redirectPath = getPartnerRedirectPath(role, verificationStatus);
-      const redirectUrl = new URL(redirectPath || '/account', request.url);
-      if (redirectPath === '/account/verification') {
-        redirectUrl.searchParams.set('restricted', pathname);
-      }
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
-
-  if (matchesRoute(pathname, CREATOR_TOOL_ROUTES)) {
-    if (!isAuthenticated) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    if (!canUseStudio(role, verificationStatus)) {
-      const redirectPath = getStudioRedirectPath(role, verificationStatus);
       const redirectUrl = new URL(redirectPath || '/account', request.url);
       if (redirectPath === '/account/verification') {
         redirectUrl.searchParams.set('restricted', pathname);

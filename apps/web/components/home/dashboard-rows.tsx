@@ -110,57 +110,40 @@ export function DashboardRows({ data }: DashboardRowsProps) {
       )}
 
       <section className="relative">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="sesh-trending-title text-[44px] font-extrabold leading-[0.94] tracking-[-0.04em] text-white md:text-[58px]">
+        <div className="flex items-start gap-[36px] overflow-hidden">
+          <div className="w-[220px] shrink-0 pt-[26px]">
+            <h2 className="sesh-trending-title text-[42px] font-extrabold leading-[0.92] tracking-[-0.04em] text-white md:text-[48px]">
               Trending
               <br />
               Now
             </h2>
-            <p className="mt-2 text-[16px] font-medium text-white/76 md:text-[18px]">
+
+            <p className="mt-5 text-[18px] font-semibold text-white/82">
               Сейчас в тренде<span className="ml-1">🔥</span>
             </p>
           </div>
 
-          <div
-            className="hidden shrink-0 items-center gap-2 md:flex"
-            aria-label="Навигация Trending Now"
-          >
-            <button
-              type="button"
-              aria-label="Прокрутить Trending Now назад"
-              aria-controls="trending-now-carousel"
-              onClick={() => scrollTrending("left")}
-              className="flex h-[42px] w-[42px] items-center justify-center rounded-[12px] border border-white/[0.08] bg-[rgba(12,12,24,0.75)] text-white/80 backdrop-blur-[10px] transition-[border-color,box-shadow,color,background-color] duration-150 ease-out hover:border-[#C70F4F]/45 hover:bg-[rgba(20,12,28,0.82)] hover:text-white hover:shadow-[0_0_18px_rgba(199,15,79,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C70F4F]/70"
-            >
-              <CaretLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              aria-label="Прокрутить Trending Now вперед"
-              aria-controls="trending-now-carousel"
-              onClick={() => scrollTrending("right")}
-              className="flex h-[42px] w-[42px] items-center justify-center rounded-[12px] border border-white/[0.08] bg-[rgba(12,12,24,0.75)] text-white/80 backdrop-blur-[10px] transition-[border-color,box-shadow,color,background-color] duration-150 ease-out hover:border-[#C70F4F]/45 hover:bg-[rgba(20,12,28,0.82)] hover:text-white hover:shadow-[0_0_18px_rgba(199,15,79,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C70F4F]/70"
-            >
-              <CaretRight className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 hidden justify-end gap-2 md:flex">
+              {/* стрелки тут */}
+            </div>
 
-        <div
-          id="trending-now-carousel"
-          ref={trendingScrollRef}
-          className="flex gap-[25px] overflow-x-auto pb-2.5 pr-6 no-scrollbar md:pr-[104px]"
-        >
-          {trending.isLoading ? (
-            <TopRailSkeleton />
-          ) : (
-            trendingItems
-              .slice(0, 8)
-              .map((item) => (
-                <CompactTrendingCard key={item.id} content={item} />
-              ))
-          )}
+            <div
+              id="trending-now-carousel"
+              ref={trendingScrollRef}
+              className="flex gap-[26px] overflow-x-auto pb-3 no-scrollbar"
+            >
+              {trending.isLoading ? (
+                <TopRailSkeleton />
+              ) : (
+                trendingItems
+                  .slice(0, 8)
+                  .map((item) => (
+                    <CompactTrendingCard key={item.id} content={item} />
+                  ))
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -189,7 +172,7 @@ function CompactTrendingCard({ content }: { content: DashboardCardContent }) {
   const href = getContentHref(content);
 
   return (
-    <article className="group w-[188px] shrink-0 md:w-[200px]">
+    <article className="group w-[190px] shrink-0 md:w-[215px]">
       <div className="relative aspect-[1.83/1] overflow-hidden rounded-[10px] bg-white/[0.04] shadow-[0_12px_32px_rgba(0,0,0,0.22)]">
         <ContentImage
           src={content.thumbnailUrl}

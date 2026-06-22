@@ -31,9 +31,9 @@ export function CartBadge({ onClick, className }: CartBadgeProps) {
     >
       <ShoppingCart className="w-5 h-5" />
       {count > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-mp-accent-primary text-white text-[10px] font-bold px-1">
-          {count > 99 ? '99+' : count}
-        </span>
+      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#C70F4F] text-white text-[10px] font-bold px-1">
+        {count > 99 ? '99+' : count}
+      </span>
       )}
     </Button>
   );

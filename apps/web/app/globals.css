@@ -958,27 +958,14 @@
     z-index: 1;
 
     text-shadow:
-      -26px 0 34px rgba(215, 10, 42, 0.7),
-      -10px 16px 30px rgba(208, 15, 71, 0.48),
-      18px 18px 34px rgba(145, 23, 130, 0.42),
-      46px 2px 42px rgba(15, 102, 235, 0.6);
+      -12px 0 18px rgba(215, 10, 42, 0.55),
+      -4px 6px 14px rgba(208, 15, 71, 0.35),
+      8px 8px 16px rgba(145, 23, 130, 0.30),
+      18px 0 22px rgba(15, 102, 235, 0.40);
   }
 
   .sesh-trending-title::before {
-    content: '';
-    position: absolute;
-    inset: -30px -60px -26px -42px;
-    z-index: -1;
-    pointer-events: none;
-
-    background:
-      radial-gradient(circle at 8% 35%, rgba(215, 10, 42, 0.68), transparent 34%),
-      radial-gradient(circle at 46% 72%, rgba(208, 15, 71, 0.42), transparent 36%),
-      radial-gradient(circle at 70% 55%, rgba(145, 23, 130, 0.36), transparent 38%),
-      radial-gradient(circle at 96% 34%, rgba(15, 102, 235, 0.62), transparent 34%);
-
-    filter: blur(30px);
-    opacity: 0.98;
+    display: none;
   }
 
   .sesh-gradient-text {

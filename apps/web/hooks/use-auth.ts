@@ -181,6 +181,9 @@ export function useAuth() {
     },
     enabled: isAuthenticated && isHydrated,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // Role and verification are mutable server-side (for example after admin
+    // approval), so protected-area guards must not rely on the persisted user.
+    refetchOnMount: 'always',
   });
 
   // Update user in store when query data changes
@@ -223,7 +226,7 @@ export function useAuth() {
 
     // User data refresh
     refreshUser: userQuery.refetch,
-    isLoadingUser: userQuery.isLoading,
+    isLoadingUser: userQuery.isFetching,
   };
 }
 
