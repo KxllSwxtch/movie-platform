@@ -1,11 +1,13 @@
 import { ShortsFeed } from '../shorts-feed';
 
 interface ShortRoutePageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
-export default function ShortRoutePage({ params }: ShortRoutePageProps) {
-  return <ShortsFeed initialShortSlug={params.slug} />;
+export default async function ShortRoutePage({ params }: ShortRoutePageProps) {
+  const { slug } = await params;
+
+  return <ShortsFeed initialShortSlug={slug} />;
 }
