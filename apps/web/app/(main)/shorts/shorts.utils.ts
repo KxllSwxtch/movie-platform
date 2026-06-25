@@ -29,3 +29,27 @@ export function mapContentItemToShort(item: {
     shareCount: item.shareCount ?? 0,
   };
 }
+
+export function isSameShort(short: ShortContent, slugOrId: string) {
+  return short.id === slugOrId || short.slug === slugOrId;
+}
+
+export function prioritizeInitialShort(
+  feedShorts: ShortContent[],
+  slugOrId: string,
+  targetShort?: ShortContent | null,
+): ShortContent[] {
+  if (!slugOrId) return feedShorts;
+
+  const firstShort =
+    targetShort ?? feedShorts.find((short) => isSameShort(short, slugOrId));
+
+  if (!firstShort) return feedShorts;
+
+  return [
+    firstShort,
+    ...feedShorts.filter(
+      (short) => short.id !== firstShort.id && short.slug !== firstShort.slug,
+    ),
+  ];
+}

@@ -392,7 +392,6 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
             <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d5203a]/22 bg-[#07020f]/54 text-white shadow-[0_0_16px_rgba(213,32,58,0.16)] backdrop-blur-md transition-all group-hover:border-[#55b7ff]/50 group-hover:bg-[#0b1727]/74">
               <ShareNetwork className="h-5 w-5" weight="fill" />
             </div>
-            <span className="text-xs font-semibold text-white">{formatNumber(content.shareCount ?? 0)}</span>
           </button>
         </div>
 

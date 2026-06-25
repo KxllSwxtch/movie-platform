@@ -1,4 +1,4 @@
-import { mapContentItemToShort } from './shorts.utils';
+import { mapContentItemToShort, prioritizeInitialShort } from './shorts.utils';
 
 describe('ShortsPage data mapping', () => {
   it('normalizes object creators and missing optional fields', () => {
@@ -19,7 +19,9 @@ describe('ShortsPage data mapping', () => {
 
     expect(short).toEqual({
       id: 'short-1',
+      slug: 'short-1',
       title: 'Untitled short',
+      contentType: 'SHORT',
       thumbnailUrl: '/images/movie-placeholder.jpg',
       creator: {
         id: 'author-1',
@@ -44,5 +46,27 @@ describe('ShortsPage data mapping', () => {
       displayName: 'SESH',
       username: 'movieplatform',
     });
+  });
+
+  it('moves the shared short to the first feed position and removes duplicates', () => {
+    const first = mapContentItemToShort({ id: 'short-1', slug: 'one', title: 'One' });
+    const target = mapContentItemToShort({ id: 'short-2', slug: 'two', title: 'Two' });
+    const third = mapContentItemToShort({ id: 'short-3', slug: 'three', title: 'Three' });
+
+    expect(prioritizeInitialShort([first, target, third], 'two')).toEqual([
+      target,
+      first,
+      third,
+    ]);
+  });
+
+  it('prepends the resolved shared short when it is not in the first feed page', () => {
+    const first = mapContentItemToShort({ id: 'short-1', slug: 'one', title: 'One' });
+    const target = mapContentItemToShort({ id: 'short-9', slug: 'nine', title: 'Nine' });
+
+    expect(prioritizeInitialShort([first], 'nine', target)).toEqual([
+      target,
+      first,
+    ]);
   });
 });
