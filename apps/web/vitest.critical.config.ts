@@ -16,6 +16,7 @@ export default defineConfig({
       'lib/__tests__/error-messages.test.ts',
       'lib/__tests__/format-utils.test.ts',
       'lib/__tests__/media-url.test.ts',
+      'lib/__tests__/public-content-url.test.ts',
       'lib/__tests__/username.test.ts',
       'lib/__tests__/author-identity.test.ts',
       'lib/__tests__/content-normalizers.test.ts',

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { cn, copyTextToClipboard, formatNumber, formatRelativeTime } from '@/lib/utils';
 import { normalizeMediaUrl } from '@/lib/media-url';
 import { normalizeCreatorIdentity } from '@/lib/author-identity';
+import { getPublicContentUrl } from '@/lib/public-content-url';
 import type { CreatorInput } from '@/lib/author-identity';
 import { useStreamUrl } from '@/hooks/use-streaming';
 import { useContentComments, useCreateContentComment } from '@/hooks/use-comments';
@@ -31,7 +32,9 @@ let activeShortVideo: HTMLVideoElement | null = null;
 
 export interface ShortContent {
   id: string;
+  slug?: string;
   title: string;
+  contentType?: string;
   thumbnailUrl?: string;
   creator: CreatorInput;
   likeCount?: number;
@@ -254,7 +257,11 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
     };
 
     const handleShare = async () => {
-      const url = typeof window !== 'undefined' ? `${window.location.origin}/watch/${content.id}` : '';
+      const url = getPublicContentUrl({
+        id: content.id,
+        slug: content.slug,
+        contentType: content.contentType || 'SHORT',
+      });
       try {
         if (typeof navigator !== 'undefined' && 'share' in navigator) {
           await (navigator as any).share({ title: content.title, url });

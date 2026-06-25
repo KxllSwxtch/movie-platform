@@ -2,18 +2,21 @@
 
 import {
   Archive,
+  ArrowSquareOut,
   Eye,
   FilmStrip,
   PencilSimple,
   Play,
 } from "@phosphor-icons/react";
 import { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { DataTableColumnHeader } from "@/components/admin/data-table/data-table-column-header";
 import { DataTableRowActions } from "@/components/admin/data-table/data-table-row-actions";
 import { AgeBadge, Badge } from "@/components/ui/badge";
 import { ContentImage } from "@/components/content/content-image";
+import { getPublicContentPath } from "@/lib/public-content-url";
 import type { Content } from "@movie-platform/shared";
 
 type AdminContentRow = Content & {
@@ -170,7 +173,22 @@ export const contentColumns: ColumnDef<Content>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Статус" />
     ),
-    cell: ({ row }) => getContentStatusBadge(row.original.status as string),
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        {getContentStatusBadge(row.original.status as string)}
+        {row.original.status === "PUBLISHED" ? (
+          <Link
+            href={getPublicContentPath(row.original)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-md border border-mp-border px-2 py-1 text-xs font-medium text-mp-text-secondary transition-colors hover:border-mp-accent-primary/60 hover:text-mp-text-primary"
+          >
+            <ArrowSquareOut className="h-3.5 w-3.5" />
+            Открыть
+          </Link>
+        ) : null}
+      </div>
+    ),
   },
   {
     accessorKey: "isFree",

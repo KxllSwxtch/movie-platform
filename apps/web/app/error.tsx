@@ -21,7 +21,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-mp-bg-primary">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-transparent">
       <div className="text-center max-w-md">
         {/* Error icon */}
         <div className="w-20 h-20 rounded-full bg-mp-error-bg flex items-center justify-center mx-auto mb-6">

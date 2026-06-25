@@ -212,6 +212,7 @@ function CompactTrendingCard({ content }: { content: DashboardCardContent }) {
           contentId={content.id}
           title={content.title}
           href={href}
+          contentType={content.type}
           duration={content.duration}
         />
         <Link
@@ -250,6 +251,7 @@ function PremiumVideoCard({ content }: { content: DashboardCardContent }) {
           contentId={content.id}
           title={content.title}
           href={href}
+          contentType={content.type}
           duration={content.duration}
         />
         <Link

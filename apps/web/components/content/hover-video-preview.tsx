@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import type { StreamUrlResponse } from "@/hooks/use-streaming";
 import { api, endpoints } from "@/lib/api-client";
 import { normalizeMediaUrl } from "@/lib/media-url";
-import { buildAbsoluteAppUrl, cn, copyTextToClipboard, formatDuration } from "@/lib/utils";
+import { getPublicContentUrl } from "@/lib/public-content-url";
+import { cn, copyTextToClipboard, formatDuration } from "@/lib/utils";
 
 let activePreviewStop: (() => void) | null = null;
 const previewStreamCache = new Map<string, StreamUrlResponse>();
@@ -20,6 +21,7 @@ interface HoverVideoPreviewProps {
   contentId: string;
   title: string;
   href: string;
+  contentType?: string;
   duration?: number | null;
   className?: string;
 }
@@ -28,6 +30,7 @@ export function HoverVideoPreview({
   contentId,
   title,
   href,
+  contentType,
   duration,
   className,
 }: HoverVideoPreviewProps) {
@@ -164,7 +167,12 @@ export function HoverVideoPreview({
   };
 
   const sharePreview = async () => {
-    const url = buildAbsoluteAppUrl(href);
+    const slug = href.split("?")[0]?.split("/").filter(Boolean).pop();
+    const url = getPublicContentUrl({
+      id: contentId,
+      slug,
+      contentType,
+    });
     try {
       if (typeof navigator !== "undefined" && "share" in navigator) {
         await navigator.share({ title, url });

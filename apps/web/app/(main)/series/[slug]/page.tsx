@@ -22,6 +22,7 @@ import {
 } from "@/components/content";
 import { RatingBadge } from "@/components/ui/rating-badge";
 import { cn, copyTextToClipboard } from "@/lib/utils";
+import { getPublicContentUrl } from "@/lib/public-content-url";
 import { useSeriesDetail } from "@/hooks/use-content";
 import { useAddToWatchlist } from "@/hooks/use-account";
 
@@ -113,8 +114,11 @@ export default function SeriesDetailPage() {
   }, [addToWatchlist, series?.id]);
 
   const handleShare = React.useCallback(async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    if (!url) return;
+    const url = getPublicContentUrl({
+      id: series?.id,
+      slug: series?.slug || slug,
+      contentType: "SERIES",
+    });
 
     try {
       if (typeof navigator !== "undefined" && "share" in navigator) {
@@ -131,7 +135,7 @@ export default function SeriesDetailPage() {
     const ok = await copyTextToClipboard(url);
     if (ok) toast.success("Ссылка скопирована");
     else toast.error("Не удалось скопировать ссылку");
-  }, [series?.title]);
+  }, [series?.id, series?.slug, series?.title, slug]);
 
   if (isLoading) {
     return (

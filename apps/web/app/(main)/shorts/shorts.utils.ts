@@ -8,7 +8,9 @@ const fallbackCreator = {
 
 export function mapContentItemToShort(item: {
   id?: string;
+  slug?: string | null;
   title?: string | null;
+  contentType?: string | null;
   thumbnailUrl?: string | null;
   creator?: CreatorInput | null;
   likeCount?: number | null;
@@ -17,7 +19,9 @@ export function mapContentItemToShort(item: {
 }): ShortContent {
   return {
     id: item.id || "",
+    slug: item.slug || item.id || "",
     title: item.title || "Untitled short",
+    contentType: item.contentType || "SHORT",
     thumbnailUrl: item.thumbnailUrl || "/images/movie-placeholder.jpg",
     creator: item.creator ?? fallbackCreator,
     likeCount: item.likeCount ?? 0,

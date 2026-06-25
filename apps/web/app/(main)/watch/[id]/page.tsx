@@ -23,6 +23,7 @@ import { VideoPlayerSkeleton } from "@/components/player";
 import { ContentComments, ContentImage } from "@/components/content";
 import { cn, copyTextToClipboard } from "@/lib/utils";
 import { normalizeMediaUrl } from "@/lib/media-url";
+import { getPublicContentUrl } from "@/lib/public-content-url";
 import { useStreamUrl } from "@/hooks/use-streaming";
 import { useContentDetail } from "@/hooks/use-content";
 import {
@@ -198,8 +199,11 @@ export default function WatchPage() {
   }, [queryClient, contentId]);
 
   const handleShare = React.useCallback(async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    if (!url) return;
+    const url = getPublicContentUrl({
+      id: contentDetail?.id || contentId,
+      slug: contentDetail?.slug,
+      contentType: contentDetail?.contentType || streamData?.contentType,
+    });
 
     const shareTitle = streamData?.title || contentDetail?.title || "Видео";
 
@@ -215,7 +219,15 @@ export default function WatchPage() {
     const ok = await copyTextToClipboard(url);
     if (ok) toast.success("Ссылка скопирована");
     else toast.error("Не удалось скопировать ссылку");
-  }, [contentDetail?.title, streamData?.title]);
+  }, [
+    contentDetail?.contentType,
+    contentDetail?.id,
+    contentDetail?.slug,
+    contentDetail?.title,
+    contentId,
+    streamData?.contentType,
+    streamData?.title,
+  ]);
 
   const handleReport = React.useCallback(() => {
     toast.message("Жалобы будут доступны позже");
