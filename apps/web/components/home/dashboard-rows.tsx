@@ -131,41 +131,51 @@ export function DashboardRows({ data }: DashboardRowsProps) {
         </section>
       ) : null}
 
-        <section className="relative">
-          <div className="flex items-start gap-[36px] overflow-hidden">
-            <div className="sesh-trending-heading w-[220px] shrink-0 pt-[26px]">
-              <h2 className="sesh-trending-title text-[40px] font-extrabold leading-[0.92] tracking-[-0.04em] text-white md:text-[46px]">
-                Сейчас
+      <section className="relative">
+        <div className="flex items-start gap-[36px] overflow-hidden">
+          <div className="w-[220px] shrink-0 pt-[26px]">
+            <h2 className="sesh-trending-title text-[42px] font-extrabold leading-[0.98] tracking-[-0.025em] text-white md:text-[48px]">
+              <span className="sesh-trending-glow" aria-hidden="true">
+                Trending
                 <br />
-                в тренде
-              </h2>
+                Now
+              </span>
 
-              <div className="mt-4 h-[3px] w-[72px] rounded-full bg-[#C70F4F] shadow-[0_0_14px_rgba(199,15,79,0.5)]" />
+              <span className="sesh-trending-main">
+                Trending
+                <br />
+                Now
+              </span>
+            </h2>
+
+            <p className="mt-5 text-[18px] font-semibold text-white/82">
+              Сейчас в тренде<span className="ml-1">🔥</span>
+            </p>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 hidden justify-end gap-2 md:flex">
+              {/* стрелки тут */}
             </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="mb-3 hidden justify-end gap-2 md:flex">
-                {/* стрелки тут */}
-              </div>
-
-              <div
-                id="trending-now-carousel"
-                ref={trendingScrollRef}
-                className="flex gap-[26px] overflow-x-auto pb-3 no-scrollbar"
-              >
-                {trending.isLoading ? (
-                  <TopRailSkeleton />
-                ) : (
-                  trendingItems
-                    .slice(0, 8)
-                    .map((item) => (
-                      <CompactTrendingCard key={item.id} content={item} />
-                    ))
-                )}
-              </div>
+            <div
+              id="trending-now-carousel"
+              ref={trendingScrollRef}
+              className="flex gap-[26px] overflow-x-auto pb-3 no-scrollbar"
+            >
+              {trending.isLoading ? (
+                <TopRailSkeleton />
+              ) : (
+                trendingItems
+                  .slice(0, 8)
+                  .map((item) => (
+                    <CompactTrendingCard key={item.id} content={item} />
+                  ))
+              )}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
       <section className="relative">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-x-[18px] gap-y-[27px]">

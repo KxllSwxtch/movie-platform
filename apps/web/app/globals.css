@@ -951,36 +951,54 @@
     background-repeat: no-repeat;
   }
 
-  .sesh-trending-heading {
-    position: relative;
-    padding-left: 18px;
-  }
-
-  .sesh-trending-heading::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 22px;
-    bottom: 18px;
-    width: 3px;
-    border-radius: 999px;
-    background: #C70F4F;
-    box-shadow: 0 0 16px rgba(199, 15, 79, 0.55);
-  }
-
   .sesh-trending-title {
     position: relative;
     display: inline-block;
     color: #fff;
+  }
+
+  .sesh-trending-main {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    color: #fff;
+  }
+
+  .sesh-trending-glow {
+    position: absolute;
+    left: 5px;
+    top: 4px;
     z-index: 1;
-    text-shadow:
-      -8px 0 16px rgba(215, 10, 42, 0.36),
-      8px 6px 18px rgba(145, 23, 130, 0.22);
+
+    display: inline-block;
+    white-space: nowrap;
+
+    background: linear-gradient(
+      90deg,
+      rgba(190, 15, 28, 1) 0%,
+      rgba(168, 10, 27, 1) 10%,
+      rgba(142, 11, 31, 1) 22%,
+      rgba(116, 12, 39, 1) 38%,
+      rgba(130, 28, 76, 1) 54%,
+      rgba(79, 43, 119, 1) 69%,
+      rgba(40, 56, 143, 1) 83%,
+      rgba(34, 58, 121, 1) 100%
+    );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+
+    filter: blur(10px);
+    opacity: 0.9;
+    pointer-events: none;
   }
 
   .sesh-trending-title::before {
     display: none;
   }
+
 
   .sesh-gradient-text {
     color: #fff;
