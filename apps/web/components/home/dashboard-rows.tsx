@@ -133,12 +133,14 @@ export function DashboardRows({ data }: DashboardRowsProps) {
 
         <section className="relative">
           <div className="flex items-start gap-[36px] overflow-hidden">
-            <div className="w-[220px] shrink-0 pt-[26px]">
+            <div className="sesh-trending-heading w-[220px] shrink-0 pt-[26px]">
               <h2 className="sesh-trending-title text-[40px] font-extrabold leading-[0.92] tracking-[-0.04em] text-white md:text-[46px]">
                 Сейчас
                 <br />
                 в тренде
               </h2>
+
+              <div className="mt-4 h-[3px] w-[72px] rounded-full bg-[#C70F4F] shadow-[0_0_14px_rgba(199,15,79,0.5)]" />
             </div>
 
             <div className="min-w-0 flex-1">
