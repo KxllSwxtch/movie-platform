@@ -1,5 +1,7 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
+
 import { AppHeader } from '@/components/layout/app-header';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
@@ -18,6 +20,8 @@ export default function MainLayoutClient({
   children: React.ReactNode;
 }) {
   const isSidebarCollapsed = useUIStore((state) => state.isSidebarCollapsed);
+  const pathname = usePathname();
+  const isShortsRoute = pathname.startsWith('/shorts');
 
   return (
     <div className="mp-home-shell min-h-screen overflow-x-hidden bg-[#080013] text-white">
@@ -35,7 +39,14 @@ export default function MainLayoutClient({
         <AppHeader />
 
         {/* Page content */}
-        <main id="main-content" className="relative z-10 px-4 pb-20 pt-0 md:px-[24px] md:pb-8">
+        <main
+          id="main-content"
+          className={cn(
+            'relative z-10 px-4 pb-20 pt-0 md:px-[24px] md:pb-8',
+            isShortsRoute &&
+              'sesh-shorts-main max-md:px-0 max-md:pb-0 max-md:overflow-hidden',
+          )}
+        >
           <PageTransition variant="fade">
             {children}
           </PageTransition>

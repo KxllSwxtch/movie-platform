@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { CaretUp, CaretDown, SpinnerGap } from '@phosphor-icons/react';
+import { CaretUp, CaretDown } from '@phosphor-icons/react';
 
 import { ShortCard, type ShortContent } from '@/components/content';
 import { useContentDetail, useContentInfinite } from '@/hooks/use-content';
@@ -11,6 +11,7 @@ import {
   mapContentItemToShort,
   prioritizeInitialShort,
 } from './shorts.utils';
+import { ShortsLoadingSkeleton } from './shorts-loading-skeleton';
 
 interface ShortsFeedProps {
   initialShortSlug?: string;
@@ -199,10 +200,7 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
   if (isLoading || isViewportPending || (targetSlug && isTargetLoading && !targetInFeed)) {
     return (
       <div ref={viewportRef} className="sesh-shorts-loading shorts-viewport-height">
-        <div className="sesh-shorts-loading-card">
-          <div className="sesh-shorts-loading-spinner" />
-          <p>Загрузка шортсов...</p>
-        </div>
+        <ShortsLoadingSkeleton />
       </div>
     );
   }
@@ -241,7 +239,9 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
         </div>
 
         {isFetchingNextPage ? (
-          <SpinnerGap className="absolute bottom-4 left-1/2 h-6 w-6 -translate-x-1/2 animate-spin text-white" />
+          <div className="sesh-shorts-next-loader" aria-hidden="true">
+            <span />
+          </div>
         ) : null}
       </div>
 

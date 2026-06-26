@@ -9,5 +9,9 @@ interface ShortRoutePageProps {
 export default async function ShortRoutePage({ params }: ShortRoutePageProps) {
   const { slug } = await params;
 
-  return <ShortsFeed initialShortSlug={slug} />;
+  return (
+    <div className="sesh-shorts-page">
+      <ShortsFeed initialShortSlug={slug} />
+    </div>
+  );
 }

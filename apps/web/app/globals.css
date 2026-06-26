@@ -2779,13 +2779,19 @@
     position: relative;
     width: 100vw !important;
     height: calc(
-      100dvh - 64px - 72px - env(safe-area-inset-bottom, 0px)
+      100dvh - 68px - 78px - env(safe-area-inset-bottom, 0px)
     ) !important;
 
     margin-left: calc(50% - 50vw) !important;
     margin-right: calc(50% - 50vw) !important;
 
     padding: 0 !important;
+    overflow: hidden;
+    background: #05020b;
+  }
+
+  .sesh-shorts-page {
+    height: calc(100dvh - 68px - 78px - env(safe-area-inset-bottom, 0px));
     overflow: hidden;
     background: #05020b;
   }
@@ -4659,34 +4665,165 @@
   width: min(420px, calc(100vw - 32px));
   aspect-ratio: 9 / 16;
   border-radius: 24px;
-  border: 1px solid rgba(75, 56, 100, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background:
-    linear-gradient(180deg, rgba(10, 7, 24, 0.82), rgba(5, 3, 13, 0.92));
+    radial-gradient(circle at 18% 12%, rgba(255, 29, 108, 0.18), transparent 30%),
+    radial-gradient(circle at 82% 22%, rgba(15, 102, 235, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(14, 8, 28, 0.92), rgba(5, 3, 13, 0.96));
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.52),
+    0 0 34px rgba(255, 29, 108, 0.12),
+    0 0 38px rgba(15, 102, 235, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.sesh-shorts-skeleton-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 24%),
+    linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.78) 100%);
+}
+
+.sesh-shorts-skeleton-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.13) 45%,
+    rgba(255, 255, 255, 0.06) 51%,
+    transparent 62%,
+    transparent 100%
+  );
+  transform: translateX(-130%);
+  animation: sesh-shimmer 1.55s ease-in-out infinite;
+}
+
+.sesh-shorts-skeleton-stack,
+.sesh-shorts-skeleton-info,
+.sesh-shorts-skeleton-actions {
+  position: absolute;
+  z-index: 1;
+}
+
+.sesh-shorts-skeleton-stack {
+  left: 20px;
+  right: 20px;
+  top: 28px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  gap: 12px;
+}
+
+.sesh-shorts-skeleton-info {
+  left: 18px;
+  right: 78px;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(5, 3, 13, 0.48);
+  padding: 13px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.sesh-shorts-skeleton-actions {
+  right: 16px;
+  bottom: 46px;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
-.sesh-shorts-loading-spinner {
-  width: 34px;
-  height: 34px;
+.sesh-shorts-skeleton-actions span,
+.sesh-shorts-skeleton-line,
+.sesh-shorts-skeleton-pill,
+.sesh-shorts-next-loader span {
+  display: block;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.09));
+  background-size: 220% 100%;
+  animation: sesh-skeleton-pulse 1.35s ease-in-out infinite;
+}
+
+.sesh-shorts-skeleton-line {
+  height: 14px;
   border-radius: 999px;
-  border: 2px solid rgba(199, 15, 79, 0.22);
-  border-top-color: #c70f4f;
-  animation: sesh-spin 0.8s linear infinite;
 }
 
-.sesh-shorts-loading-card p {
-  color: rgba(174, 184, 208, 0.86);
-  font-size: 14px;
-  font-weight: 600;
+.sesh-shorts-skeleton-pill {
+  width: 48px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff1d6c, #326eff);
+  box-shadow:
+    0 0 16px rgba(255, 29, 108, 0.45),
+    0 0 18px rgba(50, 110, 255, 0.25);
 }
 
-@keyframes sesh-spin {
+.sesh-shorts-skeleton-actions span {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 20px rgba(255, 29, 108, 0.1);
+}
+
+.sesh-shorts-next-loader {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 30;
+  width: 74px;
+  height: 4px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sesh-shorts-next-loader span {
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff1d6c, #326eff);
+  animation: sesh-loader-slide 1.05s ease-in-out infinite;
+}
+
+@keyframes sesh-shimmer {
   to {
-    transform: rotate(360deg);
+    transform: translateX(130%);
+  }
+}
+
+@keyframes sesh-skeleton-pulse {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    opacity: 0.62;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 1;
+  }
+}
+
+@keyframes sesh-loader-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(250%);
   }
 }
 
@@ -4696,7 +4833,21 @@
     height: 100%;
     border-radius: 0;
     border: 0;
-    background: rgba(5, 3, 13, 0.92);
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255, 29, 108, 0.2), transparent 32%),
+      radial-gradient(circle at 82% 16%, rgba(15, 102, 235, 0.2), transparent 34%),
+      linear-gradient(180deg, rgba(8, 4, 20, 0.98), rgba(5, 3, 13, 0.98));
+  }
+
+  .sesh-shorts-skeleton-info {
+    left: 18px;
+    right: 82px;
+    bottom: 34px;
+  }
+
+  .sesh-shorts-skeleton-actions {
+    right: 16px;
+    bottom: 54px;
   }
 }
 
@@ -4732,6 +4883,12 @@
   .mp-home-shell main {
     padding-inline: 16px !important;
     padding-bottom: calc(116px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mp-home-shell main.sesh-shorts-main {
+    padding-inline: 0 !important;
+    padding-bottom: 0 !important;
+    overflow: hidden;
   }
 
   .mp-home-shell h1,
@@ -4781,9 +4938,10 @@
   }
 
   .sesh-trending-title {
-    font-size: 52px !important;
-    line-height: 0.86 !important;
-    letter-spacing: -0.07em !important;
+    white-space: nowrap;
+    font-size: clamp(46px, 13vw, 56px) !important;
+    line-height: 0.94 !important;
+    letter-spacing: -0.075em !important;
   }
 
   .sesh-trending-glow {

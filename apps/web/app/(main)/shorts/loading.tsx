@@ -1,9 +1,9 @@
-import { Spinner } from '@/components/ui/spinner';
+import { ShortsLoadingSkeleton } from './shorts-loading-skeleton';
 
 export default function ShortsLoading() {
   return (
-    <div className="shorts-viewport-height flex w-full items-center justify-center">
-      <Spinner size="xl" />
+    <div className="sesh-shorts-loading shorts-viewport-height">
+      <ShortsLoadingSkeleton />
     </div>
   );
 }

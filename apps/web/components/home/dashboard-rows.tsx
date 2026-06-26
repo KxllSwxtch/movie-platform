@@ -162,15 +162,11 @@ export function DashboardRows({ data }: DashboardRowsProps) {
           <div>
             <h2 className="sesh-trending-title text-[52px] font-extrabold leading-[0.86] tracking-[-0.075em] text-white">
               <span className="sesh-trending-glow" aria-hidden="true">
-                Trending
-                <br />
-                Now
+                Trending Now
               </span>
 
               <span className="sesh-trending-main">
-                Trending
-                <br />
-                Now
+                Trending Now
               </span>
             </h2>
 
@@ -296,6 +292,52 @@ function MobileNewReleasePoster({
   const href = getContentHref(content);
   const typeLabel = getMobileNewReleaseTypeLabel(content.type);
   const rating = getRating(content);
+  const isSeries = (content.type || "").toUpperCase() === "SERIES";
+
+  if (!isSeries) {
+    return (
+      <article className="group w-[232px] shrink-0 snap-start transition-transform duration-200 active:scale-[0.97]">
+        <Link
+          href={href}
+          className="block rounded-[20px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff1d6c]"
+          aria-label={content.title}
+        >
+          <div className="relative aspect-video overflow-hidden rounded-[20px] bg-white/[0.04] shadow-[0_18px_42px_rgba(0,0,0,0.45),0_0_22px_rgba(255,29,108,0.09),0_0_26px_rgba(50,110,255,0.1)]">
+            <ContentImage
+              src={content.thumbnailUrl}
+              alt={content.title}
+              fill
+              className="object-cover transition-transform duration-500 group-active:scale-[1.035]"
+              sizes="240px"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/22 to-transparent" />
+
+            <div className="absolute left-3 right-3 bottom-3">
+              <div className="mb-2 grid h-8 w-8 place-items-center rounded-full border border-white/60 bg-black/25 backdrop-blur-md">
+                <Play className="h-3.5 w-3.5 text-white" weight="fill" />
+              </div>
+
+              <h3 className="line-clamp-2 text-[15px] font-extrabold leading-[1.1] tracking-[-0.035em] text-white">
+                {content.title}
+              </h3>
+              <div className="mt-1.5 flex items-center gap-2 text-[11px] font-semibold text-white/72">
+                <span>{typeLabel}</span>
+                {rating ? (
+                  <span className="inline-flex items-center gap-1 text-white/86">
+                    <Star
+                      className="h-3.5 w-3.5 text-[#ffb31a]"
+                      weight="fill"
+                    />
+                    {rating.toFixed(1)}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </Link>
+      </article>
+    );
+  }
 
   return (
     <article className="group w-[142px] shrink-0 snap-start transition-transform duration-200 active:scale-[0.97]">
@@ -535,9 +577,29 @@ function NewReleaseSkeleton() {
   return (
     <>
       {Array.from({ length: 5 }).map((_, index) => (
-        <div key={index} className="w-[142px] shrink-0 animate-pulse">
-          <div className="relative aspect-[0.68/1] rounded-[21px] bg-white/10">
-            <div className="absolute inset-x-2 bottom-2 rounded-[15px] bg-black/35 p-2.5">
+        <div
+          key={index}
+          className={cn(
+            "shrink-0 animate-pulse",
+            index % 3 === 1 ? "w-[232px]" : "w-[142px]",
+          )}
+        >
+          <div
+            className={cn(
+              "relative bg-white/10",
+              index % 3 === 1
+                ? "aspect-video rounded-[20px]"
+                : "aspect-[0.68/1] rounded-[21px]",
+            )}
+          >
+            <div
+              className={cn(
+                "absolute bg-black/35 p-2.5",
+                index % 3 === 1
+                  ? "left-3 right-3 bottom-3 rounded-[13px]"
+                  : "inset-x-2 bottom-2 rounded-[15px]",
+              )}
+            >
               <div className="h-3.5 w-5/6 rounded bg-white/10" />
               <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
               <div className="mt-2 h-3 w-1/3 rounded bg-white/10" />
@@ -559,27 +621,6 @@ function GridSkeleton() {
   );
 }
 
-function getGenreLabel(content: DashboardCardContent) {
-  if (Array.isArray(content.genres) && content.genres.length > 0) {
-    return content.genres[0];
-  }
-
-  if (typeof content.category === "string" && content.category.trim()) {
-    return content.category;
-  }
-
-  if (
-    content.category &&
-    typeof content.category === "object" &&
-    typeof content.category.name === "string" &&
-    content.category.name.trim()
-  ) {
-    return content.category.name;
-  }
-
-  return getContentTypeLabel(content.type);
-}
-
 function getRating(content: DashboardCardContent) {
   const rating = content.averageRating || content.rating;
   return typeof rating === "number" && Number.isFinite(rating) && rating > 0
@@ -594,19 +635,6 @@ function isMobileNewReleaseItem(content: DashboardCardContent) {
 
 function getMobileNewReleaseTypeLabel(type?: string) {
   return (type || "").toUpperCase() === "SERIES" ? "Сериал" : "Видео";
-}
-
-function getContentTypeLabel(type?: string) {
-  switch ((type || "").toUpperCase()) {
-    case "SERIES":
-      return "Сериал";
-    case "TUTORIAL":
-      return "Обучение";
-    case "SHORT":
-      return "Шорт";
-    default:
-      return "Видео";
-  }
 }
 
 function getContentHref(content: DashboardCardContent) {
