@@ -174,10 +174,6 @@ export function DashboardRows({ data }: DashboardRowsProps) {
               Сейчас в тренде <span>🔥</span>
             </p>
           </div>
-
-          <span className="mb-3 rounded-[14px] border border-[#ff1d6c]/35 bg-[#ff1d6c]/22 px-4 py-2 text-[12px] font-extrabold text-white shadow-[0_0_24px_rgba(255,29,108,0.28)] backdrop-blur-md">
-            TOP 10
-          </span>
         </div>
 
         <div className="md:flex md:items-start md:gap-[36px] md:overflow-hidden">
