@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ApiError, api, endpoints } from '../api-client';
+import {
+  ApiError,
+  api,
+  attemptTokenRefresh,
+  endpoints,
+  resetAuthSessionInvalidation,
+} from '../api-client';
 
 // Mock global fetch
 const mockFetch = vi.fn();
@@ -108,12 +114,15 @@ describe('ApiError', () => {
 describe('api client', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
+    resetAuthSessionInvalidation();
     mockLocalStorage.clear();
     mockSessionStorage.clear();
     mockFetch.mockReset();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
@@ -427,6 +436,30 @@ describe('api client', () => {
           }),
         })
       );
+    });
+
+    it('should time out a hanging token refresh and clear auth state', async () => {
+      vi.useFakeTimers();
+      setupAuthStorage();
+
+      mockFetch.mockImplementationOnce((_url, init?: RequestInit) => {
+        return new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        });
+      });
+
+      const refreshResult = attemptTokenRefresh();
+
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await expect(refreshResult).resolves.toBe(false);
+
+      const storage = JSON.parse(mockLocalStorage.store['mp-auth-storage']);
+      expect(storage.state.accessToken).toBeNull();
+      expect(storage.state.refreshToken).toBeNull();
+      expect(storage.state.isAuthenticated).toBe(false);
     });
   });
 

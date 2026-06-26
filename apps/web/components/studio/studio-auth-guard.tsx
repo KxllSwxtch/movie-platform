@@ -18,21 +18,24 @@ interface StudioAuthGuardProps {
 export function StudioAuthGuard({ children }: StudioAuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, isHydrated, isLoadingUser } = useAuth();
+  const { user, isAuthenticated, isHydrated, isLoadingUser, isUserLoadError } = useAuth();
   const [isAuthorized, setIsAuthorized] = React.useState<boolean | null>(null);
+  const isWaitingForUser = isAuthenticated && isLoadingUser && !isUserLoadError;
 
   React.useEffect(() => {
-    if (!isHydrated || (isAuthenticated && isLoadingUser)) {
+    if (!isHydrated || isWaitingForUser) {
       setIsAuthorized(null);
       return;
     }
 
     if (!isAuthenticated) {
+      setIsAuthorized(false);
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
     if (!user?.role) {
+      setIsAuthorized(false);
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
@@ -53,14 +56,14 @@ export function StudioAuthGuard({ children }: StudioAuthGuardProps) {
   }, [
     isHydrated,
     isAuthenticated,
-    isLoadingUser,
+    isWaitingForUser,
     pathname,
     user?.role,
     user?.verificationStatus,
     router,
   ]);
 
-  if (!isHydrated || (isAuthenticated && isLoadingUser) || isAuthorized === null) {
+  if (!isHydrated || isWaitingForUser || isAuthorized === null) {
     return (
       <div className="flex items-center justify-center py-32">
         <div className="flex flex-col items-center gap-4">

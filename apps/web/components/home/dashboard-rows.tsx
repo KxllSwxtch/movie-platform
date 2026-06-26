@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretLeft, CaretRight, Play } from "@phosphor-icons/react";
+import { CaretRight, Play, Star } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useCallback, useRef } from "react";
 
@@ -29,8 +29,13 @@ interface DashboardCardContent {
   title: string;
   type?: string;
   thumbnailUrl: string;
+  posterUrl?: string;
   viewCount?: number;
   duration?: number | null;
+  category?: string | { id?: string; name?: string; slug?: string };
+  genres?: string[];
+  rating?: number;
+  averageRating?: number;
   creator?: CreatorInput;
 }
 
@@ -46,6 +51,11 @@ interface DashboardApiItem {
   heroImageUrl?: string;
   viewCount?: number | null;
   duration?: number | null;
+  category?: string | { id?: string; name?: string; slug?: string };
+  genre?: string[];
+  genres?: string[];
+  rating?: number | null;
+  averageRating?: number | null;
   creator?: CreatorInput;
   author?: CreatorInput;
 }
@@ -59,6 +69,8 @@ interface ContinueWatchingApiItem {
   duration?: number | null;
   content?: {
     id?: string;
+    slug?: string | null;
+    contentType?: string | null;
     title?: string;
     thumbnailUrl?: string | null;
     duration?: number | null;
@@ -87,9 +99,13 @@ export function DashboardRows({ data }: DashboardRowsProps) {
   const trendingItems = (trending.data?.data?.items || []).map(
     mapToDashboardCard,
   );
+  const newReleaseItems = (newReleases.data?.data?.items || []).map(
+    mapToDashboardCard,
+  );
+  const mobileNewReleaseItems = newReleaseItems.filter(isMobileNewReleaseItem);
   const gridItems = uniqueCards([
     ...trendingItems.slice(5),
-    ...(newReleases.data?.data?.items || []).map(mapToDashboardCard),
+    ...newReleaseItems,
     ...(videos.data?.data?.items || []).map(mapToDashboardCard),
     ...(tutorials.data?.data?.items || []).map(mapToDashboardCard),
     ...(series.data?.data?.items || []).map(mapToDashboardCard),
@@ -109,31 +125,67 @@ export function DashboardRows({ data }: DashboardRowsProps) {
   }, []);
 
   return (
-    <div className="space-y-[32px]">
+    <div className="sesh-dashboard-rows space-y-[34px] md:space-y-[32px]">
       {continueItems.length > 0 ? (
-        <section className="w-fit max-w-full rounded-[14px] border border-white/[0.06] bg-black/20 p-3 backdrop-blur-xl">
-          <div className="mb-3.5 flex items-end justify-between">
-            <h2 className="text-[22px] font-semibold text-white">
+        <section className="relative overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/25 p-4 shadow-[0_22px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl md:w-fit md:max-w-full md:overflow-visible md:rounded-[14px] md:border-white/[0.06] md:bg-black/20 md:p-3 md:shadow-none">
+          <div className="mb-4 flex items-center justify-between gap-3 md:mb-3.5 md:items-end">
+            <h2 className="text-[24px] font-extrabold leading-none tracking-[-0.055em] text-white md:text-[22px] md:font-semibold md:leading-normal md:tracking-normal">
               Продолжить просмотр
             </h2>
+
             <Link
               href="/account/history"
-              className="text-sm font-medium text-white/55 transition-colors hover:text-white"
+              className="inline-flex shrink-0 items-center gap-1 text-[13px] font-bold text-white/64 transition-colors hover:text-white md:text-sm md:font-medium md:text-white/55"
             >
               Смотреть все
+              <CaretRight
+                className="h-3.5 w-3.5 text-[#ff1d6c] md:hidden"
+                weight="bold"
+              />
             </Link>
           </div>
-          <div className="flex w-fit max-w-full items-start gap-4 overflow-x-auto pb-1 no-scrollbar">
+
+          <div className="flex max-w-full items-start gap-3 overflow-x-auto pb-1 no-scrollbar md:w-fit md:gap-4">
             {continueItems.map((item) => (
-              <VideoCardProgress key={item.id} content={item} />
+              <VideoCardProgress
+                key={item.id}
+                content={item}
+                className="sesh-dashboard-progress-card"
+              />
             ))}
           </div>
         </section>
       ) : null}
 
       <section className="relative">
-        <div className="flex items-start gap-[36px] overflow-hidden">
-          <div className="w-[220px] shrink-0 pt-[26px]">
+        <div className="mb-5 flex items-end justify-between gap-4 md:hidden">
+          <div>
+            <h2 className="sesh-trending-title text-[52px] font-extrabold leading-[0.86] tracking-[-0.075em] text-white">
+              <span className="sesh-trending-glow" aria-hidden="true">
+                Trending
+                <br />
+                Now
+              </span>
+
+              <span className="sesh-trending-main">
+                Trending
+                <br />
+                Now
+              </span>
+            </h2>
+
+            <p className="mt-4 text-[19px] font-extrabold text-white/88 md:mt-5 md:text-[18px] md:font-semibold">
+              Сейчас в тренде <span>🔥</span>
+            </p>
+          </div>
+
+          <span className="mb-3 rounded-[14px] border border-[#ff1d6c]/35 bg-[#ff1d6c]/22 px-4 py-2 text-[12px] font-extrabold text-white shadow-[0_0_24px_rgba(255,29,108,0.28)] backdrop-blur-md">
+            TOP 10
+          </span>
+        </div>
+
+        <div className="md:flex md:items-start md:gap-[36px] md:overflow-hidden">
+          <div className="hidden w-[220px] shrink-0 pt-[26px] md:block">
             <h2 className="sesh-trending-title text-[42px] font-extrabold leading-[0.98] tracking-[-0.025em] text-white md:text-[48px]">
               <span className="sesh-trending-glow" aria-hidden="true">
                 Trending
@@ -161,15 +213,19 @@ export function DashboardRows({ data }: DashboardRowsProps) {
             <div
               id="trending-now-carousel"
               ref={trendingScrollRef}
-              className="flex gap-[26px] overflow-x-auto pb-3 no-scrollbar"
+              className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-5 no-scrollbar md:snap-none md:gap-[26px] md:pb-3"
             >
               {trending.isLoading ? (
                 <TopRailSkeleton />
               ) : (
                 trendingItems
                   .slice(0, 8)
-                  .map((item) => (
-                    <CompactTrendingCard key={item.id} content={item} />
+                  .map((item, index) => (
+                    <CompactTrendingCard
+                      key={item.id}
+                      content={item}
+                      rank={index + 1}
+                    />
                   ))
               )}
             </div>
@@ -177,8 +233,41 @@ export function DashboardRows({ data }: DashboardRowsProps) {
         </div>
       </section>
 
+      {newReleases.isLoading || mobileNewReleaseItems.length > 0 ? (
+        <section className="relative md:hidden">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="text-[25px] font-extrabold leading-none tracking-[-0.055em] text-white">
+              Новинки
+            </h2>
+
+            <Link
+              href="/videos"
+              className="inline-flex shrink-0 items-center gap-1 text-[13px] font-bold text-white/64 transition-colors active:text-white"
+            >
+              Смотреть все
+              <CaretRight
+                className="h-3.5 w-3.5 text-[#ff1d6c]"
+                weight="bold"
+              />
+            </Link>
+          </div>
+
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 no-scrollbar">
+            {newReleases.isLoading && !mobileNewReleaseItems.length ? (
+              <NewReleaseSkeleton />
+            ) : (
+              mobileNewReleaseItems
+                .slice(0, 10)
+                .map((item) => (
+                  <MobileNewReleasePoster key={item.id} content={item} />
+                ))
+            )}
+          </div>
+        </section>
+      ) : null}
+
       <section className="relative">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-x-[18px] gap-y-[27px]">
+        <div className="grid grid-cols-1 gap-y-7 md:grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] md:gap-x-[18px] md:gap-y-[27px]">
           {(trending.isLoading || newReleases.isLoading || videos.isLoading) &&
           !gridItems.length
             ? Array.from({ length: 8 }).map((_, index) => (
@@ -186,10 +275,11 @@ export function DashboardRows({ data }: DashboardRowsProps) {
               ))
             : gridItems
                 .slice(0, 16)
-                .map((item) => (
+                .map((item, index) => (
                   <PremiumVideoCard
                     key={`${item.type}-${item.id}`}
                     content={item}
+                    featured={index === 0}
                   />
                 ))}
         </div>
@@ -198,12 +288,65 @@ export function DashboardRows({ data }: DashboardRowsProps) {
   );
 }
 
-function CompactTrendingCard({ content }: { content: DashboardCardContent }) {
+function MobileNewReleasePoster({
+  content,
+}: {
+  content: DashboardCardContent;
+}) {
+  const href = getContentHref(content);
+  const typeLabel = getMobileNewReleaseTypeLabel(content.type);
+  const rating = getRating(content);
+
+  return (
+    <article className="group w-[142px] shrink-0 snap-start transition-transform duration-200 active:scale-[0.97]">
+      <Link
+        href={href}
+        className="block rounded-[20px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff1d6c]"
+        aria-label={content.title}
+      >
+        <div className="relative aspect-[0.68/1] overflow-hidden rounded-[21px] bg-white/[0.04] shadow-[0_18px_42px_rgba(0,0,0,0.45),0_0_22px_rgba(255,29,108,0.11),0_0_26px_rgba(50,110,255,0.1)]">
+          <ContentImage
+            src={content.posterUrl || content.thumbnailUrl}
+            alt={content.title}
+            fill
+            className="object-cover transition-transform duration-500 group-active:scale-[1.035]"
+            sizes="150px"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/10 to-white/[0.04]" />
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#03010a]/90 via-[#03010a]/36 to-transparent" />
+
+          <div className="absolute inset-x-2 bottom-2 rounded-[15px] border border-white/[0.1] bg-black/50 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_26px_rgba(0,0,0,0.36)] backdrop-blur-md">
+            <h3 className="line-clamp-2 text-[14px] font-extrabold leading-[1.08] tracking-[-0.035em] text-white">
+              {content.title}
+            </h3>
+            <p className="mt-1.5 truncate text-[11px] font-semibold text-white/62">
+              {typeLabel}
+            </p>
+            {rating ? (
+              <div className="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-white/86">
+                <Star className="h-3.5 w-3.5 text-[#ffb31a]" weight="fill" />
+                <span>{rating.toFixed(1)}</span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </Link>
+    </article>
+  );
+}
+
+function CompactTrendingCard({
+  content,
+  rank,
+}: {
+  content: DashboardCardContent;
+  rank?: number;
+}) {
   const href = getContentHref(content);
 
   return (
-    <article className="group w-[190px] shrink-0 md:w-[215px]">
-      <div className="relative aspect-[1.83/1] overflow-hidden rounded-[10px] bg-white/[0.04] shadow-[0_12px_32px_rgba(0,0,0,0.22)]">
+    <article className="group w-[174px] shrink-0 snap-start transition-transform duration-200 active:scale-[0.97] md:w-[215px] md:transition-none md:active:scale-100">
+      <div className="relative aspect-[0.72/1] overflow-hidden rounded-[22px] border border-white/[0.1] bg-white/[0.04] shadow-[0_20px_50px_rgba(0,0,0,0.42)] transition-shadow duration-300 group-active:shadow-[0_12px_30px_rgba(0,0,0,0.46)] md:aspect-[1.83/1] md:rounded-[10px] md:border-0 md:shadow-[0_12px_32px_rgba(0,0,0,0.22)]">
         <ContentImage
           src={content.thumbnailUrl}
           alt={content.title}
@@ -211,11 +354,32 @@ function CompactTrendingCard({ content }: { content: DashboardCardContent }) {
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="200px"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/62 via-transparent to-transparent" />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/94 via-black/28 to-transparent md:from-black/62 md:via-transparent" />
+
+        {rank ? (
+          <div className="absolute left-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-[10px] bg-[#ff1d6c] text-[16px] font-extrabold text-white shadow-[0_0_22px_rgba(255,29,108,0.45)] md:hidden">
+            #{rank}
+          </div>
+        ) : null}
+
+        <div className="absolute left-3 right-3 bottom-3 z-10 md:hidden">
+          <div className="mb-3 grid h-9 w-9 place-items-center rounded-full border border-white/70 bg-black/25 backdrop-blur-md">
+            <Play className="h-4 w-4 text-white" weight="fill" />
+          </div>
+
+          <ViewPill count={content.viewCount} />
+
+          <h2 className="mt-2 line-clamp-2 text-[15px] font-extrabold leading-[1.14] tracking-[-0.03em] text-white">
+            {content.title}
+          </h2>
+        </div>
+
         <ViewPill
           count={content.viewCount}
-          className="absolute bottom-2 left-3 transition-opacity duration-200 group-hover:opacity-0"
+          className="absolute bottom-2 left-3 hidden transition-opacity duration-200 group-hover:opacity-0 md:flex"
         />
+
         <HoverVideoPreview
           contentId={content.id}
           title={content.title}
@@ -223,15 +387,17 @@ function CompactTrendingCard({ content }: { content: DashboardCardContent }) {
           contentType={content.type}
           duration={content.duration}
         />
+
         <Link
           href={href}
           className="absolute inset-0 z-10"
           aria-label={content.title}
         />
       </div>
+
       <Link
         href={href}
-        className="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]"
+        className="hidden rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff] md:block"
       >
         <h2 className="mt-2 line-clamp-2 text-[15px] font-bold leading-[1.16] tracking-normal text-white transition-colors group-hover:text-white/86">
           {content.title}
@@ -241,12 +407,25 @@ function CompactTrendingCard({ content }: { content: DashboardCardContent }) {
   );
 }
 
-function PremiumVideoCard({ content }: { content: DashboardCardContent }) {
+function PremiumVideoCard({
+  content,
+  featured = false,
+}: {
+  content: DashboardCardContent;
+  featured?: boolean;
+}) {
   const href = getContentHref(content);
 
   return (
     <article className="group min-w-0">
-      <div className="relative aspect-[1.82/1] overflow-hidden rounded-[10px] bg-white/[0.04] shadow-[0_12px_34px_rgba(0,0,0,0.2)]">
+      <div
+        className={cn(
+          "relative overflow-hidden border border-white/[0.09] bg-white/[0.04] shadow-[0_22px_56px_rgba(0,0,0,0.42)] transition-transform duration-200 active:scale-[0.985] md:aspect-[1.82/1] md:rounded-[10px] md:border-0 md:shadow-[0_12px_34px_rgba(0,0,0,0.2)] md:transition-none md:active:scale-100",
+          featured
+            ? "aspect-[1.7/1] rounded-[24px]"
+            : "aspect-[1.82/1] rounded-[20px]",
+        )}
+      >
         <ContentImage
           src={content.thumbnailUrl}
           alt={content.title}
@@ -254,7 +433,28 @@ function PremiumVideoCard({ content }: { content: DashboardCardContent }) {
           className="object-cover transition-transform duration-500 ease-out-expo group-hover:scale-[1.045]"
           sizes="(max-width: 768px) 92vw, (max-width: 1536px) 20vw, 260px"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/46 via-transparent to-transparent opacity-75" />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/30 to-transparent md:from-black/46 md:via-transparent md:opacity-75" />
+
+        <div className="absolute left-4 right-4 bottom-4 z-10 md:hidden">
+          <div className="mb-3 grid h-10 w-10 place-items-center rounded-full border border-white/70 bg-black/25 backdrop-blur-md">
+            <Play className="h-4 w-4 text-white" weight="fill" />
+          </div>
+
+          <h3
+            className={cn(
+              "line-clamp-2 font-extrabold leading-[1.08] tracking-[-0.04em] text-white",
+              featured ? "text-[21px]" : "text-[18px]",
+            )}
+          >
+            {content.title}
+          </h3>
+
+          <div className="mt-2 flex items-center gap-1 text-[13px] font-semibold text-white/80">
+            <span>{formatViews(content.viewCount)}</span>
+          </div>
+        </div>
+
         <HoverVideoPreview
           contentId={content.id}
           title={content.title}
@@ -262,30 +462,34 @@ function PremiumVideoCard({ content }: { content: DashboardCardContent }) {
           contentType={content.type}
           duration={content.duration}
         />
+
         <Link
           href={href}
           className="absolute inset-0 z-10"
           aria-label={content.title}
         />
       </div>
-      <Link
-        href={href}
-        className="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]"
-      >
-        <h3 className="mt-2 line-clamp-2 text-[15px] font-bold leading-[1.16] tracking-normal text-white md:text-[16px]">
-          {content.title}
-        </h3>
-      </Link>
 
-      <div className="mt-1 flex items-center gap-1 text-[12px] font-medium text-white/72">
-        <Play className="h-3 w-3 text-white" weight="fill" />
-        <span>{formatViews(content.viewCount)}</span>
+      <div className="hidden md:block">
+        <Link
+          href={href}
+          className="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff]"
+        >
+          <h3 className="mt-2 line-clamp-2 text-[15px] font-bold leading-[1.16] tracking-normal text-white md:text-[16px]">
+            {content.title}
+          </h3>
+        </Link>
+
+        <div className="mt-1 flex items-center gap-1 text-[12px] font-medium text-white/72">
+          <Play className="h-3 w-3 text-white" weight="fill" />
+          <span>{formatViews(content.viewCount)}</span>
+        </div>
       </div>
 
       <AuthorInlineLink
         creator={content.creator}
         avatarSize="xs"
-        className="mt-2 max-w-full text-[12px] font-medium text-white/78 hover:text-white"
+        className="mt-2 hidden max-w-full text-[12px] font-medium text-white/78 hover:text-white md:block"
       />
     </article>
   );
@@ -315,9 +519,30 @@ function TopRailSkeleton() {
   return (
     <>
       {Array.from({ length: 5 }).map((_, index) => (
-        <div key={index} className="w-[200px] shrink-0 animate-pulse">
-          <div className="aspect-[1.83/1] rounded-[10px] bg-white/10" />
-          <div className="mt-2 h-3.5 w-5/6 rounded bg-white/10" />
+        <div
+          key={index}
+          className="w-[174px] shrink-0 animate-pulse md:w-[200px]"
+        >
+          <div className="aspect-[0.72/1] rounded-[22px] bg-white/10 md:aspect-[1.83/1] md:rounded-[10px]" />
+          <div className="mt-2 hidden h-3.5 w-5/6 rounded bg-white/10 md:block" />
+        </div>
+      ))}
+    </>
+  );
+}
+
+function NewReleaseSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="w-[142px] shrink-0 animate-pulse">
+          <div className="relative aspect-[0.68/1] rounded-[21px] bg-white/10">
+            <div className="absolute inset-x-2 bottom-2 rounded-[15px] bg-black/35 p-2.5">
+              <div className="h-3.5 w-5/6 rounded bg-white/10" />
+              <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
+              <div className="mt-2 h-3 w-1/3 rounded bg-white/10" />
+            </div>
+          </div>
         </div>
       ))}
     </>
@@ -332,6 +557,56 @@ function GridSkeleton() {
       <div className="mt-1 h-3 w-1/2 rounded bg-white/10" />
     </div>
   );
+}
+
+function getGenreLabel(content: DashboardCardContent) {
+  if (Array.isArray(content.genres) && content.genres.length > 0) {
+    return content.genres[0];
+  }
+
+  if (typeof content.category === "string" && content.category.trim()) {
+    return content.category;
+  }
+
+  if (
+    content.category &&
+    typeof content.category === "object" &&
+    typeof content.category.name === "string" &&
+    content.category.name.trim()
+  ) {
+    return content.category.name;
+  }
+
+  return getContentTypeLabel(content.type);
+}
+
+function getRating(content: DashboardCardContent) {
+  const rating = content.averageRating || content.rating;
+  return typeof rating === "number" && Number.isFinite(rating) && rating > 0
+    ? rating
+    : undefined;
+}
+
+function isMobileNewReleaseItem(content: DashboardCardContent) {
+  const type = (content.type || "").toUpperCase();
+  return type === "VIDEO" || type === "SERIES" || type === "CLIP";
+}
+
+function getMobileNewReleaseTypeLabel(type?: string) {
+  return (type || "").toUpperCase() === "SERIES" ? "Сериал" : "Видео";
+}
+
+function getContentTypeLabel(type?: string) {
+  switch ((type || "").toUpperCase()) {
+    case "SERIES":
+      return "Сериал";
+    case "TUTORIAL":
+      return "Обучение";
+    case "SHORT":
+      return "Шорт";
+    default:
+      return "Видео";
+  }
 }
 
 function getContentHref(content: DashboardCardContent) {
@@ -373,6 +648,12 @@ function mapToDashboardCard(item: DashboardApiItem): DashboardCardContent {
     slug: item.slug || item.id,
     title: item.title,
     type: item.contentType || item.type,
+    posterUrl:
+      item.coverUrl ||
+      item.thumbnailUrl ||
+      item.bannerUrl ||
+      item.heroImageUrl ||
+      "/images/movie-placeholder.jpg",
     thumbnailUrl:
       item.thumbnailUrl ||
       item.coverUrl ||
@@ -381,6 +662,10 @@ function mapToDashboardCard(item: DashboardApiItem): DashboardCardContent {
       "/images/movie-placeholder.jpg",
     viewCount: item.viewCount ?? undefined,
     duration: item.duration,
+    category: item.category,
+    genres: item.genres || item.genre,
+    rating: item.rating ?? undefined,
+    averageRating: item.averageRating ?? undefined,
     creator: item.creator ?? item.author,
   };
 }
@@ -397,9 +682,10 @@ export function mapContinueWatchingItems(
     if (!id || !title) return [];
 
     const durationCandidate = content?.duration ?? item.duration;
-    const duration = isValidNumber(durationCandidate) && durationCandidate > 0
-      ? durationCandidate
-      : undefined;
+    const duration =
+      isValidNumber(durationCandidate) && durationCandidate > 0
+        ? durationCandidate
+        : undefined;
 
     let currentTime = isValidNumber(item.progressSeconds)
       ? Math.max(0, item.progressSeconds)
@@ -416,21 +702,28 @@ export function mapContinueWatchingItems(
     const publishedYear = content?.publishedAt
       ? new Date(content.publishedAt).getFullYear()
       : undefined;
-    const year = isValidNumber(item.year) && item.year > 0
-      ? item.year
-      : isValidNumber(publishedYear)
-        ? publishedYear
-        : undefined;
+    const year =
+      isValidNumber(item.year) && item.year > 0
+        ? item.year
+        : isValidNumber(publishedYear)
+          ? publishedYear
+          : undefined;
 
-    return [{
-      id,
-      title,
-      thumbnailUrl:
-        content?.thumbnailUrl || item.thumbnailUrl || "/images/movie-placeholder.jpg",
-      progress: safeProgressPercent(currentTime, duration),
-      currentTime,
-      duration,
-      year,
-    }];
+    return [
+      {
+        id,
+        slug: content?.slug || id,
+        contentType: content?.contentType || undefined,
+        title,
+        thumbnailUrl:
+          content?.thumbnailUrl ||
+          item.thumbnailUrl ||
+          "/images/movie-placeholder.jpg",
+        progress: safeProgressPercent(currentTime, duration),
+        currentTime,
+        duration,
+        year,
+      },
+    ];
   });
 }

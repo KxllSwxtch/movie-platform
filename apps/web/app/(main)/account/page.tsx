@@ -26,6 +26,7 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { useProfile, useVerificationStatus, useContinueWatching } from '@/hooks/use-account';
 import { useActiveSubscription } from '@/hooks';
 import { useAuthStore } from '@/stores/auth.store';
+import { getPublicContentPath } from '@/lib/public-content-url';
 import { formatDuration } from '@/lib/utils';
 
 // ==============================
@@ -231,6 +232,14 @@ export default function AccountDashboardPage() {
             {continueItems.slice(0, 6).map((item: any) => {
               const content = item.content || {};
               const contentId = content.id || item.contentId;
+              const isShort = String(content.contentType || '').toUpperCase() === 'SHORT';
+              const href = isShort
+                ? getPublicContentPath({
+                    id: contentId,
+                    slug: content.slug,
+                    contentType: content.contentType,
+                  })
+                : `/watch/${contentId}`;
               const duration = content.duration || 0;
               const progressSeconds = item.progressSeconds || 0;
               const progressPercent = duration > 0
@@ -240,7 +249,7 @@ export default function AccountDashboardPage() {
               return (
                 <Link
                   key={item.id || contentId}
-                  href={`/watch/${contentId}`}
+                  href={href}
                   className="group w-48 shrink-0"
                 >
                   <div className="relative aspect-video overflow-hidden rounded-xl bg-mp-surface">

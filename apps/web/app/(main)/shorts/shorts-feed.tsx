@@ -16,11 +16,24 @@ interface ShortsFeedProps {
   initialShortSlug?: string;
 }
 
+function getBrowserViewportHeight() {
+  if (typeof window === 'undefined') return 0;
+  return Math.round(window.visualViewport?.height || window.innerHeight || 0);
+}
+
+function getMeasuredHeight(element: HTMLElement | null) {
+  return Math.round(element?.clientHeight || 0);
+}
+
+const useIsomorphicLayoutEffect =
+  typeof window === 'undefined' ? React.useEffect : React.useLayoutEffect;
+
 export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
   const targetSlug = initialShortSlug?.trim() || '';
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [viewportHeight, setViewportHeight] = React.useState(0);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const scrollFrameRef = React.useRef(0);
 
   const {
@@ -31,7 +44,11 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
     isFetchingNextPage,
   } = useContentInfinite({ type: 'SHORT', limit: 10 });
 
-  const { data: targetContent, isLoading: isTargetLoading } =
+  const {
+    data: targetContent,
+    isLoading: isTargetLoading,
+    isError: isTargetError,
+  } =
     useContentDetail(targetSlug);
 
   const feedShorts: ShortContent[] = React.useMemo(() => {
@@ -59,32 +76,50 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
   }, [feedShorts, targetShort, targetSlug]);
 
   const scrollToIndex = React.useCallback((index: number) => {
-    const container = containerRef.current;
-    if (!container || viewportHeight === 0) return;
+    const container = scrollContainerRef.current;
+    if (!container || viewportHeight <= 0) return;
     container.scrollTo({ top: index * viewportHeight, behavior: 'smooth' });
   }, [viewportHeight]);
 
   React.useEffect(() => {
     if (!targetSlug) return;
     setActiveIndex(0);
-    containerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    scrollContainerRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
   }, [targetShort?.id, targetSlug]);
+
+  // Measure the viewport shell before mounting the virtualized feed body.
+  useIsomorphicLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return undefined;
+
+    const updateSize = () => {
+      const nextHeight = getMeasuredHeight(viewport) || getBrowserViewportHeight();
+      setViewportHeight((current) => current === nextHeight ? current : nextHeight);
+    };
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(viewport);
+    updateSize();
+
+    window.addEventListener('resize', updateSize);
+    window.visualViewport?.addEventListener('resize', updateSize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateSize);
+      window.visualViewport?.removeEventListener('resize', updateSize);
+    };
+  }, []);
 
   // Keep one viewport per item while mounting only the previous, current and next cards.
   React.useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return undefined;
-
-    const updateSize = () => setViewportHeight(container.clientHeight);
-    const resizeObserver = new ResizeObserver(updateSize);
-    resizeObserver.observe(container);
-    updateSize();
+    const container = scrollContainerRef.current;
+    if (!container || viewportHeight <= 0) return undefined;
 
     const handleScroll = () => {
       if (scrollFrameRef.current) return;
       scrollFrameRef.current = window.requestAnimationFrame(() => {
         scrollFrameRef.current = 0;
-        const height = container.clientHeight;
+        const height = getMeasuredHeight(container) || viewportHeight;
         if (!height) return;
         const nextIndex = Math.max(
           0,
@@ -97,11 +132,10 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
     container.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      resizeObserver.disconnect();
       container.removeEventListener('scroll', handleScroll);
       if (scrollFrameRef.current) window.cancelAnimationFrame(scrollFrameRef.current);
     };
-  }, [shorts.length]);
+  }, [shorts.length, viewportHeight]);
 
   // Fetch before the virtual window reaches the end.
   React.useEffect(() => {
@@ -126,9 +160,45 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeIndex, shorts.length, scrollToIndex]);
 
-  if (isLoading || (targetSlug && isTargetLoading && !targetInFeed)) {
+  const isViewportPending = viewportHeight <= 0;
+  const isTargetMissing =
+    Boolean(targetSlug) && !isTargetLoading && !targetInFeed && !targetShort;
+
+  if (targetSlug && isTargetError && !targetInFeed) {
     return (
-      <div className="sesh-shorts-loading shorts-viewport-height">
+      <div
+        ref={viewportRef}
+        className="relative shorts-viewport-height flex w-full items-center justify-center px-6 text-center"
+      >
+        <div>
+          <p className="text-lg font-semibold text-white">Short not found</p>
+          <p className="mt-2 text-sm text-mp-text-secondary">
+            We could not load this short. Try opening the feed again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isTargetMissing) {
+    return (
+      <div
+        ref={viewportRef}
+        className="relative shorts-viewport-height flex w-full items-center justify-center px-6 text-center"
+      >
+        <div>
+          <p className="text-lg font-semibold text-white">Short unavailable</p>
+          <p className="mt-2 text-sm text-mp-text-secondary">
+            This short was not found or is no longer published.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading || isViewportPending || (targetSlug && isTargetLoading && !targetInFeed)) {
+    return (
+      <div ref={viewportRef} className="sesh-shorts-loading shorts-viewport-height">
         <div className="sesh-shorts-loading-card">
           <div className="sesh-shorts-loading-spinner" />
           <p>Загрузка шортсов...</p>
@@ -139,16 +209,16 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
 
   if (shorts.length === 0) {
     return (
-      <div className="relative shorts-viewport-height flex w-full items-center justify-center">
+      <div ref={viewportRef} className="relative shorts-viewport-height flex w-full items-center justify-center">
         <p className="text-mp-text-secondary text-lg">Shorts пока нет</p>
       </div>
     );
   }
 
   return (
-    <div className="relative shorts-viewport-height w-full overflow-hidden">
+    <div ref={viewportRef} className="relative shorts-viewport-height w-full overflow-hidden">
       <div
-        ref={containerRef}
+        ref={scrollContainerRef}
         className="h-full overflow-y-scroll snap-y snap-mandatory overscroll-contain"
         style={{ scrollbarWidth: 'none' }}
       >
@@ -162,7 +232,7 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
               <div
                 key={short.id}
                 className="absolute left-0 w-full snap-start"
-                style={{ top: index * viewportHeight, height: viewportHeight || '100%' }}
+                style={{ top: index * viewportHeight, height: viewportHeight }}
               >
                 <ShortCard content={short} isActive={index === activeIndex} className="h-full" />
               </div>

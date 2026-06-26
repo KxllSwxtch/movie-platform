@@ -6,7 +6,13 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { toast } from 'sonner';
 
-import { api, ApiError, endpoints, resetAuthSessionInvalidation } from '@/lib/api-client';
+import {
+  api,
+  ApiError,
+  clearAuthState,
+  endpoints,
+  resetAuthSessionInvalidation,
+} from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
 import { canUsePartnerRole, isVerified, normalizeLegacyRole } from '@/lib/role-permissions';
 import { useAuthStore } from '@/stores/auth.store';
@@ -36,6 +42,7 @@ export function useAuth() {
   const {
     user,
     accessToken,
+    refreshToken,
     isAuthenticated,
     isHydrated,
     setAuth,
@@ -158,7 +165,9 @@ export function useAuth() {
    */
   const logout = async () => {
     try {
-      await api.post(endpoints.auth.logout, {}, { skipRefresh: true });
+      if (refreshToken) {
+        await api.post(endpoints.auth.logout, { refreshToken }, { skipRefresh: true });
+      }
     } catch {
       // Ignore logout errors
     } finally {
@@ -192,6 +201,20 @@ export function useAuth() {
       updateUser(userQuery.data);
     }
   }, [userQuery.data, updateUser]);
+
+  React.useEffect(() => {
+    if (!userQuery.isError) return;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[auth] /me failed', userQuery.error);
+    }
+
+    if (userQuery.error instanceof ApiError && userQuery.error.status === 401) {
+      clearAuthState();
+      queryClient.removeQueries({ queryKey: queryKeys.users.profile() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
+    }
+  }, [queryClient, userQuery.error, userQuery.isError]);
 
   const resolvedUser = userQuery.data ?? user;
 
@@ -227,6 +250,7 @@ export function useAuth() {
     // User data refresh
     refreshUser: userQuery.refetch,
     isLoadingUser: userQuery.isFetching,
+    isUserLoadError: userQuery.isError,
   };
 }
 

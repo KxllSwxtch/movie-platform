@@ -26,6 +26,7 @@ import {
   useDeleteWatchHistoryItem,
   useClearWatchHistory,
 } from '@/hooks/use-account';
+import { getPublicContentPath } from '@/lib/public-content-url';
 import { formatDate, formatDuration, cn } from '@/lib/utils';
 
 // ==============================
@@ -177,6 +178,14 @@ export default function HistoryPage() {
             {continueItems.slice(0, 6).map((item: any) => {
               const content = item.content || {};
               const contentId = content.id || item.contentId;
+              const isShort = String(content.contentType || '').toUpperCase() === 'SHORT';
+              const href = isShort
+                ? getPublicContentPath({
+                    id: contentId,
+                    slug: content.slug,
+                    contentType: content.contentType,
+                  })
+                : `/watch/${contentId}`;
               const duration = content.duration || 0;
               const progressSeconds = item.progressSeconds || 0;
               const progressPercent = duration > 0
@@ -186,7 +195,7 @@ export default function HistoryPage() {
               return (
                 <Link
                   key={item.id || contentId}
-                  href={`/watch/${contentId}`}
+                  href={href}
                   className="group w-48 shrink-0"
                 >
                   <div className="relative aspect-video overflow-hidden rounded-xl bg-mp-surface">
@@ -339,6 +348,7 @@ export default function HistoryPage() {
                   const contentId = content.id || item.contentId;
                   const contentSlug = content.slug;
                   const contentType = content.contentType || 'SERIES';
+                  const isShort = contentType === 'SHORT';
                   const duration = content.duration || 0;
                   const progressSeconds = item.progressSeconds || 0;
                   const progressPercent = duration > 0
@@ -347,10 +357,14 @@ export default function HistoryPage() {
                   const isCompleted = item.completed || progressPercent >= 95;
                   const linkPath = contentType === 'TUTORIAL'
                     ? `/tutorials/${contentSlug || contentId}`
-                    : contentType === 'SHORT'
-                      ? `/shorts`
+                    : isShort
+                      ? getPublicContentPath({
+                          id: contentId,
+                          slug: contentSlug,
+                          contentType,
+                        })
                       : `/series/${contentSlug || contentId}`;
-                  const watchPath = `/watch/${contentId}`;
+                  const watchPath = isShort ? linkPath : `/watch/${contentId}`;
                   const isDeleting =
                     deleteItem.isPending && deleteItem.variables === contentId;
 

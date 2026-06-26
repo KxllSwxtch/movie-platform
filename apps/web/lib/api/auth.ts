@@ -9,6 +9,16 @@
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 let isSessionInvalidated = false;
+const REFRESH_TIMEOUT_MS = 10_000;
+
+function debugAuth(message: string, error?: unknown): void {
+  if (process.env.NODE_ENV !== 'development') return;
+  if (error) {
+    console.warn(`[auth] ${message}`, error);
+    return;
+  }
+  console.info(`[auth] ${message}`);
+}
 
 function syncAuthCookies(accessToken: string | null): void {
   if (typeof document === 'undefined') return;
@@ -91,6 +101,7 @@ export function setTokens(accessToken: string, refreshToken?: string, sessionId?
 export function clearAuthState(): void {
   if (typeof window === 'undefined') return;
 
+  debugAuth('auth state cleared');
   isSessionInvalidated = true;
   isRefreshing = false;
   refreshPromise = null;
@@ -148,12 +159,20 @@ export async function attemptTokenRefresh(): Promise<boolean> {
 
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
+    clearAuthState();
     return false;
   }
 
   isRefreshing = true;
   refreshPromise = (async () => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      debugAuth('refresh timeout');
+      controller.abort();
+    }, REFRESH_TIMEOUT_MS);
+
     try {
+      debugAuth('refresh started');
       const response = await fetch(`${_apiBaseUrl}/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -162,9 +181,11 @@ export async function attemptTokenRefresh(): Promise<boolean> {
         },
         body: JSON.stringify({ refreshToken }),
         credentials: 'include',
+        signal: controller.signal,
       });
 
       if (!response.ok) {
+        debugAuth(`refresh failed with status ${response.status}`);
         clearAuthState();
         return false;
       }
@@ -175,12 +196,15 @@ export async function attemptTokenRefresh(): Promise<boolean> {
         return true;
       }
 
+      debugAuth('refresh failed with invalid response');
       clearAuthState();
       return false;
-    } catch {
+    } catch (error) {
+      debugAuth('refresh failed', error);
       clearAuthState();
       return false;
     } finally {
+      window.clearTimeout(timeoutId);
       isRefreshing = false;
       refreshPromise = null;
     }

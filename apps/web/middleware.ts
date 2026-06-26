@@ -7,7 +7,7 @@ import {
 } from '@/lib/role-permissions';
 
 /**
- * Routes that require authentication — redirect to /login if no token
+ * Routes that require authentication.
  */
 const PROTECTED_ROUTES = [
   '/account',
@@ -33,48 +33,12 @@ const VERIFIED_ONLY_ROUTES = [
   '/checkout',
 ];
 
-/**
- * Routes only for unauthenticated users — redirect to / if has token
- */
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'];
 
-/**
- * Check if pathname starts with any of the given prefixes
- */
 function matchesRoute(pathname: string, routes: string[]): boolean {
   return routes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
-}
-
-/**
- * Check if user has an auth token.
- * We check the cookie set by the auth store persistence.
- * This is a lightweight check — full JWT validation happens server-side.
- */
-function hasAuthToken(request: NextRequest): boolean {
-  // Check cookie first (set by Zustand persist middleware)
-  const authCookie = request.cookies.get('mp-auth-token');
-  if (authCookie?.value) {
-    // Lightweight JWT expiry check (decode payload without verification)
-    try {
-      const payload = JSON.parse(atob(authCookie.value.split('.')[1]));
-      if (payload.exp && payload.exp * 1000 < Date.now()) {
-        // Token expired — treat as unauthenticated
-        return false;
-      }
-    } catch {
-      // Malformed token — treat as unauthenticated
-      return false;
-    }
-    return true;
-  }
-
-  // Fallback: check localStorage-backed cookie
-  const storageCookie = request.cookies.get('mp-authenticated');
-  if (storageCookie?.value === 'true') return true;
-
-  return false;
 }
 
 function getTokenPayload(request: NextRequest): Record<string, unknown> | null {
@@ -93,6 +57,20 @@ function getTokenPayload(request: NextRequest): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+function hasAuthToken(request: NextRequest): boolean {
+  const authCookie = request.cookies.get('mp-auth-token');
+  if (!authCookie?.value) return false;
+
+  const payload = getTokenPayload(request);
+  if (!payload) return false;
+
+  if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()) {
+    return false;
+  }
+
+  return true;
 }
 
 function getUserRole(request: NextRequest): string | null {
@@ -114,35 +92,37 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthenticated = hasAuthToken(request);
+  const hasStaleAuthCookies =
+    !isAuthenticated &&
+    Boolean(
+      request.cookies.get('mp-auth-token')?.value ||
+        request.cookies.get('mp-authenticated')?.value === 'true',
+    );
   const role = isAuthenticated ? getUserRole(request) : null;
   const verificationStatus = isAuthenticated
     ? getVerificationStatus(request)
     : null;
 
-  // If not authenticated but stale cookies remain, clear them proactively
-  if (!isAuthenticated) {
-    const authCookie = request.cookies.get('mp-auth-token');
-    const markerCookie = request.cookies.get('mp-authenticated');
-    if (authCookie?.value || markerCookie?.value === 'true') {
-      const response = NextResponse.next();
+  const clearStaleCookies = (response: NextResponse) => {
+    if (hasStaleAuthCookies) {
       response.cookies.delete('mp-auth-token');
       response.cookies.delete('mp-authenticated');
-      return response;
+      response.cookies.delete('mp-verification-status');
     }
-  }
+    return response;
+  };
 
-  // Protected routes: redirect to login if not authenticated
   if (matchesRoute(pathname, PROTECTED_ROUTES) && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    return clearStaleCookies(NextResponse.redirect(loginUrl));
   }
 
   if (matchesRoute(pathname, PARTNER_ONLY_ROUTES)) {
     if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
+      return clearStaleCookies(NextResponse.redirect(loginUrl));
     }
 
     if (!canUsePartnerDashboard(role, verificationStatus)) {
@@ -151,7 +131,7 @@ export function middleware(request: NextRequest) {
       if (redirectPath === '/account/verification') {
         redirectUrl.searchParams.set('restricted', pathname);
       }
-      return NextResponse.redirect(redirectUrl);
+      return clearStaleCookies(NextResponse.redirect(redirectUrl));
     }
   }
 
@@ -163,10 +143,9 @@ export function middleware(request: NextRequest) {
   ) {
     const verificationUrl = new URL('/account/verification', request.url);
     verificationUrl.searchParams.set('restricted', pathname);
-    return NextResponse.redirect(verificationUrl);
+    return clearStaleCookies(NextResponse.redirect(verificationUrl));
   }
 
-  // Auth routes: redirect to home if already authenticated
   if (matchesRoute(pathname, AUTH_ROUTES) && isAuthenticated) {
     const redirectTo =
       request.nextUrl.searchParams.get('redirect') ||
@@ -177,10 +156,10 @@ export function middleware(request: NextRequest) {
       ? new URL(redirectTo, request.url)
       : new URL('/dashboard', request.url);
 
-    return NextResponse.redirect(redirectUrl);
+    return clearStaleCookies(NextResponse.redirect(redirectUrl));
   }
 
-  return NextResponse.next();
+  return clearStaleCookies(NextResponse.next());
 }
 
 export const config = {

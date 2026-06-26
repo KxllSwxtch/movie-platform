@@ -9,6 +9,8 @@ describe('mapContinueWatchingItems', () => {
       progressSeconds: 30,
       content: {
         id: 'content-1',
+        slug: 'episode-one',
+        contentType: 'SERIES',
         title: 'Episode one',
         thumbnailUrl: '/episode.jpg',
         duration: 120,
@@ -17,6 +19,8 @@ describe('mapContinueWatchingItems', () => {
 
     expect(item).toMatchObject({
       id: 'content-1',
+      slug: 'episode-one',
+      contentType: 'SERIES',
       title: 'Episode one',
       currentTime: 30,
       duration: 120,
@@ -38,6 +42,26 @@ describe('mapContinueWatchingItems', () => {
     expect(item.progress).toBe(0);
     expect(item.currentTime).toBe(0);
     expect(item.duration).toBeUndefined();
+  });
+
+  it('preserves short routing metadata from nested content', () => {
+    const [item] = mapContinueWatchingItems([{
+      id: 'history-short',
+      progressSeconds: 5,
+      content: {
+        id: 'short-id',
+        slug: 'short-slug',
+        contentType: 'SHORT',
+        title: 'Short one',
+        duration: 30,
+      },
+    }]);
+
+    expect(item).toMatchObject({
+      id: 'short-id',
+      slug: 'short-slug',
+      contentType: 'SHORT',
+    });
   });
 
   it('removes records that cannot render a valid card', () => {
