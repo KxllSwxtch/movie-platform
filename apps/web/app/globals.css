@@ -5350,39 +5350,47 @@
     -webkit-backdrop-filter: blur(10px);
   }
 
-  .mp-home-shell img,
-  .mp-home-shell video {
+  .mp-home-shell img {
+    border-radius: 16px !important;
+  }
+
+  .mp-home-shell video:not(.sesh-shorts-video) {
     border-radius: 16px !important;
   }
 
   .mp-home-shell .shorts-viewport-height [data-short-id],
   .mp-home-shell .shorts-viewport-height [data-short-id] > div,
-  .mp-home-shell .shorts-viewport-height [data-short-id] > div > div:first-child,
-  .mp-home-shell .shorts-viewport-height video {
+  .mp-home-shell .shorts-viewport-height [data-short-id] > div > div:first-child {
     width: 100vw !important;
     max-width: none !important;
     min-width: 100vw !important;
-    margin-inline: 0 !important;
-    padding-inline: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     border-radius: 0 !important;
-  }
-
-  @supports (width: 100dvw) {
-    .mp-home-shell .shorts-viewport-height [data-short-id],
-    .mp-home-shell .shorts-viewport-height [data-short-id] > div,
-    .mp-home-shell .shorts-viewport-height [data-short-id] > div > div:first-child,
-    .mp-home-shell .shorts-viewport-height video {
-      width: 100dvw !important;
-      min-width: 100dvw !important;
-    }
+    background: transparent !important;
+    overflow: hidden !important;
   }
 
   .mp-home-shell .shorts-viewport-height video {
+    position: absolute !important;
+    inset: 0 !important;
+
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: none !important;
     height: 100% !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
     object-fit: cover !important;
     object-position: center center !important;
+
+    border-radius: 0 !important;
     background: transparent !important;
-    transform: translateZ(0);
+
+    transform: translateZ(0) scale(1.035) !important;
+    transform-origin: center center !important;
   }
 
   .mp-home-shell [class*='bg-mp-surface'],
