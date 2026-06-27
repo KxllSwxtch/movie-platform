@@ -2639,11 +2639,61 @@
 @media (max-width: 767px) {
   .sesh-mobile-sidebar {
     width: min(340px, 88vw) !important;
-    border-right: 1px solid rgba(75, 56, 100, 0.8) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.11) !important;
+    border-top-right-radius: 28px;
+    border-bottom-right-radius: 28px;
+    background:
+      radial-gradient(ellipse at 12% 0%, rgba(255, 67, 96, 0.22), transparent 38%),
+      radial-gradient(ellipse at 100% 42%, rgba(177, 17, 100, 0.18), transparent 46%),
+      linear-gradient(180deg, rgba(24, 5, 18, 0.9), rgba(9, 4, 17, 0.82) 46%, rgba(33, 3, 15, 0.9)),
+      url('/images/background.jpg') left bottom / cover no-repeat !important;
     box-shadow:
-      24px 0 70px rgba(0, 0, 0, 0.48),
-      0 0 28px rgba(215, 10, 42, 0.12),
-      0 0 34px rgba(15, 102, 235, 0.08) !important;
+      28px 0 78px rgba(0, 0, 0, 0.52),
+      0 0 34px rgba(215, 10, 42, 0.16),
+      inset -1px 0 0 rgba(255, 255, 255, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(30px) saturate(168%);
+    -webkit-backdrop-filter: blur(30px) saturate(168%);
+    transition-duration: 420ms !important;
+    transition-timing-function: cubic-bezier(0.2, 0.82, 0.22, 1) !important;
+  }
+
+  .sesh-mobile-sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 22%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 18%, transparent 78%, rgba(215, 10, 42, 0.08));
+    pointer-events: none;
+  }
+
+  .sesh-mobile-sidebar > div:first-child {
+    height: 90px !important;
+    padding-top: 20px !important;
+  }
+
+  .sesh-mobile-sidebar > div:first-child button {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+    color: rgba(255, 255, 255, 0.72);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition:
+      transform 180ms ease,
+      color 180ms ease,
+      background 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .sesh-mobile-sidebar > div:first-child button:active {
+    transform: scale(0.94);
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .sesh-mobile-sidebar a[href="/dashboard"],
@@ -2654,30 +2704,131 @@
   }
 
   .sesh-mobile-sidebar nav {
-    padding-bottom: 92px !important;
+    padding-bottom: 104px !important;
+    padding-inline: 10px !important;
+  }
+
+  .sesh-mobile-sidebar nav > div {
+    margin-bottom: 14px;
   }
 
   .sesh-mobile-sidebar nav a {
-    height: 44px !important;
-    padding-left: 26px !important;
-    padding-right: 22px !important;
+    height: 46px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
     font-size: 14px !important;
-    border-radius: 12px !important;
-    margin: 2px 14px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    border: 1px solid transparent;
+    border-radius: 15px !important;
+    margin: 4px 8px !important;
+    color: rgba(238, 241, 255, 0.7) !important;
+    transition:
+      transform 180ms cubic-bezier(0.2, 0.82, 0.22, 1),
+      color 180ms ease,
+      background 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease !important;
   }
 
   .sesh-mobile-sidebar nav a::before {
     border-radius: 999px;
+    box-shadow: 0 0 14px rgba(255, 38, 50, 0.68);
   }
 
   .sesh-mobile-sidebar nav a svg {
     width: 18px !important;
     height: 18px !important;
+    color: rgba(255, 255, 255, 0.52) !important;
+    transition:
+      color 180ms ease,
+      filter 180ms ease,
+      transform 180ms cubic-bezier(0.2, 0.82, 0.22, 1);
+  }
+
+  .sesh-mobile-sidebar nav a:hover,
+  .sesh-mobile-sidebar nav a:focus-visible {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.055) !important;
+    color: rgba(255, 255, 255, 0.92) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+    transform: translateX(2px);
+  }
+
+  .sesh-mobile-sidebar nav a:active {
+    transform: translateX(2px) scale(0.985);
+    background: rgba(255, 255, 255, 0.075) !important;
+  }
+
+  .sesh-mobile-sidebar nav a:hover svg,
+  .sesh-mobile-sidebar nav a:focus-visible svg {
+    color: rgba(255, 255, 255, 0.86) !important;
+    transform: scale(1.04);
+  }
+
+  .sesh-mobile-sidebar nav a[class*='bg-[#4c000b]'] {
+    border-color: rgba(255, 255, 255, 0.13) !important;
+    background:
+      radial-gradient(circle at 0% 50%, rgba(255, 38, 50, 0.34), transparent 36%),
+      linear-gradient(90deg, rgba(215, 10, 42, 0.34), rgba(177, 17, 100, 0.2) 58%, rgba(255, 255, 255, 0.055)) !important;
+    color: #fff !important;
+    box-shadow:
+      0 10px 28px rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(215, 10, 42, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .sesh-mobile-sidebar nav a[class*='bg-[#4c000b]'] svg {
+    color: #fff !important;
+    filter: drop-shadow(0 0 8px rgba(255, 38, 50, 0.42));
   }
 
   .sesh-mobile-sidebar [class*='text-[10px]'] {
     font-size: 11px !important;
-    letter-spacing: 0.04em;
+    font-weight: 650 !important;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.42) !important;
+  }
+
+  .sesh-mobile-sidebar nav > div > div:first-child {
+    margin-bottom: 7px !important;
+    padding-left: 26px !important;
+  }
+
+  .sesh-mobile-sidebar nav > div > div:nth-child(2) {
+    padding-bottom: 16px !important;
+  }
+
+  .sesh-mobile-sidebar nav > div > div:nth-child(2)::after {
+    left: 26px !important;
+    right: 26px !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), rgba(215, 10, 42, 0.14), transparent) !important;
+  }
+
+  .sesh-mobile-sidebar > div:last-child {
+    margin: 0 16px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 12px 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent);
+  }
+
+  .sesh-mobile-sidebar > div:last-child a,
+  .sesh-mobile-sidebar > div:last-child button {
+    height: 42px !important;
+    padding-inline: 16px !important;
+    border-radius: 14px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    transition:
+      transform 180ms ease,
+      color 180ms ease,
+      background 180ms ease,
+      box-shadow 180ms ease !important;
+  }
+
+  .sesh-mobile-sidebar > div:last-child a:active,
+  .sesh-mobile-sidebar > div:last-child button:active {
+    transform: scale(0.985);
   }
 
   .sesh-mobile-bottom-nav {
@@ -4862,11 +5013,8 @@
 /* Mobile dashboard background */
 @media (max-width: 767px) {
   .mp-home-shell {
-    background-color: #05020b;
-    background-image: url('/images/mobile-bg.png');
-    background-repeat: no-repeat;
-    background-position: center top;
-    background-size: cover;
+    background-color: #07020b;
+    background-image: none;
     background-attachment: scroll;
   }
 }
@@ -4874,10 +5022,32 @@
 /* SESH mobile dashboard polish */
 @media (max-width: 767px) {
   .mp-home-shell {
+    background: #07020b !important;
+  }
+
+  .mp-home-shell::before,
+  .mp-home-shell::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .mp-home-shell::before {
+    z-index: -2;
+    background: url('/images/mobile-bg.png') center center / cover no-repeat;
+    transform: rotate(180deg) scale(1.04);
+    filter: saturate(1.12) contrast(1.05) brightness(1.08);
+  }
+
+  .mp-home-shell::after {
+    z-index: -1;
     background:
-      linear-gradient(180deg, rgba(5, 2, 11, 0.64), rgba(5, 2, 11, 0.32) 35%, rgba(5, 2, 11, 0.72) 100%),
-      url('/images/mobile-bg.png') center top / cover no-repeat,
-      #05020b !important;
+      radial-gradient(ellipse at 50% 108%, rgba(215, 10, 42, 0.56), rgba(177, 17, 100, 0.28) 34%, transparent 68%),
+      radial-gradient(ellipse at 12% 88%, rgba(215, 10, 42, 0.34), rgba(177, 17, 100, 0.22) 38%, transparent 64%),
+      linear-gradient(180deg, rgba(5, 2, 11, 0.14) 0%, rgba(8, 2, 11, 0.12) 35%, rgba(52, 4, 18, 0.46) 100%),
+      linear-gradient(90deg, rgba(215, 10, 42, 0.12), transparent 32%, transparent 68%, rgba(145, 23, 130, 0.12));
+    mix-blend-mode: normal;
   }
 
   .mp-home-shell main {
