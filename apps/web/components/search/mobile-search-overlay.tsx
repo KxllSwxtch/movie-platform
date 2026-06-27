@@ -144,11 +144,37 @@ export function MobileSearchOverlay() {
 
       {/* Empty state when no query and no recent */}
       {recentSearches.length === 0 && !searchQuery && (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="sesh-mobile-search-empty px-4">
+          <div className="sesh-mobile-search-empty-card">
+            <div className="sesh-mobile-search-empty-icon" aria-hidden="true">
+              <MagnifyingGlass className="h-10 w-10" />
+            </div>
+
+            <h2>Что будем смотреть?</h2>
+
+            <p>
+              Введите название сериала, видео или обучающего материала
+            </p>
+
+            <div className="sesh-mobile-search-chips" aria-label="Быстрые категории">
+              {['Сериалы', 'Видео', 'Обучение', 'Популярное'].map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setSearchQuery(label)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="sr-only">
           <MagnifyingGlass className="w-12 h-12 text-mp-text-disabled mb-4" />
           <p className="text-mp-text-secondary text-sm">
             Начните вводить для поиска сериалов, видео и обучающих материалов
           </p>
+          </div>
         </div>
       )}
     </div>
