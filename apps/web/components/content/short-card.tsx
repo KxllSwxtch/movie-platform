@@ -303,7 +303,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           ref={ref}
           data-short-id={content.id}
           className={cn(
-            'relative flex h-full w-full snap-start snap-always items-center justify-center bg-transparent px-4 py-0 sm:px-6 md:px-0',
+            'relative flex h-full w-full snap-start snap-always items-center justify-center bg-transparent px-4 py-0 sm:px-6 md:px-0 max-md:w-screen max-md:max-w-none max-md:px-0',
             className
           )}
           onClick={(e) => {
@@ -313,8 +313,8 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
             handleToggleMute();
           }}
         >
-          <div className="relative flex h-full w-full max-w-[760px] items-center justify-center gap-3 sm:gap-4 md:gap-5 lg:max-w-[720px]">
-            <div className="relative h-full w-full overflow-hidden bg-[#05060a] shadow-[0_24px_70px_rgba(0,0,0,0.34)] sm:mt-3 sm:h-[calc(100%-24px)] sm:aspect-[9/16] sm:max-h-[860px] sm:w-auto sm:self-start sm:rounded-[10px]">
+          <div className="relative flex h-full w-full max-w-[760px] items-center justify-center gap-3 sm:gap-4 md:gap-5 lg:max-w-[720px] max-md:w-screen max-md:max-w-none max-md:gap-0">
+            <div className="relative h-full w-full overflow-hidden bg-[#05060a] shadow-[0_24px_70px_rgba(0,0,0,0.34)] sm:mt-3 sm:h-[calc(100%-24px)] sm:aspect-[9/16] sm:max-h-[860px] sm:w-auto sm:self-start sm:rounded-[10px] max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:bg-transparent max-md:shadow-none">
         {/* Video element */}
         <video
           ref={videoRef}
@@ -323,7 +323,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           muted={isMuted}
           playsInline
           preload={isActive ? 'metadata' : 'none'}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover max-md:w-screen max-md:max-w-none max-md:rounded-none"
         />
 
         {/* Gradient overlays */}

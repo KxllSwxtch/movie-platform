@@ -5355,6 +5355,36 @@
     border-radius: 16px !important;
   }
 
+  .mp-home-shell .shorts-viewport-height [data-short-id],
+  .mp-home-shell .shorts-viewport-height [data-short-id] > div,
+  .mp-home-shell .shorts-viewport-height [data-short-id] > div > div:first-child,
+  .mp-home-shell .shorts-viewport-height video {
+    width: 100vw !important;
+    max-width: none !important;
+    min-width: 100vw !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  @supports (width: 100dvw) {
+    .mp-home-shell .shorts-viewport-height [data-short-id],
+    .mp-home-shell .shorts-viewport-height [data-short-id] > div,
+    .mp-home-shell .shorts-viewport-height [data-short-id] > div > div:first-child,
+    .mp-home-shell .shorts-viewport-height video {
+      width: 100dvw !important;
+      min-width: 100dvw !important;
+    }
+  }
+
+  .mp-home-shell .shorts-viewport-height video {
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    background: transparent !important;
+    transform: translateZ(0);
+  }
+
   .mp-home-shell [class*='bg-mp-surface'],
   .mp-home-shell [class*='bg-card'] {
     border-color: rgba(255, 255, 255, 0.08) !important;

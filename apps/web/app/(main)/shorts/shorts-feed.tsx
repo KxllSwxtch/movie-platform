@@ -214,14 +214,14 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
   }
 
   return (
-    <div ref={viewportRef} className="relative shorts-viewport-height w-full overflow-hidden">
+    <div ref={viewportRef} className="relative shorts-viewport-height w-full overflow-hidden max-md:w-screen max-md:max-w-none">
       <div
         ref={scrollContainerRef}
-        className="h-full overflow-y-scroll snap-y snap-mandatory overscroll-contain"
+        className="h-full w-full overflow-y-scroll snap-y snap-mandatory overscroll-contain max-md:w-screen max-md:max-w-none"
         style={{ scrollbarWidth: 'none' }}
       >
         <div
-          className="relative w-full"
+          className="relative w-full max-md:w-screen max-md:max-w-none"
           style={{ height: Math.max(viewportHeight, shorts.length * viewportHeight) }}
         >
           {shorts.map((short, index) => {
@@ -229,7 +229,7 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
             return (
               <div
                 key={short.id}
-                className="absolute left-0 w-full snap-start"
+                className="absolute left-0 w-full snap-start max-md:w-screen max-md:max-w-none"
                 style={{ top: index * viewportHeight, height: viewportHeight }}
               >
                 <ShortCard content={short} isActive={index === activeIndex} className="h-full" />
