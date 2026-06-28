@@ -7,18 +7,30 @@ import Link from 'next/link';
 export function LandingHero() {
   return (
     <section className="sesh-approved-hero relative min-h-[100dvh] overflow-hidden">
-      <Image
-        src="/images/mainbackground.png"
-        alt=""
-        aria-hidden="true"
-        fill
-        priority
-        unoptimized
-        sizes="100vw"
-        className="fixed inset-0 h-full w-full object-cover"
-        style={{ position: 'fixed' }}
-        draggable={false}
-      />
+      <div className="fixed inset-0 hidden md:block" aria-hidden="true">
+        <Image
+          src="/images/mainbackground.png"
+          alt=""
+          fill
+          priority
+          unoptimized
+          sizes="100vw"
+          className="h-full w-full object-cover"
+          draggable={false}
+        />
+      </div>
+      <div className="fixed inset-0 md:hidden" aria-hidden="true">
+        <Image
+          src="/images/mobile-bg.png"
+          alt=""
+          fill
+          priority
+          unoptimized
+          sizes="100vw"
+          className="sesh-approved-mobile-bg h-full w-full object-cover"
+          draggable={false}
+        />
+      </div>
 
       <div className="sesh-approved-content relative z-10">
         <div className="sesh-approved-badge">
@@ -46,6 +58,12 @@ export function LandingHero() {
           <Link href="/pricing" className="sesh-approved-secondary">
             Узнать о тарифах
           </Link>
+        </div>
+
+        <div className="sesh-approved-proof" aria-label="Social proof">
+          <span>10 000+ {'\u0435\u0434\u0438\u043d\u0438\u0446 \u043a\u043e\u043d\u0442\u0435\u043d\u0442\u0430'}</span>
+          <span>4K</span>
+          <span>{'\u0411\u0435\u0437 \u0440\u0435\u043a\u043b\u0430\u043c\u044b'}</span>
         </div>
       </div>
 

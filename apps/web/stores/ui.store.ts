@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 /**
  * Modal configuration
@@ -71,20 +71,30 @@ export const useUIStore = create<UIState>()(
       isMobileMenuOpen: false,
       modals: [],
       isSearchOpen: false,
-      searchQuery: '',
+      searchQuery: "",
       isGlobalLoading: false,
       loadingMessage: null,
 
       // Sidebar actions
-      toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+      toggleSidebar: () =>
+        set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
       setSidebarOpen: (open) => set({ isSidebarOpen: open }),
       toggleSidebarCollapsed: () =>
         set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
-      setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
+      setSidebarCollapsed: (collapsed) =>
+        set({ isSidebarCollapsed: collapsed }),
 
       // Mobile menu actions
-      toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
-      setMobileMenuOpen: (open) => set({ isMobileMenuOpen: open }),
+      toggleMobileMenu: () =>
+        set((state) => ({
+          isMobileMenuOpen: !state.isMobileMenuOpen,
+          isSearchOpen: !state.isMobileMenuOpen ? false : state.isSearchOpen,
+        })),
+      setMobileMenuOpen: (open) =>
+        set((state) => ({
+          isMobileMenuOpen: open,
+          isSearchOpen: open ? false : state.isSearchOpen,
+        })),
 
       // Modal actions
       openModal: (id, data, onClose) =>
@@ -128,20 +138,31 @@ export const useUIStore = create<UIState>()(
       },
 
       // Search actions
-      toggleSearch: () => set((state) => ({ isSearchOpen: !state.isSearchOpen })),
+      toggleSearch: () =>
+        set((state) => ({
+          isSearchOpen: !state.isSearchOpen,
+          isMobileMenuOpen: !state.isSearchOpen
+            ? false
+            : state.isMobileMenuOpen,
+          searchQuery: state.isSearchOpen ? "" : state.searchQuery,
+        })),
       setSearchOpen: (open) =>
-        set({ isSearchOpen: open, searchQuery: open ? get().searchQuery : '' }),
+        set((state) => ({
+          isSearchOpen: open,
+          isMobileMenuOpen: open ? false : state.isMobileMenuOpen,
+          searchQuery: open ? get().searchQuery : "",
+        })),
       setSearchQuery: (query) => set({ searchQuery: query }),
 
       // Loading actions
       setGlobalLoading: (loading, message) =>
         set({
           isGlobalLoading: loading,
-          loadingMessage: loading ? message ?? null : null,
+          loadingMessage: loading ? (message ?? null) : null,
         }),
     }),
     {
-      name: 'mp-ui-storage',
+      name: "mp-ui-storage",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         isSidebarCollapsed: state.isSidebarCollapsed,
@@ -153,13 +174,17 @@ export const useUIStore = create<UIState>()(
 /**
  * Selector hooks for common UI state
  */
-export const useIsSidebarOpen = () => useUIStore((state) => state.isSidebarOpen);
-export const useIsSidebarCollapsed = () => useUIStore((state) => state.isSidebarCollapsed);
-export const useIsMobileMenuOpen = () => useUIStore((state) => state.isMobileMenuOpen);
+export const useIsSidebarOpen = () =>
+  useUIStore((state) => state.isSidebarOpen);
+export const useIsSidebarCollapsed = () =>
+  useUIStore((state) => state.isSidebarCollapsed);
+export const useIsMobileMenuOpen = () =>
+  useUIStore((state) => state.isMobileMenuOpen);
 export const useIsSearchOpen = () => useUIStore((state) => state.isSearchOpen);
 export const useSearchQuery = () => useUIStore((state) => state.searchQuery);
 export const useModals = () => useUIStore((state) => state.modals);
-export const useIsGlobalLoading = () => useUIStore((state) => state.isGlobalLoading);
+export const useIsGlobalLoading = () =>
+  useUIStore((state) => state.isGlobalLoading);
 
 /**
  * Check if a specific modal is open
@@ -171,13 +196,13 @@ export const useIsModalOpen = (id: string) =>
  * Modal IDs for type safety
  */
 export const MODAL_IDS = {
-  LOGIN: 'login',
-  REGISTER: 'register',
-  SEARCH: 'search',
-  VIDEO_PLAYER: 'video-player',
-  SUBSCRIPTION_SELECT: 'subscription-select',
-  PAYMENT: 'payment',
-  VERIFICATION: 'verification',
-  CONFIRM_DELETE: 'confirm-delete',
-  ACCEPT_DOCUMENT: 'accept-document',
+  LOGIN: "login",
+  REGISTER: "register",
+  SEARCH: "search",
+  VIDEO_PLAYER: "video-player",
+  SUBSCRIPTION_SELECT: "subscription-select",
+  PAYMENT: "payment",
+  VERIFICATION: "verification",
+  CONFIRM_DELETE: "confirm-delete",
+  ACCEPT_DOCUMENT: "accept-document",
 } as const;

@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { MagnifyingGlass, X, Clock, ArrowRight } from '@phosphor-icons/react';
+import * as React from "react";
+import { MagnifyingGlass, X, Clock, ArrowRight } from "@phosphor-icons/react";
+import { usePathname } from "next/navigation";
 
-import { useUIStore, useIsSearchOpen } from '@/stores/ui.store';
+import { useUIStore, useIsSearchOpen } from "@/stores/ui.store";
 
-const RECENT_SEARCHES_KEY = 'mp-recent-searches';
+const RECENT_SEARCHES_KEY = "mp-recent-searches";
 const MAX_RECENT = 8;
 
 /**
@@ -16,6 +17,9 @@ export function MobileSearchOverlay() {
   const isOpen = useIsSearchOpen();
   const { setSearchOpen, searchQuery, setSearchQuery } = useUIStore();
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
+  const previousPathnameRef = React.useRef(pathname);
+  const [shouldRender, setShouldRender] = React.useState(isOpen);
   const [recentSearches, setRecentSearches] = React.useState<string[]>([]);
 
   // Load recent searches from localStorage
@@ -39,6 +43,41 @@ export function MobileSearchOverlay() {
     }, 100);
     return () => clearTimeout(timer);
   }, [isOpen]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+
+    const timer = window.setTimeout(() => setShouldRender(false), 240);
+    return () => window.clearTimeout(timer);
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (previousPathnameRef.current !== pathname) {
+      previousPathnameRef.current = pathname;
+      setShouldRender(false);
+      setSearchOpen(false);
+    }
+  }, [pathname, setSearchOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSearchQuery("");
+        setSearchOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, setSearchOpen, setSearchQuery]);
 
   // Handle search submission
   const handleSubmit = (e: React.FormEvent) => {
@@ -79,10 +118,14 @@ export function MobileSearchOverlay() {
     }
   };
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
-    <div className="sesh-mobile-search fixed inset-0 z-50 bg-mp-bg-primary md:hidden">
+    <div
+      className={`sesh-mobile-search fixed inset-0 z-50 bg-mp-bg-primary md:hidden ${
+        isOpen ? "sesh-mobile-search-open" : "sesh-mobile-search-closed"
+      }`}
+    >
       {/* Header with search input */}
       <div className="sesh-mobile-search-header flex items-center gap-3 p-4 border-b border-mp-border">
         <form onSubmit={handleSubmit} className="flex-1 relative">
@@ -100,7 +143,7 @@ export function MobileSearchOverlay() {
         </form>
         <button
           onClick={() => {
-            setSearchQuery('');
+            setSearchQuery("");
             setSearchOpen(false);
           }}
           className="p-2 text-mp-text-secondary hover:text-mp-text-primary rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -152,12 +195,13 @@ export function MobileSearchOverlay() {
 
             <h2>Что будем смотреть?</h2>
 
-            <p>
-              Введите название сериала, видео или обучающего материала
-            </p>
+            <p>Введите название сериала, видео или обучающего материала</p>
 
-            <div className="sesh-mobile-search-chips" aria-label="Быстрые категории">
-              {['Сериалы', 'Видео', 'Обучение', 'Популярное'].map((label) => (
+            <div
+              className="sesh-mobile-search-chips"
+              aria-label="Быстрые категории"
+            >
+              {["Сериалы", "Видео", "Обучение", "Популярное"].map((label) => (
                 <button
                   key={label}
                   type="button"
@@ -170,10 +214,10 @@ export function MobileSearchOverlay() {
           </div>
 
           <div className="sr-only">
-          <MagnifyingGlass className="w-12 h-12 text-mp-text-disabled mb-4" />
-          <p className="text-mp-text-secondary text-sm">
-            Начните вводить для поиска сериалов, видео и обучающих материалов
-          </p>
+            <MagnifyingGlass className="w-12 h-12 text-mp-text-disabled mb-4" />
+            <p className="text-mp-text-secondary text-sm">
+              Начните вводить для поиска сериалов, видео и обучающих материалов
+            </p>
           </div>
         </div>
       )}
