@@ -13,8 +13,13 @@ import {
   type VideoProgressContent,
 } from "@/components/content";
 import { ContentImage } from "@/components/content/content-image";
+import { UserAvatar } from "@/components/ui/avatar";
 import type { useDashboardHome } from "@/hooks/use-home";
-import type { CreatorInput } from "@/lib/author-identity";
+import {
+  normalizeCreatorIdentity,
+  type CreatorInput,
+} from "@/lib/author-identity";
+import { normalizeMediaUrl } from "@/lib/media-url";
 import { cn, formatNumber, formatViewCount } from "@/lib/utils";
 
 type DashboardData = ReturnType<typeof useDashboardHome>;
@@ -259,7 +264,7 @@ export function DashboardRows({ data }: DashboardRowsProps) {
       ) : null}
 
       <section className="relative">
-        <div className="grid grid-cols-1 gap-y-7 md:grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] md:gap-x-[18px] md:gap-y-[27px]">
+        <div className="grid grid-cols-1 gap-y-8 md:grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] md:gap-x-[18px] md:gap-y-[27px]">
           {(trending.isLoading || newReleases.isLoading || videos.isLoading) &&
           !gridItems.length
             ? Array.from({ length: 8 }).map((_, index) => (
@@ -453,12 +458,17 @@ function PremiumVideoCard({
   featured?: boolean;
 }) {
   const href = getContentHref(content);
+  const typeLabel = getContentTypeLabel(content.type);
+  const creatorIdentity = normalizeCreatorIdentity(content.creator);
+  const creatorAvatarSrc = creatorIdentity?.avatarUrl
+    ? normalizeMediaUrl(creatorIdentity.avatarUrl)
+    : null;
 
   return (
     <article className="group min-w-0">
       <div
         className={cn(
-          "relative overflow-hidden border border-white/[0.09] bg-white/[0.04] shadow-[0_22px_56px_rgba(0,0,0,0.42)] transition-transform duration-200 active:scale-[0.985] md:aspect-[1.82/1] md:rounded-[10px] md:border-0 md:shadow-[0_12px_34px_rgba(0,0,0,0.2)] md:transition-none md:active:scale-100",
+          "relative overflow-hidden border border-white/[0.09] bg-white/[0.04] shadow-[0_22px_56px_rgba(0,0,0,0.46),0_0_28px_rgba(255,29,108,0.07)] transition-[transform,box-shadow] duration-200 active:scale-[0.982] active:shadow-[0_28px_64px_rgba(0,0,0,0.52),0_0_34px_rgba(255,29,108,0.11)] md:aspect-[1.82/1] md:rounded-[10px] md:border-0 md:shadow-[0_12px_34px_rgba(0,0,0,0.2)] md:transition-none md:active:scale-100 md:active:shadow-[0_12px_34px_rgba(0,0,0,0.2)]",
           featured
             ? "aspect-[1.7/1] rounded-[24px]"
             : "aspect-[1.82/1] rounded-[20px]",
@@ -472,25 +482,46 @@ function PremiumVideoCard({
           sizes="(max-width: 768px) 92vw, (max-width: 1536px) 20vw, 260px"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/30 to-transparent md:from-black/46 md:via-transparent md:opacity-75" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04)_0%,rgba(0,0,0,0.1)_38%,rgba(0,0,0,0.64)_72%,rgba(0,0,0,0.96)_100%)] md:bg-gradient-to-t md:from-black/46 md:via-transparent md:to-transparent md:opacity-75" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#020107] via-[#020107]/55 to-transparent md:hidden" />
 
         <div className="absolute left-4 right-4 bottom-4 z-10 md:hidden">
-          <div className="mb-3 grid h-10 w-10 place-items-center rounded-full border border-white/70 bg-black/25 backdrop-blur-md">
-            <Play className="h-4 w-4 text-white" weight="fill" />
+          <div className="mb-3 grid h-12 w-12 place-items-center rounded-full border border-white/85 bg-white/[0.14] text-white shadow-[0_0_22px_rgba(255,255,255,0.18),0_0_26px_rgba(255,29,108,0.16),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-md">
+            <Play className="ml-0.5 h-5 w-5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]" weight="fill" />
           </div>
 
           <h3
             className={cn(
-              "line-clamp-2 font-extrabold leading-[1.08] tracking-[-0.04em] text-white",
-              featured ? "text-[21px]" : "text-[18px]",
+              "line-clamp-2 font-extrabold leading-[1.05] tracking-[-0.04em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.78)]",
+              featured ? "text-[23px]" : "text-[20px]",
             )}
           >
             {content.title}
           </h3>
 
-          <div className="mt-2 flex items-center gap-1 text-[13px] font-semibold text-white/80">
-            <span>{formatViews(content.viewCount)}</span>
-          </div>
+          {typeLabel ? (
+            <p className="mt-2 text-[12px] font-extrabold uppercase tracking-[0.13em] text-white/86 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
+              {typeLabel}
+            </p>
+          ) : null}
+
+          {creatorIdentity ? (
+            <div className="mt-2 flex min-w-0 items-center gap-2">
+              <UserAvatar
+                size="xs"
+                src={creatorAvatarSrc}
+                name={creatorIdentity.displayName}
+                className="h-6 w-6 border border-white/24 bg-[#10131c] shadow-[0_0_14px_rgba(255,255,255,0.12)]"
+              />
+              <span className="truncate text-[12px] font-bold text-white/78 drop-shadow-[0_1px_8px_rgba(0,0,0,0.72)]">
+                {creatorIdentity.displayName}
+              </span>
+            </div>
+          ) : null}
+
+          <p className="mt-2 text-[12px] font-semibold text-white/68 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
+            {formatViews(content.viewCount)}
+          </p>
         </div>
 
         <HoverVideoPreview
@@ -631,6 +662,24 @@ function isMobileNewReleaseItem(content: DashboardCardContent) {
 
 function getMobileNewReleaseTypeLabel(type?: string) {
   return (type || "").toUpperCase() === "SERIES" ? "Сериал" : "Видео";
+}
+
+function getContentTypeLabel(type?: string) {
+  switch ((type || "").toUpperCase()) {
+    case "VIDEO":
+    case "CLIP":
+      return "Видео";
+    case "SERIES":
+      return "Сериал";
+    case "DOCUMENTARY":
+      return "Документальный";
+    case "TUTORIAL":
+      return "Обучение";
+    case "SHORT":
+      return "Шортс";
+    default:
+      return undefined;
+  }
 }
 
 function getContentHref(content: DashboardCardContent) {

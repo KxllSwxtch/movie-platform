@@ -1,7 +1,19 @@
 'use client';
 
-import { Play, Heart, ChatCircle, ShareNetwork } from '@phosphor-icons/react';
+import {
+  ArrowBendUpLeft,
+  ChatCircle,
+  ChatCircleDots,
+  Heart,
+  PaperPlaneTilt,
+  Play,
+  ShareNetwork,
+  ShieldCheck,
+  SpinnerGap,
+  X,
+} from '@phosphor-icons/react';
 import Hls from 'hls.js';
+import Link from 'next/link';
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -20,6 +32,7 @@ import {
 import { useIsAuthenticated, useUser } from '@/stores/auth.store';
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -62,6 +75,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
     const [isMuted, setIsMuted] = useState(true);
     const [commentsOpen, setCommentsOpen] = useState(false);
     const [commentText, setCommentText] = useState('');
+    const commentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     const user = useUser();
     const isAuthenticated = useIsAuthenticated();
@@ -73,10 +87,18 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
     const liked = likeStatus.data?.liked ?? false;
     const likeCount = likeStatus.data?.likeCount ?? content.likeCount ?? 0;
     const commentCount = commentsQuery.data?.total ?? content.commentCount ?? 0;
+    const commentSummary =
+      commentCount > 0
+        ? `${formatNumber(commentCount)} ${getCommentWord(commentCount)}`
+        : 'Нет комментариев';
+    const currentUserName = user
+      ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.username || 'вы'
+      : 'вы';
     const creatorIdentity = normalizeCreatorIdentity(content.creator);
     const creatorAvatarSrc = creatorIdentity?.avatarUrl
       ? normalizeMediaUrl(creatorIdentity.avatarUrl)
       : undefined;
+    const creatorHref = creatorIdentity?.href;
 
     const pauseCurrentVideo = useCallback((reset = false) => {
       const el = videoRef.current;
@@ -115,6 +137,13 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
       setCommentsOpen(false);
       setCommentText('');
     }, [content.id]);
+
+    useEffect(() => {
+      const el = commentTextareaRef.current;
+      if (!el) return;
+      el.style.height = '0px';
+      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    }, [commentText]);
 
     useEffect(() => {
       // When card becomes inactive, ensure it's muted (prevents bleed when scrolling)
@@ -348,16 +377,31 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
 
         {/* Side action bar */}
         <div className="absolute bottom-28 right-3 z-10 flex flex-col items-center gap-4 sm:bottom-20 md:static md:translate-y-[38px] md:gap-5">
-          {creatorIdentity && (
-            <div className="rounded-full bg-[linear-gradient(135deg,#b91428,#43259d,#0e6fb7)] p-[2px] shadow-[0_0_14px_rgba(213,32,58,0.22)]">
-              <UserAvatar
-                size="default"
-                name={creatorIdentity.displayName}
-                src={creatorAvatarSrc}
-                className="h-11 w-11 border-2 border-[#080013] bg-[#10131c]"
-              />
-            </div>
-          )}
+          {creatorIdentity ? (
+            creatorHref ? (
+              <Link
+                href={creatorHref}
+                aria-label="Открыть профиль автора"
+                className="rounded-full bg-[linear-gradient(135deg,#b91428,#43259d,#0e6fb7)] p-[2px] shadow-[0_0_14px_rgba(213,32,58,0.22)] transition-[transform,box-shadow] duration-150 hover:shadow-[0_0_18px_rgba(213,32,58,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b7ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#05030d] active:scale-95"
+              >
+                <UserAvatar
+                  size="default"
+                  name={creatorIdentity.displayName}
+                  src={creatorAvatarSrc}
+                  className="h-11 w-11 border-2 border-[#080013] bg-[#10131c]"
+                />
+              </Link>
+            ) : (
+              <div className="rounded-full bg-[linear-gradient(135deg,#b91428,#43259d,#0e6fb7)] p-[2px] shadow-[0_0_14px_rgba(213,32,58,0.22)]">
+                <UserAvatar
+                  size="default"
+                  name={creatorIdentity.displayName}
+                  src={creatorAvatarSrc}
+                  className="h-11 w-11 border-2 border-[#080013] bg-[#10131c]"
+                />
+              </div>
+            )
+          ) : null}
           <button
             type="button"
             className="group flex flex-col items-center gap-1"
@@ -418,20 +462,50 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         <Sheet open={commentsOpen} onOpenChange={setCommentsOpen}>
           <SheetContent
             side="bottom"
-            className="h-[75vh] bg-mp-surface border-mp-border text-mp-text-primary flex flex-col"
+            className="sesh-comments-sheet mx-auto flex h-[82vh] max-h-[820px] w-full max-w-[920px] flex-col overflow-hidden rounded-t-[26px] border-white/10 bg-[radial-gradient(circle_at_18%_0%,rgba(213,32,58,0.18),transparent_30%),radial-gradient(circle_at_84%_4%,rgba(85,183,255,0.12),transparent_28%),linear-gradient(180deg,rgba(16,7,29,0.96),rgba(5,6,15,0.98))] px-0 pb-0 pt-0 text-mp-text-primary shadow-[0_-28px_90px_rgba(0,0,0,0.62),0_0_42px_rgba(213,32,58,0.12),inset_0_1px_0_rgba(255,255,255,0.09)] backdrop-blur-2xl data-[state=open]:duration-500 data-[state=closed]:duration-300 [&>button:first-child]:hidden sm:h-[78vh] sm:rounded-t-[24px]"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
-            <SheetHeader>
-              <SheetTitle className="text-mp-text-primary">Комментарии</SheetTitle>
+            <SheetHeader className="border-b border-white/[0.07] bg-white/[0.025] px-5 pb-4 pt-5 text-left shadow-[0_12px_34px_rgba(0,0,0,0.16)] sm:px-7 sm:pb-5 sm:pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <SheetTitle className="text-[22px] font-extrabold leading-tight text-white sm:text-2xl">
+                    Комментарии
+                  </SheetTitle>
+                  <p className="mt-1 text-sm font-medium text-white/52">
+                    {commentSummary}
+                  </p>
+                </div>
+                <SheetClose className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white/66 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_28px_rgba(0,0,0,0.22)] backdrop-blur-xl transition-all duration-200 hover:border-[#ff4163]/35 hover:bg-[#d5203a]/14 hover:text-white hover:shadow-[0_0_24px_rgba(213,32,58,0.18)] focus:outline-none focus:ring-2 focus:ring-[#ff4163]/35">
+                  <X className="h-5 w-5 transition-transform duration-200 group-hover:scale-90" weight="bold" />
+                  <span className="sr-only">Закрыть комментарии</span>
+                </SheetClose>
+              </div>
             </SheetHeader>
 
-            <div className="mt-4 flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 pr-3 sm:space-y-4 sm:px-7 sm:py-5">
               {commentsQuery.isLoading ? (
-                <div className="text-sm text-mp-text-secondary">Загрузка…</div>
+                <div className="rounded-[18px] border border-white/8 bg-white/[0.035] p-5 text-sm font-medium text-white/54">
+                  Загрузка…
+                </div>
               ) : commentsQuery.isError ? (
-                <div className="text-sm text-mp-text-secondary">Не удалось загрузить комментарии</div>
+                <div className="rounded-[18px] border border-[#d5203a]/20 bg-[#d5203a]/8 p-5 text-sm font-medium text-white/64">
+                  Не удалось загрузить комментарии
+                </div>
               ) : (commentsQuery.data?.items?.length ?? 0) === 0 ? (
-                <div className="text-sm text-mp-text-secondary">Пока нет комментариев</div>
+                <div className="flex min-h-[calc(100%-1rem)] flex-col items-center justify-center rounded-[22px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.018))] px-6 py-12 text-center">
+                  <div className="relative mb-5">
+                    <div className="absolute inset-[-18px] rounded-full bg-[#d5203a]/20 blur-2xl" />
+                    <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-white/12 bg-[#0b0815]/76 text-[#ff6680] shadow-[0_0_28px_rgba(213,32,58,0.22),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+                      <ChatCircleDots className="h-8 w-8" weight="duotone" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-extrabold text-white">
+                    Комментариев пока нет
+                  </h3>
+                  <p className="mt-2 max-w-[280px] text-sm leading-6 text-white/48">
+                    Будьте первым, кто начнет обсуждение.
+                  </p>
+                </div>
               ) : (
                 commentsQuery.data!.items.map((c) => {
                   const author = c.author;
@@ -442,54 +516,125 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
                   const avatarSrc = author?.avatarUrl
                     ? normalizeMediaUrl(author.avatarUrl)
                     : undefined;
+                  const authorMeta = author as
+                    | (typeof author & {
+                        role?: string | null;
+                        verified?: boolean | null;
+                        isVerified?: boolean | null;
+                      })
+                    | null
+                    | undefined;
+                  const role = authorMeta?.role;
+                  const isVerified = Boolean(authorMeta?.verified || authorMeta?.isVerified);
 
                   return (
-                    <div key={c.id} className="flex gap-3">
-                      <UserAvatar size="sm" name={name} src={avatarSrc} />
+                    <article
+                      key={c.id}
+                      className="group flex gap-3 rounded-[20px] border border-white/[0.07] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#d5203a]/22 hover:bg-white/[0.06] hover:shadow-[0_18px_42px_rgba(0,0,0,0.24),0_0_24px_rgba(213,32,58,0.08)] sm:gap-4 sm:p-5"
+                    >
+                      <UserAvatar
+                        size="default"
+                        name={name}
+                        src={avatarSrc}
+                        className="h-10 w-10 border border-white/14 bg-[#120917] shadow-[0_0_20px_rgba(213,32,58,0.18)] ring-2 ring-[#d5203a]/10 sm:h-11 sm:w-11"
+                      />
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline gap-2">
-                          <div className="text-sm font-medium text-mp-text-primary truncate">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <div className="truncate text-[15px] font-extrabold leading-tight text-white">
                             {name}
                           </div>
-                          <div className="text-xs text-mp-text-secondary">
+                          {isVerified && (
+                            <ShieldCheck className="h-4 w-4 flex-none text-[#55b7ff]" weight="fill" />
+                          )}
+                          {role && (
+                            <span className="rounded-full border border-[#d5203a]/24 bg-[#d5203a]/12 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#ff8a9b]">
+                              {role}
+                            </span>
+                          )}
+                          <div className="basis-full text-xs font-medium text-white/42 sm:basis-auto">
                             {formatRelativeTime(c.createdAt)}
                           </div>
                         </div>
-                        <div className="text-sm text-mp-text-secondary whitespace-pre-wrap break-words">
+                        <div className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7 text-white/72">
                           {c.text}
                         </div>
+                        <div className="mt-4 flex items-center gap-2 text-xs font-bold text-white/46">
+                          <button
+                            type="button"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 transition-colors hover:bg-white/[0.06] hover:text-white"
+                          >
+                            <Heart className="h-3.5 w-3.5" />
+                            Нравится
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 transition-colors hover:bg-white/[0.06] hover:text-white"
+                          >
+                            <ArrowBendUpLeft className="h-3.5 w-3.5" />
+                            Ответить
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    </article>
                   );
                 })
               )}
             </div>
 
-            <div className="mt-4 border-t border-mp-border pt-4">
+            <div className="border-t border-white/[0.08] bg-[linear-gradient(180deg,rgba(8,5,18,0.72),rgba(5,4,14,0.96))] px-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))] pt-4 shadow-[0_-18px_48px_rgba(0,0,0,0.28)] sm:px-7 sm:pb-5 sm:pt-5">
               {isAuthenticated ? (
-                <div className="space-y-2">
-                  <div className="text-xs text-mp-text-secondary">
-                    Комментирует: {user ? `${user.firstName} ${user.lastName}` : 'вы'}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      size="sm"
+                      src={(user as { avatarUrl?: string | null } | null)?.avatarUrl ? normalizeMediaUrl((user as { avatarUrl?: string }).avatarUrl as string) : null}
+                      name={currentUserName}
+                      className="h-9 w-9 border border-white/14 bg-[#120917] shadow-[0_0_20px_rgba(213,32,58,0.18)]"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-white/42">
+                        Комментирует как
+                      </p>
+                      <p className="truncate text-sm font-bold text-white">
+                        {currentUserName}
+                      </p>
+                    </div>
                   </div>
                   <Textarea
+                    ref={commentTextareaRef}
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Написать комментарий…"
-                    className="bg-mp-surface-elevated border-mp-border text-mp-text-primary placeholder:text-mp-text-disabled"
+                    placeholder="Поделитесь своим мнением..."
+                    rows={2}
+                    className="max-h-[160px] min-h-[88px] resize-none rounded-[18px] border-white/10 bg-[#060713]/72 px-4 py-4 text-[15px] leading-relaxed text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_0_1px_rgba(213,32,58,0.04)] outline-none transition-all duration-200 placeholder:text-white/34 hover:border-white/16 focus-visible:border-[#ff4163]/45 focus-visible:ring-2 focus-visible:ring-[#d5203a]/20"
                     maxLength={2000}
                   />
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-white/36">
+                      {commentText.length}/2000
+                    </span>
                     <Button
                       type="button"
                       onClick={handleSubmitComment}
                       disabled={!commentText.trim() || createComment.isPending}
+                      className="h-11 rounded-full border-0 bg-[linear-gradient(135deg,#d5203a_0%,#ff2d7a_52%,#7a5cff_100%)] px-5 font-bold text-white shadow-[0_0_22px_rgba(213,32,58,0.28),0_12px_28px_rgba(0,0,0,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(255,45,122,0.36),0_16px_36px_rgba(0,0,0,0.34)] active:translate-y-0 disabled:translate-y-0 disabled:opacity-45 disabled:shadow-none"
                     >
-                      Отправить
+                      {createComment.isPending ? (
+                        <>
+                          <SpinnerGap className="h-4 w-4 animate-spin" />
+                          Отправляем
+                        </>
+                      ) : (
+                        <>
+                          <PaperPlaneTilt className="h-4 w-4" weight="fill" />
+                          Отправить
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-mp-text-secondary">
+                <div className="rounded-[18px] border border-white/8 bg-white/[0.04] p-4 text-sm font-medium text-white/58">
                   Войдите, чтобы оставить комментарий.
                 </div>
               )}
@@ -501,3 +646,14 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
   }
 );
 ShortCard.displayName = 'ShortCard';
+
+function getCommentWord(count: number) {
+  const abs = Math.abs(count);
+  const lastTwo = abs % 100;
+  const last = abs % 10;
+
+  if (lastTwo >= 11 && lastTwo <= 14) return 'комментариев';
+  if (last === 1) return 'комментарий';
+  if (last >= 2 && last <= 4) return 'комментария';
+  return 'комментариев';
+}

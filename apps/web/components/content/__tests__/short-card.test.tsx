@@ -90,6 +90,14 @@ describe("ShortCard", () => {
     expect(screen.getByText("@tester")).toBeInTheDocument();
   });
 
+  it("links the side author avatar to the public author profile", () => {
+    render(<ShortCard content={mockShort} />);
+
+    expect(
+      screen.getByRole("link", { name: "Открыть профиль автора" }),
+    ).toHaveAttribute("href", "/author/tester");
+  });
+
   it("renders like, comment, and share buttons", () => {
     render(<ShortCard content={mockShort} />);
 
