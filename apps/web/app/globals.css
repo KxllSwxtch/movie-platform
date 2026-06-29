@@ -3879,16 +3879,19 @@
 
   .sesh-mobile-bottom-nav {
     height: calc(78px + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.075) !important;
     background:
-      linear-gradient(180deg, rgba(20, 8, 34, 0.82), rgba(5, 4, 16, 0.96)) !important;
-    backdrop-filter: blur(22px) saturate(150%);
-    -webkit-backdrop-filter: blur(22px) saturate(150%);
+      radial-gradient(ellipse at 20% 0%, rgba(215, 10, 42, 0.13), transparent 52%),
+      radial-gradient(ellipse at 82% 0%, rgba(15, 102, 235, 0.1), transparent 48%),
+      linear-gradient(180deg, rgba(8, 5, 17, 0.7), rgba(8, 5, 17, 0.44)),
+      rgba(8, 5, 17, 0.28) !important;
+    backdrop-filter: blur(18px) saturate(1.16);
+    -webkit-backdrop-filter: blur(18px) saturate(1.16);
     box-shadow:
-      0 -18px 48px rgba(0, 0, 0, 0.55),
+      0 -12px 30px rgba(0, 0, 0, 0.16),
       inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 0 32px rgba(215, 10, 42, 0.12),
-      0 0 34px rgba(15, 102, 235, 0.10);
+      0 0 24px rgba(215, 10, 42, 0.08),
+      0 0 24px rgba(15, 102, 235, 0.06);
   }
 
   .sesh-mobile-bottom-nav > div {
@@ -6458,14 +6461,20 @@
     inset: var(--sesh-mobile-header-top) 0 0;
     border-width: 0 0 1px;
     border-radius: 0;
-    border-color: rgba(255, 255, 255, 0.055);
+    border-color: rgba(255, 255, 255, 0.075);
     background:
-      linear-gradient(180deg, rgba(8, 5, 17, 0.66), rgba(8, 5, 17, 0.34)),
-      rgba(8, 5, 17, 0.24);
+      radial-gradient(ellipse at 18% 100%, rgba(215, 10, 42, 0.13), transparent 52%),
+      radial-gradient(ellipse at 82% 100%, rgba(15, 102, 235, 0.1), transparent 48%),
+      linear-gradient(180deg, rgba(8, 5, 17, 0.7), rgba(8, 5, 17, 0.44)),
+      rgba(8, 5, 17, 0.28);
     opacity: 1;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
-    backdrop-filter: blur(16px) saturate(1.12);
-    -webkit-backdrop-filter: blur(16px) saturate(1.12);
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.16),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.045),
+      0 0 24px rgba(215, 10, 42, 0.08),
+      0 0 24px rgba(15, 102, 235, 0.06);
+    backdrop-filter: blur(18px) saturate(1.16);
+    -webkit-backdrop-filter: blur(18px) saturate(1.16);
   }
 
   .sesh-mobile-header-expanded::before {
@@ -6477,11 +6486,17 @@
   }
 
   .sesh-mobile-header-compact::before {
-    border-color: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.075);
     background:
-      linear-gradient(180deg, rgba(8, 5, 17, 0.72), rgba(8, 5, 17, 0.42)),
+      radial-gradient(ellipse at 18% 100%, rgba(215, 10, 42, 0.13), transparent 52%),
+      radial-gradient(ellipse at 82% 100%, rgba(15, 102, 235, 0.1), transparent 48%),
+      linear-gradient(180deg, rgba(8, 5, 17, 0.7), rgba(8, 5, 17, 0.44)),
       rgba(8, 5, 17, 0.28);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.16),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.045),
+      0 0 24px rgba(215, 10, 42, 0.08),
+      0 0 24px rgba(15, 102, 235, 0.06);
     backdrop-filter: blur(18px) saturate(1.16);
     -webkit-backdrop-filter: blur(18px) saturate(1.16);
   }
@@ -6670,22 +6685,29 @@
   .sesh-mobile-sidebar {
     z-index: 70 !important;
     width: min(340px, 88vw) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.11) !important;
     border-top-right-radius: 26px !important;
     border-bottom-right-radius: 26px !important;
     background:
-      linear-gradient(180deg, rgba(16, 12, 24, 0.94), rgba(7, 5, 13, 0.96)) !important;
+      radial-gradient(ellipse at 6% 8%, rgba(215, 10, 42, 0.24), transparent 40%),
+      radial-gradient(ellipse at 98% 38%, rgba(177, 17, 100, 0.18), transparent 48%),
+      radial-gradient(ellipse at 82% 0%, rgba(15, 102, 235, 0.11), transparent 42%),
+      linear-gradient(180deg, rgba(8, 5, 17, 0.68), rgba(8, 5, 17, 0.5)),
+      url('/images/mobile-bg.png') center center / cover no-repeat !important;
     box-shadow:
-      24px 0 64px rgba(0, 0, 0, 0.46),
-      inset -1px 0 0 rgba(255, 255, 255, 0.055),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-    backdrop-filter: blur(18px) saturate(1.08) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(1.08) !important;
+      24px 0 64px rgba(0, 0, 0, 0.32),
+      0 0 28px rgba(215, 10, 42, 0.12),
+      0 0 28px rgba(15, 102, 235, 0.08),
+      inset -1px 0 0 rgba(255, 255, 255, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.09) !important;
+    backdrop-filter: blur(22px) saturate(1.16) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.16) !important;
   }
 
   .sesh-mobile-sidebar::before {
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 26%) !important;
+      linear-gradient(180deg, rgba(255, 255, 255, 0.065), transparent 24%),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045), transparent 26%),
+      linear-gradient(180deg, transparent 58%, rgba(215, 10, 42, 0.08)) !important;
   }
 }
