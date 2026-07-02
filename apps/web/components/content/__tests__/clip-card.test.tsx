@@ -105,7 +105,7 @@ describe('ClipCard', () => {
     it('should handle zero view count', () => {
       const zeroViews = { ...mockClip, viewCount: 0 };
       render(<ClipCard content={zeroViews} />);
-      expect(screen.getByText('0')).toBeInTheDocument();
+      expect(screen.getByText('0 просмотров')).toBeInTheDocument();
     });
 
     it('should show placeholder when thumbnailUrl is empty', () => {

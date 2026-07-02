@@ -92,9 +92,9 @@ export function ClipCard({ content, className }: ClipCardProps) {
       </div>
 
       {/* Content info */}
-      <div>
+      <div className="flex min-h-[78px] flex-col">
         <Link href={`/videos/${content.slug}`} className="block">
-          <h3 className="font-medium text-mp-text-primary truncate group-hover:text-mp-accent-tertiary transition-colors duration-200">
+          <h3 className="line-clamp-2 font-medium leading-tight text-mp-text-primary transition-colors duration-200 group-hover:text-mp-accent-tertiary">
             {content.title}
           </h3>
         </Link>
@@ -103,13 +103,13 @@ export function ClipCard({ content, className }: ClipCardProps) {
           className="mt-1 max-w-full"
           showUsername
         />
-        <div className="flex items-center gap-2 mt-1 text-sm text-mp-text-secondary">
-          <span className="flex items-center gap-1">
+        <div className="mt-auto flex min-w-0 items-center gap-2 pt-1 text-sm text-mp-text-secondary">
+          <span className="flex min-w-0 items-center gap-1">
             <Eye className="w-3.5 h-3.5" />
-            {formatViewCount(content.viewCount)}
+            <span className="truncate">{formatViewCount(content.viewCount)}</span>
           </span>
-          <span>&middot;</span>
-          <span>{formatDuration(content.duration)}</span>
+          <span className="shrink-0">&middot;</span>
+          <span className="shrink-0">{formatDuration(content.duration)}</span>
         </div>
       </div>
     </article>

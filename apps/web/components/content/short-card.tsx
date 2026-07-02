@@ -9,6 +9,8 @@ import {
   Play,
   ShareNetwork,
   ShieldCheck,
+  SpeakerHigh,
+  SpeakerSlash,
   SpinnerGap,
   X,
 } from '@phosphor-icons/react';
@@ -72,7 +74,9 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
     const { data, isLoading, error } = useStreamUrl(isActive ? content.id : undefined);
     const streamData = (data as any)?.data ?? data;
 
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isPaused, setIsPaused] = useState(!isActive);
+    const mutedRef = useRef(isMuted);
     const [commentsOpen, setCommentsOpen] = useState(false);
     const [commentText, setCommentText] = useState('');
     const commentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -100,6 +104,10 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
       : undefined;
     const creatorHref = creatorIdentity?.href;
 
+    useEffect(() => {
+      mutedRef.current = isMuted;
+    }, [isMuted]);
+
     const pauseCurrentVideo = useCallback((reset = false) => {
       const el = videoRef.current;
       if (!el) return;
@@ -121,22 +129,34 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         activeShortVideo.currentTime = 0;
       }
       activeShortVideo = el;
-      el.muted = true;
+      el.muted = mutedRef.current;
 
       const playPromise = el.play();
       if (playPromise && typeof (playPromise as Promise<void>).catch === 'function') {
         (playPromise as Promise<void>).catch(() => {
-          // Autoplay can be blocked; user can tap the video.
+          if (!el.muted) {
+            el.muted = true;
+            setIsMuted(true);
+            const mutedPlayPromise = el.play();
+            if (mutedPlayPromise && typeof (mutedPlayPromise as Promise<void>).catch === 'function') {
+              (mutedPlayPromise as Promise<void>).catch(() => {
+                setIsPaused(true);
+              });
+            }
+            return;
+          }
+          setIsPaused(true);
         });
       }
     }, []);
 
     useEffect(() => {
       // Reset local state when card changes
-      setIsMuted(true);
+      setIsMuted(false);
+      setIsPaused(!isActive);
       setCommentsOpen(false);
       setCommentText('');
-    }, [content.id]);
+    }, [content.id, isActive]);
 
     useEffect(() => {
       const el = commentTextareaRef.current;
@@ -148,7 +168,8 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
     useEffect(() => {
       // When card becomes inactive, ensure it's muted (prevents bleed when scrolling)
       if (!isActive) {
-        setIsMuted(true);
+        setIsMuted(false);
+        setIsPaused(true);
         if (videoRef.current) {
           videoRef.current.muted = true;
         }
@@ -305,6 +326,36 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
       else toast.error('Не удалось скопировать ссылку');
     };
 
+    const handleTogglePlayback = () => {
+      const el = videoRef.current;
+      if (!el || !isActive) return;
+
+      if (el.paused) {
+        el.muted = isMuted;
+        const playPromise = el.play();
+        if (playPromise && typeof (playPromise as Promise<void>).catch === 'function') {
+          (playPromise as Promise<void>).catch(() => {
+            if (!el.muted) {
+              el.muted = true;
+              setIsMuted(true);
+              const mutedPlayPromise = el.play();
+              if (mutedPlayPromise && typeof (mutedPlayPromise as Promise<void>).catch === 'function') {
+                (mutedPlayPromise as Promise<void>).catch(() => {
+                  setIsPaused(true);
+                });
+              }
+              return;
+            }
+            setIsPaused(true);
+          });
+        }
+        return;
+      }
+
+      el.pause();
+      setIsPaused(true);
+    };
+
     const handleToggleMute = () => {
       const el = videoRef.current;
       if (!el) return;
@@ -320,7 +371,8 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         const playPromise = el.play();
         if (playPromise && typeof (playPromise as Promise<void>).catch === 'function') {
           (playPromise as Promise<void>).catch(() => {
-            // ignore
+            el.muted = true;
+            setIsMuted(true);
           });
         }
       }
@@ -339,7 +391,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
             if (!isActive) return;
             const target = e.target as HTMLElement | null;
             if (target?.closest('button,a')) return;
-            handleToggleMute();
+            handleTogglePlayback();
           }}
         >
           <div className="relative flex h-full w-full max-w-[760px] items-center justify-center gap-3 sm:gap-4 md:gap-5 lg:max-w-[720px] max-md:w-screen max-md:max-w-none max-md:gap-0">
@@ -352,12 +404,43 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           muted={isMuted}
           playsInline
           preload={isActive ? 'metadata' : 'none'}
-          className="absolute inset-0 h-full w-full object-cover max-md:w-screen max-md:max-w-none max-md:rounded-none"
+          className="sesh-shorts-video absolute inset-0 h-full w-full object-cover max-md:w-screen max-md:max-w-none max-md:rounded-none"
+          onPlay={() => setIsPaused(false)}
+          onPause={() => setIsPaused(true)}
         />
 
         {/* Gradient overlays */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/82 via-black/34 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-black/22 to-transparent" />
+
+        {/* Dedicated sound control */}
+        <button
+          type="button"
+          aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
+          className="absolute right-4 top-[calc(16px+env(safe-area-inset-top,0px))] z-20 grid h-11 w-11 place-items-center rounded-full border border-white/14 bg-[#07020f]/52 text-white shadow-[0_0_20px_rgba(213,32,58,0.18),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-200 hover:border-[#55b7ff]/42 hover:bg-[#0b1727]/70 active:scale-95 sm:right-5 sm:top-5"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleToggleMute();
+          }}
+        >
+          {isMuted ? (
+            <SpeakerSlash className="h-5 w-5" weight="fill" />
+          ) : (
+            <SpeakerHigh className="h-5 w-5" weight="fill" />
+          )}
+        </button>
+
+        {/* Center play indicator */}
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-200",
+            isActive && isPaused ? "opacity-100" : "opacity-0",
+          )}
+        >
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/16 bg-[#07020f]/40 shadow-[0_0_18px_rgba(213,32,58,0.16)] backdrop-blur-md">
+            <Play className="ml-1 h-8 w-8 text-white" weight="fill" />
+          </div>
+        </div>
 
         {/* Bottom info */}
         <div className="absolute bottom-7 left-5 right-5 z-10 sm:bottom-8 sm:left-6 sm:right-6">
@@ -448,14 +531,6 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           </div>
         )}
 
-        {/* Center play indicator (shown when paused) */}
-        {!isActive && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/16 bg-[#07020f]/40 shadow-[0_0_18px_rgba(213,32,58,0.16)] backdrop-blur-md">
-              <Play className="ml-1 h-8 w-8 text-white" weight="fill" />
-            </div>
-          </div>
-        )}
         </div>
         </div>
 

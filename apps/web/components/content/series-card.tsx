@@ -80,9 +80,9 @@ export const SeriesCard = memo(function SeriesCard({
         <Link href={`/series/${content.slug}`} className="absolute inset-0 z-10" aria-label={content.title} />
       </div>
 
-      <div>
+      <div className="flex min-h-[78px] flex-col">
         <Link href={`/series/${content.slug}`} className="block">
-          <h3 className="truncate font-medium text-mp-text-primary transition-colors duration-200 group-hover:text-mp-accent-primary">
+          <h3 className="line-clamp-2 font-medium leading-tight text-mp-text-primary transition-colors duration-200 group-hover:text-mp-accent-primary">
             {content.title}
           </h3>
         </Link>
@@ -91,11 +91,11 @@ export const SeriesCard = memo(function SeriesCard({
           className="mt-1 max-w-full"
           showUsername
         />
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-auto flex min-w-0 items-center gap-2 pt-1">
           {content.year && (
-            <span className="text-sm text-mp-text-secondary">{content.year}</span>
+            <span className="shrink-0 text-sm text-mp-text-secondary">{content.year}</span>
           )}
-          <span className="text-sm text-mp-text-tertiary">
+          <span className="truncate text-sm text-mp-text-tertiary">
             {formatSeriesInfo(content.seasonCount, content.episodeCount)}
           </span>
         </div>
@@ -136,7 +136,7 @@ export const SeriesCardCompact = memo(function SeriesCardCompact({
       </div>
 
       <Link href={`/series/${content.slug}`} className="block">
-        <h4 className="truncate text-sm font-medium text-mp-text-primary transition-colors group-hover:text-mp-accent-primary">
+        <h4 className="line-clamp-1 text-sm font-medium leading-tight text-mp-text-primary transition-colors group-hover:text-mp-accent-primary">
           {content.title}
         </h4>
       </Link>

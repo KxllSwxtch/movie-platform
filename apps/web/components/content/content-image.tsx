@@ -67,13 +67,17 @@ export function ContentImage({
     return (
       <div
         className={cn(
-          "w-full h-full bg-mp-surface-elevated flex items-center justify-center",
+          "relative flex h-full w-full items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_28%_18%,rgba(213,32,58,0.24),transparent_34%),radial-gradient(circle_at_78%_70%,rgba(85,183,255,0.18),transparent_36%),linear-gradient(135deg,rgba(22,8,34,0.98),rgba(5,7,18,0.98))]",
+          "before:absolute before:inset-0 before:bg-[linear-gradient(180deg,rgba(255,255,255,0.07),transparent_34%,rgba(0,0,0,0.28))]",
+          "after:absolute after:inset-0 after:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-40px_70px_rgba(0,0,0,0.34)]",
           fallbackClassName,
         )}
       >
-        {fallbackIcon ?? (
-          <FilmStrip className="w-12 h-12 text-mp-text-disabled" />
-        )}
+        <div className="relative z-10 grid h-14 w-14 place-items-center rounded-full border border-white/12 bg-white/[0.06] text-white/66 shadow-[0_0_26px_rgba(213,32,58,0.18),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md">
+          {fallbackIcon ?? (
+            <FilmStrip className="h-7 w-7 text-white/68" weight="duotone" />
+          )}
+        </div>
       </div>
     );
   }

@@ -113,9 +113,9 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
         <Link href={`/tutorials/${content.slug}`} className="absolute inset-0 z-10" aria-label={content.title} />
       </div>
 
-      <div>
+      <div className="flex min-h-[84px] flex-col">
         <Link href={`/tutorials/${content.slug}`} className="block">
-          <h3 className="line-clamp-2 font-medium text-mp-text-primary transition-colors duration-200 group-hover:text-mp-accent-secondary">
+          <h3 className="line-clamp-2 font-medium leading-tight text-mp-text-primary transition-colors duration-200 group-hover:text-mp-accent-secondary">
             {content.title}
           </h3>
         </Link>
@@ -124,15 +124,15 @@ export function TutorialCard({ content, className }: TutorialCardProps) {
           className="mt-1 max-w-full"
           showUsername
         />
-        <div className="mt-2 flex items-center gap-2 text-sm text-mp-text-secondary">
-          <span className="flex items-center gap-1">
+        <div className="mt-auto flex min-w-0 items-center gap-2 pt-2 text-sm text-mp-text-secondary">
+          <span className="flex min-w-0 items-center gap-1">
             <BookOpen className="w-3.5 h-3.5" />
-            {content.completedLessons}/{content.lessonCount} уроков
+            <span className="truncate">{content.completedLessons}/{content.lessonCount} уроков</span>
           </span>
           {content.duration && (
             <>
-              <span>&middot;</span>
-              <span>{content.duration}</span>
+              <span className="shrink-0">&middot;</span>
+              <span className="shrink-0">{content.duration}</span>
             </>
           )}
         </div>

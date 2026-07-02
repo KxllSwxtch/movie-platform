@@ -313,7 +313,7 @@ function MobileNewReleasePoster({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/22 to-transparent" />
 
-            <div className="absolute left-3 right-3 bottom-3">
+            <div className="absolute inset-x-3 bottom-3 flex min-h-[86px] flex-col justify-end">
               <div className="mb-2 grid h-8 w-8 place-items-center rounded-full border border-white/60 bg-black/25 backdrop-blur-md">
                 <Play className="h-3.5 w-3.5 text-white" weight="fill" />
               </div>
@@ -321,10 +321,10 @@ function MobileNewReleasePoster({
               <h3 className="line-clamp-2 text-[15px] font-extrabold leading-[1.1] tracking-[-0.035em] text-white">
                 {content.title}
               </h3>
-              <div className="mt-1.5 flex items-center gap-2 text-[11px] font-semibold text-white/72">
-                <span>{typeLabel}</span>
+              <div className="mt-1.5 flex min-w-0 items-center gap-2 text-[11px] font-semibold text-white/72">
+                <span className="truncate">{typeLabel}</span>
                 {rating ? (
-                  <span className="inline-flex items-center gap-1 text-white/86">
+                  <span className="inline-flex shrink-0 items-center gap-1 text-white/86">
                     <Star
                       className="h-3.5 w-3.5 text-[#ffb31a]"
                       weight="fill"
@@ -358,7 +358,7 @@ function MobileNewReleasePoster({
           <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/10 to-white/[0.04]" />
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#03010a]/90 via-[#03010a]/36 to-transparent" />
 
-          <div className="absolute inset-x-2 bottom-2 rounded-[15px] border border-white/[0.1] bg-black/50 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_26px_rgba(0,0,0,0.36)] backdrop-blur-md">
+          <div className="absolute inset-x-2 bottom-2 flex min-h-[92px] flex-col justify-end rounded-[15px] border border-white/[0.1] bg-black/50 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_26px_rgba(0,0,0,0.36)] backdrop-blur-md">
             <h3 className="line-clamp-2 text-[14px] font-extrabold leading-[1.08] tracking-[-0.035em] text-white">
               {content.title}
             </h3>
@@ -406,7 +406,7 @@ function CompactTrendingCard({
           </div>
         ) : null}
 
-        <div className="absolute left-3 right-3 bottom-3 z-10 md:hidden">
+        <div className="absolute inset-x-3 bottom-3 z-10 flex min-h-[112px] flex-col justify-end md:hidden">
           <div className="mb-3 grid h-9 w-9 place-items-center rounded-full border border-white/70 bg-black/25 backdrop-blur-md">
             <Play className="h-4 w-4 text-white" weight="fill" />
           </div>
@@ -485,7 +485,7 @@ function PremiumVideoCard({
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04)_0%,rgba(0,0,0,0.1)_38%,rgba(0,0,0,0.64)_72%,rgba(0,0,0,0.96)_100%)] md:bg-gradient-to-t md:from-black/46 md:via-transparent md:to-transparent md:opacity-75" />
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#020107] via-[#020107]/55 to-transparent md:hidden" />
 
-        <div className="absolute left-4 right-4 bottom-4 z-10 md:hidden">
+        <div className="absolute inset-x-4 bottom-4 z-10 flex min-h-[136px] flex-col justify-end md:hidden">
           <div className="mb-3 grid h-12 w-12 place-items-center rounded-full border border-white/85 bg-white/[0.14] text-white shadow-[0_0_22px_rgba(255,255,255,0.18),0_0_26px_rgba(255,29,108,0.16),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-md">
             <Play className="ml-0.5 h-5 w-5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]" weight="fill" />
           </div>

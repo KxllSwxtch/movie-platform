@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 
 import { ShortCard, type ShortContent } from "@/components/content/short-card";
@@ -80,6 +80,8 @@ describe("ShortCard", () => {
   beforeEach(() => {
     streamUrlMock.data = null;
     vi.clearAllMocks();
+    (HTMLVideoElement.prototype.play as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (HTMLVideoElement.prototype.pause as unknown as ReturnType<typeof vi.fn>).mockReset();
   });
 
   it("renders short title and creator identity", () => {
@@ -123,7 +125,7 @@ describe("ShortCard", () => {
     expect(ref.current).toHaveAttribute("data-short-id", "s1");
   });
 
-  it("plays active video through controlled muted playback without autoPlay", async () => {
+  it("plays active video through controlled sound-first playback without autoPlay", async () => {
     streamUrlMock.data = { streamUrl: "/short.mp4" };
 
     render(<ShortCard content={mockShort} isActive />);
@@ -134,6 +136,61 @@ describe("ShortCard", () => {
     await waitFor(() => {
       expect(HTMLVideoElement.prototype.play).toHaveBeenCalledTimes(1);
     });
+    expect(video).toHaveProperty("muted", false);
+  });
+
+  it("clicking the active video toggles pause instead of sound", async () => {
+    streamUrlMock.data = { streamUrl: "/short.mp4" };
+
+    render(<ShortCard content={mockShort} isActive />);
+
+    const video = document.querySelector("video") as HTMLVideoElement;
+    await waitFor(() => {
+      expect(HTMLVideoElement.prototype.play).toHaveBeenCalledTimes(1);
+    });
+
+    Object.defineProperty(video, "paused", {
+      configurable: true,
+      value: false,
+    });
+
+    fireEvent.click(video);
+
+    expect(HTMLVideoElement.prototype.pause).toHaveBeenCalledTimes(1);
+    expect(video).toHaveProperty("muted", false);
+  });
+
+  it("renders a separate mute button that does not pause the video", async () => {
+    streamUrlMock.data = { streamUrl: "/short.mp4" };
+
+    render(<ShortCard content={mockShort} isActive />);
+
+    await waitFor(() => {
+      expect(HTMLVideoElement.prototype.play).toHaveBeenCalledTimes(1);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Выключить звук" }));
+
+    const video = document.querySelector("video");
     expect(video).toHaveProperty("muted", true);
+    expect(screen.getByRole("button", { name: "Включить звук" })).toBeInTheDocument();
+    expect(HTMLVideoElement.prototype.pause).not.toHaveBeenCalled();
+  });
+
+  it("falls back to muted playback when sound autoplay is blocked", async () => {
+    streamUrlMock.data = { streamUrl: "/short.mp4" };
+    (HTMLVideoElement.prototype.play as unknown as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new DOMException("Autoplay blocked"))
+      .mockResolvedValueOnce(undefined);
+
+    render(<ShortCard content={mockShort} isActive />);
+
+    const video = document.querySelector("video");
+    await waitFor(() => {
+      expect(HTMLVideoElement.prototype.play).toHaveBeenCalledTimes(2);
+    });
+
+    expect(video).toHaveProperty("muted", true);
+    expect(screen.getByRole("button", { name: "Включить звук" })).toBeInTheDocument();
   });
 });
