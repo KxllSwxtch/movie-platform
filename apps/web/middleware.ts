@@ -33,6 +33,10 @@ const VERIFIED_ONLY_ROUTES = [
   '/checkout',
 ];
 
+const PUBLIC_FINANCIAL_INFO_ROUTES = [
+  '/bonuses/withdraw/how-it-works',
+];
+
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'];
 
 function matchesRoute(pathname: string, routes: string[]): boolean {
@@ -111,6 +115,10 @@ export function middleware(request: NextRequest) {
     }
     return response;
   };
+
+  if (matchesRoute(pathname, PUBLIC_FINANCIAL_INFO_ROUTES)) {
+    return clearStaleCookies(NextResponse.next());
+  }
 
   if (matchesRoute(pathname, PROTECTED_ROUTES) && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);

@@ -45,6 +45,7 @@ const BASE_ACCOUNT_NAV: AccountNavItem[] = [
   { href: '/account/notifications', icon: Bell, label: 'Уведомления', badge: true },
   { href: '/account/settings', icon: Gear, label: 'Настройки' },
   { href: '/account/subscriptions', icon: Crown, label: 'Подписки' },
+  { href: '/account/wallet', icon: Wallet, label: 'Кошелек' },
   { href: '/account/payments', icon: CreditCard, label: 'Платежи' },
   { href: '/account/verification', icon: Shield, label: 'Верификация' },
 ];

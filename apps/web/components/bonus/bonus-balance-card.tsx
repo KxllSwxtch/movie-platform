@@ -44,13 +44,15 @@ export function BonusBalanceCard({
   const { data: statistics, isLoading: isLoadingStats } = useBonusStatistics();
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn('overflow-hidden rounded-3xl border-white/[0.08] bg-[linear-gradient(145deg,rgba(24,8,38,0.68),rgba(8,3,18,0.84))] shadow-[0_20px_54px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.055)] backdrop-blur-xl', className)}>
       {/* Header */}
-      <CardHeader className="bg-gradient-to-r from-mp-accent-primary/10 via-mp-surface to-mp-accent-secondary/10 pb-0">
+      <CardHeader className="border-b border-white/[0.06] bg-[linear-gradient(90deg,rgba(255,45,111,0.13),rgba(145,23,130,0.08),transparent)] pb-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Gift className="h-5 w-5 text-mp-accent-secondary" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#ff2d6f]/[0.24] bg-[#ff2d6f]/[0.12] text-[#ff7b9d]">
+                <Gift className="h-4 w-4" />
+              </span>
               Баланс бонусов
             </CardTitle>
           </div>
@@ -59,7 +61,7 @@ export function BonusBalanceCard({
             size="icon"
             onClick={() => refetchBalance()}
             disabled={isLoading}
-            className="h-8 w-8"
+            className="h-9 w-9 rounded-xl border border-white/[0.06] bg-white/[0.035]"
           >
             <ArrowsClockwise
               className={cn('h-4 w-4', isLoading && 'animate-spin')}
@@ -68,14 +70,14 @@ export function BonusBalanceCard({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-4">
+      <CardContent className="pt-5">
         {/* Main balance */}
-        <div className="mb-6 text-center">
+        <div className="mb-6 rounded-3xl border border-white/[0.07] bg-white/[0.035] px-4 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           {isLoading ? (
             <Skeleton className="mx-auto h-12 w-48" />
           ) : (
             <div>
-              <span className="text-4xl font-bold text-mp-text-primary">
+              <span className="text-4xl font-bold leading-none text-white md:text-5xl">
                 {formatBonusAmount(balance)}
               </span>
               <span className="ml-2 text-xl text-mp-text-secondary">₽</span>
@@ -88,7 +90,7 @@ export function BonusBalanceCard({
 
         {/* Statistics grid */}
         {showStatistics && (
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatItem
               icon={TrendUp}
               iconColor="text-green-400"
@@ -166,8 +168,8 @@ function StatItem({
   return (
     <div
       className={cn(
-        'rounded-lg border border-mp-border bg-mp-surface/50 p-3 text-center',
-        highlight && 'border-yellow-500/50 bg-yellow-500/5'
+        'rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]',
+        highlight && 'border-[#ffb86b]/[0.32] bg-[#ffb86b]/[0.07]'
       )}
     >
       <Icon className={cn('mx-auto mb-1 h-4 w-4', iconColor)} />
@@ -177,13 +179,13 @@ function StatItem({
         <p
           className={cn(
             'text-lg font-semibold',
-            highlight ? 'text-yellow-400' : 'text-mp-text-primary'
+            highlight ? 'text-[#ffcf8a]' : 'text-mp-text-primary'
           )}
         >
           {value}
         </p>
       )}
-      <p className="text-xs text-mp-text-secondary">{label}</p>
+      <p className="mt-1 text-xs leading-4 text-mp-text-secondary">{label}</p>
     </div>
   );
 }
@@ -197,8 +199,8 @@ export function BonusBalanceCardSkeleton({
   className?: string;
 }) {
   return (
-    <Card className={cn('overflow-hidden', className)}>
-      <CardHeader className="bg-gradient-to-r from-mp-accent-primary/10 via-mp-surface to-mp-accent-secondary/10 pb-0">
+    <Card className={cn('overflow-hidden rounded-3xl border-white/[0.08] bg-[linear-gradient(145deg,rgba(24,8,38,0.68),rgba(8,3,18,0.84))] shadow-[0_20px_54px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.055)] backdrop-blur-xl', className)}>
+      <CardHeader className="border-b border-white/[0.06] bg-[linear-gradient(90deg,rgba(255,45,111,0.13),rgba(145,23,130,0.08),transparent)] pb-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <Skeleton className="h-6 w-40" />
@@ -206,16 +208,16 @@ export function BonusBalanceCardSkeleton({
           <Skeleton className="h-8 w-8 rounded" />
         </div>
       </CardHeader>
-      <CardContent className="pt-4">
-        <div className="mb-6 text-center">
+      <CardContent className="pt-5">
+        <div className="mb-6 rounded-3xl border border-white/[0.07] bg-white/[0.035] px-4 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <Skeleton className="mx-auto h-12 w-48" />
           <Skeleton className="mx-auto mt-1 h-4 w-40" />
         </div>
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-lg border border-mp-border bg-mp-surface/50 p-3 text-center"
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3 text-center"
             >
               <Skeleton className="mx-auto mb-1 h-4 w-4" />
               <Skeleton className="mx-auto mb-1 h-5 w-16" />

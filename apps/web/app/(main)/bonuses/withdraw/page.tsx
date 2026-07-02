@@ -72,6 +72,12 @@ export default function BonusWithdrawPage() {
         <p className="text-mp-text-secondary">
           Конвертируйте бонусы в рубли и переводите на банковский счёт
         </p>
+        <Button variant="outline" size="sm" asChild className="mt-4">
+          <Link href="/bonuses/withdraw/how-it-works">
+            <Info className="mr-2 h-4 w-4" />
+            Как работает вывод бонусов
+          </Link>
+        </Button>
       </div>
 
       {/* Balance info */}

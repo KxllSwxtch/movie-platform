@@ -40,7 +40,7 @@ export function LandingHero() {
 
         <h1 className="sesh-approved-title">
           <span>Смотрите то,</span>
-          <span>что вдохнавляет</span>
+          <span>что вдохновляет</span>
         </h1>
 
         <p className="sesh-approved-subtitle">

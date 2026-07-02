@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDots, CreditCard, ClockCounterClockwise, X } from '@phosphor-icons/react';
+import { CalendarDots, CreditCard, ClockCounterClockwise, Wallet, X } from '@phosphor-icons/react';
 import Link from 'next/link';
 import * as React from 'react';
 
@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTransactionHistory } from '@/hooks';
-import { cn } from '@/lib/utils';
 import type { TransactionType, TransactionStatus } from '@/types';
 
 const TRANSACTION_TYPES: { value: string; label: string }[] = [
@@ -130,12 +129,20 @@ export default function PaymentHistoryPage() {
           </p>
         </div>
 
-        <Button variant="outline" asChild>
-          <Link href="/account/subscriptions">
-            <CreditCard className="mr-2 h-4 w-4" />
-            Мои подписки
-          </Link>
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button variant="outline" asChild>
+            <Link href="/account/wallet">
+              <Wallet className="mr-2 h-4 w-4" />
+              Кошелек
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/account/subscriptions">
+              <CreditCard className="mr-2 h-4 w-4" />
+              Мои подписки
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats cards */}

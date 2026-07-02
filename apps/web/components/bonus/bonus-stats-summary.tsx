@@ -7,7 +7,6 @@ import {
   Clock,
   Gift,
   TrendUp,
-  Wallet,
 } from '@phosphor-icons/react';
 import * as React from 'react';
 
@@ -82,15 +81,17 @@ export function BonusStatsSummary({ className }: BonusStatsSummaryProps) {
   ];
 
   return (
-    <Card className={className}>
-      <CardHeader>
+    <Card className={cn('overflow-hidden rounded-3xl border-white/[0.08] bg-[linear-gradient(145deg,rgba(24,8,38,0.6),rgba(8,3,18,0.8))] shadow-[0_16px_42px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.045)] backdrop-blur-xl', className)}>
+      <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <TrendUp className="h-5 w-5 text-mp-accent-primary" />
+          <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#ff2d6f]/[0.24] bg-[#ff2d6f]/[0.12] text-[#ff7b9d]">
+            <TrendUp className="h-4 w-4" />
+          </span>
           Статистика бонусов
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {statItems.map((item) => (
             <StatCard
               key={item.label}
@@ -137,12 +138,12 @@ function StatCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-mp-border bg-mp-surface/50 p-3',
-        highlight && 'border-yellow-500/50 bg-yellow-500/5'
+        'rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]',
+        highlight && 'border-[#ffb86b]/[0.32] bg-[#ffb86b]/[0.07]'
       )}
     >
       <div className="flex items-center gap-2">
-        <div className={cn('rounded-lg p-1.5', iconBg)}>
+        <div className={cn('rounded-xl border border-white/[0.06] p-1.5', iconBg)}>
           <Icon className={cn('h-4 w-4', iconColor)} />
         </div>
         <span className="text-xs text-mp-text-secondary">{label}</span>
@@ -154,7 +155,7 @@ function StatCard({
         <p
           className={cn(
             'mt-2 text-lg font-bold',
-            highlight ? 'text-yellow-400' : 'text-mp-text-primary'
+            highlight ? 'text-[#ffcf8a]' : 'text-mp-text-primary'
           )}
         >
           {value}
@@ -206,7 +207,7 @@ export function BonusStatsRow({ className }: BonusStatsRowProps) {
   return (
     <div
       className={cn(
-        'grid grid-cols-4 divide-x divide-mp-border rounded-lg border border-mp-border bg-mp-surface/50',
+        'grid grid-cols-4 divide-x divide-white/[0.07] rounded-2xl border border-white/[0.08] bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]',
         className
       )}
     >
@@ -246,7 +247,7 @@ export function MonthlyComparisonCard({ className }: MonthlyComparisonCardProps)
   const net = earned - spent;
 
   return (
-    <Card className={className}>
+    <Card className={cn('overflow-hidden rounded-3xl border-white/[0.08] bg-[linear-gradient(145deg,rgba(24,8,38,0.62),rgba(8,3,18,0.82))] shadow-[0_16px_42px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.045)] backdrop-blur-xl', className)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-mp-text-secondary">
           За этот месяц
