@@ -478,13 +478,13 @@ function PremiumVideoCard({
           <Play className="ml-0.5 h-4 w-4 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.42)]" weight="fill" />
         </div>
 
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 h-[112px] rounded-[16px] border border-white/[0.08] bg-black/28 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_14px_30px_rgba(0,0,0,0.28)] backdrop-blur-[2px] md:hidden">
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 h-[124px] rounded-[16px] border border-white/[0.08] bg-black/28 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_14px_30px_rgba(0,0,0,0.28)] backdrop-blur-[2px] md:hidden">
           <div className="flex h-full min-w-0 flex-col">
-            <h3 className="line-clamp-2 min-h-[38px] text-[17px] font-extrabold leading-[1.12] tracking-normal text-white [text-wrap:balance] drop-shadow-[0_2px_12px_rgba(0,0,0,0.78)]">
+            <h3 className="line-clamp-3 min-h-[55px] text-[16px] font-extrabold leading-[1.15] tracking-normal text-white [text-wrap:balance] drop-shadow-[0_2px_12px_rgba(0,0,0,0.78)]">
               {content.title}
             </h3>
 
-            <div className="mt-2 grid min-w-0 gap-1.5 text-[11px] font-bold leading-none text-white/74 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
+            <div className="mt-1.5 grid min-w-0 gap-1 text-[11px] font-bold leading-none text-white/74 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
               <span className="truncate text-[10px] font-black uppercase tracking-[0.08em] text-white/84">
                 {typeLabel || "Видео"}
               </span>
