@@ -5,6 +5,7 @@ import { CaretUp, CaretDown } from '@phosphor-icons/react';
 
 import { ShortCard, type ShortContent } from '@/components/content';
 import { useContentDetail, useContentInfinite } from '@/hooks/use-content';
+import { usePrefetchStreamUrls } from '@/hooks/use-streaming';
 import { cn } from '@/lib/utils';
 import {
   isSameShort,
@@ -75,6 +76,12 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
   const shorts: ShortContent[] = React.useMemo(() => {
     return prioritizeInitialShort(feedShorts, targetSlug, targetShort);
   }, [feedShorts, targetShort, targetSlug]);
+
+  const streamPrefetchIds = React.useMemo(
+    () => shorts.slice(activeIndex + 1, activeIndex + 3).map((short) => short.id),
+    [activeIndex, shorts],
+  );
+  usePrefetchStreamUrls(streamPrefetchIds);
 
   const scrollToIndex = React.useCallback((index: number) => {
     const container = scrollContainerRef.current;
@@ -225,14 +232,25 @@ export function ShortsFeed({ initialShortSlug }: ShortsFeedProps) {
           style={{ height: Math.max(viewportHeight, shorts.length * viewportHeight) }}
         >
           {shorts.map((short, index) => {
-            if (Math.abs(index - activeIndex) > 1) return null;
+            if (index < activeIndex - 1 || index > activeIndex + 2) return null;
+            const preload =
+              index === activeIndex
+                ? 'auto'
+                : index > activeIndex && index <= activeIndex + 2
+                  ? 'metadata'
+                  : 'none';
             return (
               <div
                 key={short.id}
                 className="absolute left-0 w-full snap-start max-md:w-screen max-md:max-w-none"
                 style={{ top: index * viewportHeight, height: viewportHeight }}
               >
-                <ShortCard content={short} isActive={index === activeIndex} className="h-full" />
+                <ShortCard
+                  content={short}
+                  isActive={index === activeIndex}
+                  preload={preload}
+                  className="h-full"
+                />
               </div>
             );
           })}

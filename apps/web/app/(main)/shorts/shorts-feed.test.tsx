@@ -5,6 +5,7 @@ import { ShortsFeed } from './shorts-feed';
 
 const mockUseContentInfinite = vi.fn();
 const mockUseContentDetail = vi.fn();
+const mockUsePrefetchStreamUrls = vi.fn();
 
 vi.mock('@/hooks/use-content', () => ({
   useContentInfinite: (...args: unknown[]) => mockUseContentInfinite(...args),
@@ -12,11 +13,21 @@ vi.mock('@/hooks/use-content', () => ({
 }));
 
 vi.mock('@/components/content', () => ({
-  ShortCard: ({ content }: { content: { id: string; title: string } }) => (
-    <div data-testid="short-card" data-short-id={content.id}>
+  ShortCard: ({
+    content,
+    preload,
+  }: {
+    content: { id: string; title: string };
+    preload?: string;
+  }) => (
+    <div data-testid="short-card" data-short-id={content.id} data-preload={preload}>
       {content.title}
     </div>
   ),
+}));
+
+vi.mock('@/hooks/use-streaming', () => ({
+  usePrefetchStreamUrls: (...args: unknown[]) => mockUsePrefetchStreamUrls(...args),
 }));
 
 describe('ShortsFeed', () => {
@@ -86,6 +97,34 @@ describe('ShortsFeed', () => {
     render(<ShortsFeed initialShortSlug="nine" />);
 
     expect(screen.getAllByTestId('short-card')[0]?.getAttribute('data-short-id')).toBe('short-9');
+  });
+
+  it('prefetches and metadata-preloads upcoming shorts', () => {
+    mockUseContentInfinite.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              { id: 'short-1', slug: 'one', title: 'One', contentType: 'SHORT' },
+              { id: 'short-2', slug: 'two', title: 'Two', contentType: 'SHORT' },
+              { id: 'short-3', slug: 'three', title: 'Three', contentType: 'SHORT' },
+            ],
+          },
+        ],
+      },
+      isLoading: false,
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+    });
+
+    render(<ShortsFeed />);
+
+    expect(mockUsePrefetchStreamUrls).toHaveBeenCalledWith(['short-2', 'short-3']);
+    const cards = screen.getAllByTestId('short-card');
+    expect(cards[0]?.getAttribute('data-preload')).toBe('auto');
+    expect(cards[1]?.getAttribute('data-preload')).toBe('metadata');
+    expect(cards[2]?.getAttribute('data-preload')).toBe('metadata');
   });
 
   it('shows an error state when the direct short cannot be resolved', () => {

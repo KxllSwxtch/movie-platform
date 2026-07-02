@@ -13,13 +13,11 @@ import {
   type VideoProgressContent,
 } from "@/components/content";
 import { ContentImage } from "@/components/content/content-image";
-import { UserAvatar } from "@/components/ui/avatar";
 import type { useDashboardHome } from "@/hooks/use-home";
 import {
   normalizeCreatorIdentity,
   type CreatorInput,
 } from "@/lib/author-identity";
-import { normalizeMediaUrl } from "@/lib/media-url";
 import { cn, formatNumber, formatViewCount } from "@/lib/utils";
 
 type DashboardData = ReturnType<typeof useDashboardHome>;
@@ -115,7 +113,7 @@ export function DashboardRows({ data }: DashboardRowsProps) {
     ...(tutorials.data?.data?.items || []).map(mapToDashboardCard),
     ...(series.data?.data?.items || []).map(mapToDashboardCard),
     ...(shorts.data?.data?.items || []).map(mapToDashboardCard),
-  ]);
+  ]).filter((item) => (item.type || "").toUpperCase() !== "SHORT");
 
   const scrollTrending = useCallback((direction: "left" | "right") => {
     const carousel = trendingScrollRef.current;
@@ -452,7 +450,6 @@ function CompactTrendingCard({
 
 function PremiumVideoCard({
   content,
-  featured = false,
 }: {
   content: DashboardCardContent;
   featured?: boolean;
@@ -460,19 +457,11 @@ function PremiumVideoCard({
   const href = getContentHref(content);
   const typeLabel = getContentTypeLabel(content.type);
   const creatorIdentity = normalizeCreatorIdentity(content.creator);
-  const creatorAvatarSrc = creatorIdentity?.avatarUrl
-    ? normalizeMediaUrl(creatorIdentity.avatarUrl)
-    : null;
 
   return (
     <article className="group min-w-0">
       <div
-        className={cn(
-          "relative overflow-hidden border border-white/[0.09] bg-white/[0.04] shadow-[0_22px_56px_rgba(0,0,0,0.46),0_0_28px_rgba(255,29,108,0.07)] transition-[transform,box-shadow] duration-200 active:scale-[0.982] active:shadow-[0_28px_64px_rgba(0,0,0,0.52),0_0_34px_rgba(255,29,108,0.11)] md:aspect-[1.82/1] md:rounded-[10px] md:border-0 md:shadow-[0_12px_34px_rgba(0,0,0,0.2)] md:transition-none md:active:scale-100 md:active:shadow-[0_12px_34px_rgba(0,0,0,0.2)]",
-          featured
-            ? "aspect-[1.7/1] rounded-[24px]"
-            : "aspect-[1.82/1] rounded-[20px]",
-        )}
+        className="relative aspect-[1.82/1] overflow-hidden rounded-[20px] border border-white/[0.09] bg-white/[0.04] shadow-[0_22px_56px_rgba(0,0,0,0.46),0_0_28px_rgba(255,29,108,0.07)] transition-[transform,box-shadow] duration-200 active:scale-[0.982] active:shadow-[0_28px_64px_rgba(0,0,0,0.52),0_0_34px_rgba(255,29,108,0.11)] md:aspect-[1.82/1] md:rounded-[10px] md:border-0 md:shadow-[0_12px_34px_rgba(0,0,0,0.2)] md:transition-none md:active:scale-100 md:active:shadow-[0_12px_34px_rgba(0,0,0,0.2)]"
       >
         <ContentImage
           src={content.thumbnailUrl}
@@ -482,46 +471,32 @@ function PremiumVideoCard({
           sizes="(max-width: 768px) 92vw, (max-width: 1536px) 20vw, 260px"
         />
 
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04)_0%,rgba(0,0,0,0.1)_38%,rgba(0,0,0,0.64)_72%,rgba(0,0,0,0.96)_100%)] md:bg-gradient-to-t md:from-black/46 md:via-transparent md:to-transparent md:opacity-75" />
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#020107] via-[#020107]/55 to-transparent md:hidden" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.05)_0%,rgba(0,0,0,0.08)_38%,rgba(0,0,0,0.58)_68%,rgba(0,0,0,0.94)_100%)] md:bg-gradient-to-t md:from-black/46 md:via-transparent md:to-transparent md:opacity-75" />
+        <div className="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-[#020107]/95 via-[#020107]/58 to-transparent md:hidden" />
 
-        <div className="absolute inset-x-4 bottom-4 z-10 flex min-h-[136px] flex-col justify-end md:hidden">
-          <div className="mb-3 grid h-12 w-12 place-items-center rounded-full border border-white/85 bg-white/[0.14] text-white shadow-[0_0_22px_rgba(255,255,255,0.18),0_0_26px_rgba(255,29,108,0.16),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-md">
-            <Play className="ml-0.5 h-5 w-5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]" weight="fill" />
-          </div>
+        <div className="pointer-events-none absolute left-3 top-3 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/70 bg-white/[0.13] text-white shadow-[0_0_18px_rgba(255,255,255,0.14),0_0_20px_rgba(255,29,108,0.12),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-md md:hidden">
+          <Play className="ml-0.5 h-4 w-4 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.42)]" weight="fill" />
+        </div>
 
-          <h3
-            className={cn(
-              "line-clamp-2 font-extrabold leading-[1.05] tracking-[-0.04em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.78)]",
-              featured ? "text-[23px]" : "text-[20px]",
-            )}
-          >
-            {content.title}
-          </h3>
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 h-[112px] rounded-[16px] border border-white/[0.08] bg-black/28 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_14px_30px_rgba(0,0,0,0.28)] backdrop-blur-[2px] md:hidden">
+          <div className="flex h-full min-w-0 flex-col">
+            <h3 className="line-clamp-2 min-h-[38px] text-[17px] font-extrabold leading-[1.12] tracking-normal text-white [text-wrap:balance] drop-shadow-[0_2px_12px_rgba(0,0,0,0.78)]">
+              {content.title}
+            </h3>
 
-          {typeLabel ? (
-            <p className="mt-2 text-[12px] font-extrabold uppercase tracking-[0.13em] text-white/86 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
-              {typeLabel}
-            </p>
-          ) : null}
-
-          {creatorIdentity ? (
-            <div className="mt-2 flex min-w-0 items-center gap-2">
-              <UserAvatar
-                size="xs"
-                src={creatorAvatarSrc}
-                name={creatorIdentity.displayName}
-                className="h-6 w-6 border border-white/24 bg-[#10131c] shadow-[0_0_14px_rgba(255,255,255,0.12)]"
-              />
-              <span className="truncate text-[12px] font-bold text-white/78 drop-shadow-[0_1px_8px_rgba(0,0,0,0.72)]">
-                {creatorIdentity.displayName}
+            <div className="mt-2 grid min-w-0 gap-1.5 text-[11px] font-bold leading-none text-white/74 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
+              <span className="truncate text-[10px] font-black uppercase tracking-[0.08em] text-white/84">
+                {typeLabel || "Видео"}
+              </span>
+              <span className="truncate">
+                {creatorIdentity?.displayName || "SESH"}
               </span>
             </div>
-          ) : null}
 
-          <p className="mt-2 text-[12px] font-semibold text-white/68 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
-            {formatViews(content.viewCount)}
-          </p>
+            <p className="mt-auto truncate text-[11px] font-semibold leading-none text-white/64 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
+              {formatViews(content.viewCount)}
+            </p>
+          </div>
         </div>
 
         <HoverVideoPreview

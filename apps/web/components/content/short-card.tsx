@@ -60,6 +60,7 @@ export interface ShortContent {
 interface ShortCardProps {
   content: ShortContent;
   isActive?: boolean;
+  preload?: 'auto' | 'metadata' | 'none';
   className?: string;
 }
 
@@ -68,15 +69,21 @@ interface ShortCardProps {
  * Uses native <video> for performance. Only active card plays.
  */
 export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
-  ({ content, isActive = false, className }, ref) => {
+  ({ content, isActive = false, preload = 'none', className }, ref) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const hlsRef = useRef<Hls | null>(null);
-    const { data, isLoading, error } = useStreamUrl(isActive ? content.id : undefined);
+    const shouldLoadStream = isActive || preload !== 'none';
+    const { data, isLoading, error } = useStreamUrl(content.id, {
+      enabled: shouldLoadStream,
+      reason: isActive ? 'active' : 'preload',
+    });
     const streamData = (data as any)?.data ?? data;
 
     const [isMuted, setIsMuted] = useState(false);
     const [isPaused, setIsPaused] = useState(!isActive);
+    const [showLoadingState, setShowLoadingState] = useState(false);
     const mutedRef = useRef(isMuted);
+    const activeStartedAtRef = useRef<number | null>(null);
     const [commentsOpen, setCommentsOpen] = useState(false);
     const [commentText, setCommentText] = useState('');
     const commentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -178,11 +185,27 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
     }, [isActive, pauseCurrentVideo]);
 
     const videoSrc = useMemo(() => {
-      if (!isActive) return undefined;
+      if (!shouldLoadStream) return undefined;
       return streamData?.streamUrl
         ? normalizeMediaUrl(streamData.streamUrl as string)
         : undefined;
-    }, [isActive, streamData?.streamUrl]);
+    }, [shouldLoadStream, streamData?.streamUrl]);
+
+    useEffect(() => {
+      if (!isActive || (!isLoading && videoSrc)) {
+        setShowLoadingState(false);
+        return undefined;
+      }
+
+      const timer = window.setTimeout(() => setShowLoadingState(true), 300);
+      return () => window.clearTimeout(timer);
+    }, [isActive, isLoading, videoSrc]);
+
+    useEffect(() => {
+      if (isActive) {
+        activeStartedAtRef.current = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      }
+    }, [content.id, isActive, videoSrc]);
 
     useEffect(() => {
       const el = videoRef.current;
@@ -194,7 +217,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         hlsRef.current = null;
       }
 
-      if (!isActive || !videoSrc) {
+      if (!shouldLoadStream || !videoSrc) {
         try {
           pauseCurrentVideo(true);
           el.removeAttribute('src');
@@ -254,7 +277,11 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
       // Safari (native HLS) or non-HLS URL
       try {
         el.src = videoSrc;
-        playActiveVideo();
+        if (isActive) {
+          playActiveVideo();
+        } else {
+          el.load();
+        }
       } catch {
         // ignore
       }
@@ -264,7 +291,7 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         }
         el.pause();
       };
-    }, [isActive, pauseCurrentVideo, playActiveVideo, videoSrc]);
+    }, [isActive, pauseCurrentVideo, playActiveVideo, shouldLoadStream, videoSrc]);
 
     useEffect(() => {
       return () => {
@@ -403,10 +430,25 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
           loop
           muted={isMuted}
           playsInline
-          preload={isActive ? 'metadata' : 'none'}
+          preload={isActive ? 'auto' : preload}
           className="sesh-shorts-video absolute inset-0 h-full w-full object-cover max-md:w-screen max-md:max-w-none max-md:rounded-none"
           onPlay={() => setIsPaused(false)}
           onPause={() => setIsPaused(true)}
+          onLoadedData={(event) => {
+            if (process.env.NODE_ENV !== 'development' || !isActive) return;
+            const el = event.currentTarget;
+            const startedAt = activeStartedAtRef.current;
+            const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+            // eslint-disable-next-line no-console
+            console.debug('[shorts:first-frame]', {
+              contentId: content.id,
+              durationMs: startedAt ? Math.round(now - startedAt) : null,
+              currentSrc: el.currentSrc,
+              readyState: el.readyState,
+              networkState: el.networkState,
+              preload: el.preload,
+            });
+          }}
         />
 
         {/* Gradient overlays */}
@@ -523,10 +565,11 @@ export const ShortCard = forwardRef<HTMLDivElement, ShortCardProps>(
         </div>
 
         {/* Stream state indicator for active card */}
-        {isActive && (isLoading || error || !videoSrc) && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-            <div className="rounded-full bg-[#07020f]/62 px-4 py-2 text-sm text-white/90 shadow-[0_0_16px_rgba(213,32,58,0.14)] backdrop-blur-md">
-              Видео готовится…
+        {isActive && (showLoadingState || error) && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[radial-gradient(circle_at_50%_46%,rgba(213,32,58,0.16),transparent_32%)]">
+            <div className="relative overflow-hidden rounded-full border border-white/12 bg-[#07020f]/68 px-4 py-2 text-sm font-semibold text-white/90 shadow-[0_0_24px_rgba(213,32,58,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md">
+              <span className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_infinite] bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+              <span className="relative">Видео готовится…</span>
             </div>
           </div>
         )}

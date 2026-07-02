@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, endpoints, ApiError } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-client";
@@ -51,17 +51,45 @@ export interface EncodingStatusResponse {
   errorMessage?: string;
 }
 
+const STREAM_URL_STALE_TIME = 3.5 * 60 * 60 * 1000; // 3.5h (URL expires in 4h)
+
+async function fetchStreamUrl(contentId: string, reason: string) {
+  const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const response = await api.get<StreamUrlResponse>(endpoints.streaming.url(contentId));
+
+  if (process.env.NODE_ENV === "development") {
+    const endedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const payload = (
+      "data" in response && response.data ? response.data : response
+    ) as Partial<StreamUrlResponse>;
+    // eslint-disable-next-line no-console
+    console.debug("[shorts:stream-url]", {
+      contentId,
+      reason,
+      durationMs: Math.round(endedAt - startedAt),
+      expiresAt: payload?.expiresAt,
+      streamUrl: payload?.streamUrl,
+    });
+  }
+
+  return response;
+}
+
 /**
  * Fetch stream URL for content playback.
  * Auto-refreshes when the signed URL approaches expiry.
  */
-export function useStreamUrl(contentId: string | undefined) {
+export function useStreamUrl(
+  contentId: string | undefined,
+  options?: { enabled?: boolean; reason?: string },
+) {
+  const enabled = Boolean(contentId) && (options?.enabled ?? true);
+
   return useQuery({
     queryKey: queryKeys.streaming.url(contentId || ""),
-    queryFn: () =>
-      api.get<StreamUrlResponse>(endpoints.streaming.url(contentId!)),
-    enabled: !!contentId,
-    staleTime: 3.5 * 60 * 60 * 1000, // 3.5h (URL expires in 4h)
+    queryFn: () => fetchStreamUrl(contentId!, options?.reason || "playback"),
+    enabled,
+    staleTime: STREAM_URL_STALE_TIME,
     refetchInterval: (query) => {
       // Poll even on 404 when backend says "queued/processing".
       if (query.state.status === "error") {
@@ -84,6 +112,24 @@ export function useStreamUrl(contentId: string | undefined) {
       return failureCount < 2;
     },
   });
+}
+
+export function usePrefetchStreamUrls(contentIds: string[]) {
+  const queryClient = useQueryClient();
+  const stableIds = useMemo(
+    () => Array.from(new Set(contentIds.filter(Boolean))).slice(0, 2),
+    [contentIds],
+  );
+
+  useEffect(() => {
+    stableIds.forEach((contentId) => {
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.streaming.url(contentId),
+        queryFn: () => fetchStreamUrl(contentId, "prefetch"),
+        staleTime: STREAM_URL_STALE_TIME,
+      });
+    });
+  }, [queryClient, stableIds]);
 }
 
 /**

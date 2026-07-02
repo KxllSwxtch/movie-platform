@@ -73,10 +73,15 @@ export function ContentImage({
           fallbackClassName,
         )}
       >
-        <div className="relative z-10 grid h-14 w-14 place-items-center rounded-full border border-white/12 bg-white/[0.06] text-white/66 shadow-[0_0_26px_rgba(213,32,58,0.18),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md">
-          {fallbackIcon ?? (
-            <FilmStrip className="h-7 w-7 text-white/68" weight="duotone" />
-          )}
+        <div className="relative z-10 flex flex-col items-center gap-2">
+          <div className="grid h-14 w-14 place-items-center rounded-full border border-white/12 bg-white/[0.06] text-white/66 shadow-[0_0_26px_rgba(213,32,58,0.18),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md">
+            {fallbackIcon ?? (
+              <FilmStrip className="h-7 w-7 text-white/68" weight="duotone" />
+            )}
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/42">
+            SESH
+          </span>
         </div>
       </div>
     );
