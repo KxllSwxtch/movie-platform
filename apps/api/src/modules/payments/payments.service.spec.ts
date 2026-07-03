@@ -70,6 +70,7 @@ describe('PaymentsService', () => {
 
     mockPartnersService = {
       calculateAndCreateCommissions: jest.fn(),
+      clawbackCommissions: jest.fn(),
     };
 
     mockYooKassaService = {
